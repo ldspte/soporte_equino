@@ -1,0 +1,33 @@
+.insumos{
+    width: 100%;
+    display: flexbox;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.container-insumos{
+    display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.5rem;
+  max-width: 1200px;
+  width: 90%;
+  padding: 1rem 0;
+  justify-content: center;
+}
+
+
+.insumos-container{
+    background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.insumos-container img {
+    width: 70%;
+}
