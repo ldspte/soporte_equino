@@ -1,8 +1,9 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Home from './Views/Home.jsx';
 import Landing from './Views/Landing.jsx';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import ClinicalHistory from './components/ClinicalHistory.jsx';
-import AuthenticatedLayout from './components/AuthenticatedLayout'; // Importa el nuevo layout
+import AuthenticatedLayout from './components/AuthenticatedLayout.jsx'; // Importa el nuevo layout
 
 const App = () => {
   return (

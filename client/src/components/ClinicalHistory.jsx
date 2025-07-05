@@ -6,6 +6,7 @@ import {
   FaCarSide, FaCamera, FaUser, FaHome, FaCalendarAlt, FaClock, FaTimes,
   FaCheckCircle, FaSpinner, FaBookMedical, FaHorse, FaClipboardList
 } from 'react-icons/fa'
+import '../Styles/history.css';
 
 function ClinicalHistory() {
     const [clinicals, setClinical] = useState([]);
@@ -104,7 +105,7 @@ function ClinicalHistory() {
       const fetchData = () => {
         const userStorage = localStorage.getItem('veterinario');
         if (userStorage) {
-          setUser(JSON.parse(userStorage));
+          setUserData(JSON.parse(userStorage));
         }
       };
       fetchData();
@@ -128,7 +129,7 @@ function ClinicalHistory() {
               setLoading(false);
               return;
             }
-            const response = await fetch('http://localhost:3001/api/clinical_history',
+            const response = await fetch('http://localhost:3001/api/historia_clinica',
             {
                 method: 'GET',
                 headers: {
@@ -443,7 +444,7 @@ function ClinicalHistory() {
           onClick={() => setShowNewClinicalModal(true)}
           disabled={loading}
         >
-          <FaPlus className="me-2" /> Nuevo Conductor
+          <FaPlus className="me-2" /> Nueva Historia Clinica
         </Button>
       </div>
     {error && (
@@ -473,17 +474,17 @@ function ClinicalHistory() {
 
       {/* listado historias clinicas */}
       <Card>
-        <Card.header className="bg-white">
+        {/* <Card.header className="bg-white">
           <div className="d-flex justify-content-between align-items-center">
             <div className="d-flex align-items-center">
               <FaBookMedical className="text-warning me-2" size={20} />
               <h5 className="mb-0">Listado de Historias Clinicas</h5>
             </div>
             <small className="text-muted">
-              {filteredDrivers.length} Historia(s) encontrada(s)
+              {filteredClinicals.length} Historia(s) encontrada(s)
             </small>  
           </div>
-        </Card.header>
+        </Card.header> */}
 
         <Card.Body>
           {loading ? (
@@ -576,8 +577,8 @@ function ClinicalHistory() {
 
       {/* Modal Detalles Historia Clinica */}
       <Modal
-        show={showDriverModal} 
-        onHide={() => setShowDriverModal(false)}
+        show={showClinicalModal} 
+        onHide={() => setShowClinicalModal(false)}
         size="lg"
         centered
       >
@@ -737,8 +738,8 @@ function ClinicalHistory() {
       
      {/* Modal Crear Historia Clinica */}
 <Modal
-  show={showCreateClinicalModal} 
-  onHide={() => setShowCreateClinicalModal(false)}
+  show={showNewClinicalModal} 
+  onHide={() => setShowNewClinicalModal(false)}
   size="lg"
   centered
 >
@@ -749,7 +750,7 @@ function ClinicalHistory() {
     </Modal.Title>
   </Modal.Header>
   <Modal.Body>
-    <Form noValidate validated={validated} onSubmit={handleCreateClinical}>
+    <Form noValidate validated={validated} onSubmit={handleSubmitNewHistory}>
       <h5 className='border-bottom pb-2 mb-3'>Información Básica</h5>
       <Row>
         <Col md={6}>
@@ -802,7 +803,7 @@ function ClinicalHistory() {
         </Col>
       </Row>
 
-      <h5 className='mt-4'>Examen Físico</h5>
+      <h5 className='border-bottom pb-2 mb-3'>Examen Físico</h5>
       <Row>
         <Col md={6}>
           <Form.Group className="mb-3" controlId="formVacunas">
@@ -1202,7 +1203,7 @@ function ClinicalHistory() {
     </Modal.Title>
   </Modal.Header>
   <Modal.Body>
-    {selectedClinical && (
+    {editClinical && (
       <Form noValidate validated={validated} onSubmit={handleSubmitEditClinical}>
         <h5 className='border-bottom pb-2 mb-3'>Información Básica</h5>
         <Row>
@@ -1573,7 +1574,7 @@ function ClinicalHistory() {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {driverToDelete && (
+          {clinicalToDelete && (
             <div className="text-center">
               <div className="mb-3">
                 <FaUser size={40} className="text-danger" />
