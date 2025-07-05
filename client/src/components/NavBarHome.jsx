@@ -1,22 +1,22 @@
 import Logo from '../assets/img/logo.png';
-import { useState } from 'react';
+import { Link } from 'react-router-dom'; // Importa Link de react-router-dom
 
-export default function NavBarHome({}) {
+export default function NavBarHome() {
   return (
     <div>
       <nav className='navmenu'>
-        <a href="index.html">
-            <img src={Logo} alt="" />
-        </a>
+        <Link to="/">
+          <img src={Logo} alt="Logo" />
+        </Link>
         <ul>
-            <li><a href="" >Inicio</a></li>
-            <li><a href="" >Historias Clinicas</a></li>
-            <li><a href="" >Veterinarios</a></li>
-            <li><a href="" >Insumos</a></li>
-            <li><a href="" >Propietarios</a></li>
-            <li><a href="" >Pacientes</a></li>
+          <li><Link to="/">Inicio</Link></li> {/* Enlace a la página de inicio */}
+          <li><Link to="/historias-clinicas">Historias Clínicas</Link></li> {/* Enlace a historias clínicas */}
+          <li><Link to="/veterinarios">Veterinarios</Link></li>
+          <li><Link to="/insumos">Insumos</Link></li>
+          <li><Link to="/propietarios">Propietarios</Link></li>
+          <li><Link to="/pacientes">Pacientes</Link></li>
         </ul>
       </nav>
     </div>
-  )
+  );
 }
