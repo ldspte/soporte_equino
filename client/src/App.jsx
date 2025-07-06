@@ -4,6 +4,8 @@ import Landing from './Views/Landing.jsx';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ClinicalHistory from './components/ClinicalHistory.jsx';
 import AuthenticatedLayout from './components/AuthenticatedLayout.jsx'; // Importa el nuevo layout
+import PatientManagement from './components/Patients.jsx';
+import Owners from './components/Owners.jsx';
 
 const App = () => {
   return (
@@ -16,6 +18,8 @@ const App = () => {
           <Route element={<AuthenticatedLayout />}>
             <Route path="/home" element={<Home />} />
             <Route path="/historias-clinicas" element={<ClinicalHistory />} />
+            <Route path="/propietarios" element={<Owners />} />
+            <Route path="/pacientes" element={<PatientManagement/>} />
           </Route>
         </Routes>
       </Router>
