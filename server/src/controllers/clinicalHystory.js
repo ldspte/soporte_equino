@@ -5,7 +5,7 @@ const getClinicalHistiry = async() => {
     const result = await db.query(`
         SELECT * FROM historia_clinica
     `)
-    return result;
+    return result.length > 0 ? result[0] : null;
 }
 
 const getClinicalHistoryById = async(idHistoria_clinica) => {

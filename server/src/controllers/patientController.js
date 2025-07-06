@@ -2,11 +2,11 @@ const {db} = require('../database')
 
 
 const getPatients = async () => {
-    const result = await db.query(`
+    const results = await db.query(`
         SELECT * FROM paciente
 
     `)
-    return result;
+    return results.length > 0 ? results[0] : null;
 }
 
 const getPatientById = async(idPaciente) => {
@@ -18,20 +18,20 @@ const getPatientById = async(idPaciente) => {
     return result;
 };
 
-const createPatient = async(nombre, raza, edad, sexo, propietario) => {
+const createPatient = async(Nombre, Raza, Edad, Sexo, Propietario) => {
     const result = await db.query(`
-        INSERT INTO veterinarios (nombre, raza, edad, sexo, propietario) VALUES (?, ?, ?, ?, ?)
+        INSERT INTO Paciente (Nombre, Raza, Edad, Sexo, Propietario) VALUES (?, ?, ?, ?, ?)
     `,
-    [nombre, raza, edad, sexo, propietario]
+    [Nombre, Raza, Edad, Sexo, Propietario]
     );
     return result;
 }
 
-const updatePatient = async(idPaciente, nombre, raza, edad, sexo, propietario) => {
+const updatePatient = async(idPaciente, Nombre, Raza, Edad, Sexo, Propietario) => {
     const result = await db.query(`
-        UPDATE paciente SET nombre = ?, raza = ?, edad = ?, sexo = ?, propietario = ? WHERE idPaciente = ?
+        UPDATE Paciente SET Nombre = ?, Raza = ?, Edad = ?, Sexo = ?, Propietario = ? WHERE idPaciente = ?
     `,
-    [nombre, raza, edad, sexo, propietario, idPaciente]
+    [Nombre, Raza, Edad, Sexo, Propietario, idPaciente]
     );
     return result;
 }
