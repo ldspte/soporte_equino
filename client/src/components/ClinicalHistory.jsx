@@ -9,21 +9,23 @@ import {
 import '../Styles/history.css';
 
 function ClinicalHistory() {
-    const [clinicals, setClinical] = useState([]);
-    const [userData, setUserData] = useState(null);
+  const [clinicals, setClinical] = useState([]);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [patients, setPatients] = useState([]);
+  const [owners, setOwners] = useState([]);
 
-    // EStado Modales
+  // EStado Modales
   const [showClinicalModal, setShowClinicalModal] = useState(false);
   const [showNewClinicalModal, setShowNewClinicalModal] = useState(false);
   const [showEditClinicalModal, setShowEditClinicalModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
 
-    // Estados de validación
+  // Estados de validación
   const [validated, setValidated] = useState(false);
   const [editValidated, setEditValidated] = useState(false);
 
@@ -32,59 +34,73 @@ function ClinicalHistory() {
   const [currentClinical, setCurrentClinical] = useState(null);
   const [clinicalToDelete, setClinicalToDelete] = useState(null);
 
+  useEffect(() => {
+      const fetchData = () => {
+        const userStorage = localStorage.getItem('veterinario');
+        if (userStorage) {
+          setUserData(JSON.parse(userStorage));
+        }
+      };
+      fetchData();
+      fetchClinical();
+      fetchOwners();
+      fetchPatients();
+    }, []);
+
    const initialCLinicalState = {
-    veterinario: '',
-    paciente: '',
-    vacunas: '',
-    enfermedades: '',
-    temperatura: '',
-    pulso: '',
-    frecuencia_cardiaca: '',
-    llenado_capilar: '',
-    mucosas: '',
-    pulso_digital: '',
-    aspecto: '',
-    locomotor: '',
-    respiratorio: '',
-    circulatorio: '',
-    digestivo: '',
-    genitourinario: '',
-    sis_nervioso: '',
-    oidos: '',
-    glangios_linfaticos: '',
-    piel: '',
-    diagnostico_integral: '',
-    tratamiento: '',
-    prescripcion: '',
-    observaciones: ''
+    Veterinario: '',
+    Paciente: '',
+    Vacunas: '',
+    Enfermedades: '',
+    Temperatura: '',
+    Pulso: '',
+    Frecuencia_cardiaca: '',
+    Llenado_capilar: '',
+    Mucosas: '',
+    Pulso_digital: '',
+    Aspecto: '',
+    Locomotor: '',
+    Respiratorio: '',
+    Circulatorio: '',
+    Digestivo: '',
+    Genitourinario: '',
+    Sis_nervioso: '',
+    Oidos: '',
+    Glangios_linfaticos: '',
+    Piel: '',
+    Diagnostico_integral: '',
+    Tratamiento: '',
+    Prescripcion: '',
+    Observaciones: ''
   }
 
   const normalizeClinicalData = useCallback((clinical) => {
     return{
-    veterinario: clinical.veterinario  || '',
-    paciente: clinical.paciente  || '',
-    vacunas: clinical.vacunas  || '',
-    enfermedades: clinical.enfermedades  || '',
-    temperatura: clinical.temperatura  || '',
-    pulso: clinical.piel  || '',
-    frecuencia_cardiaca: clinical.frecuencia_cardiaca  || '',
-    llenado_capilar: clinical.llenado_capilar  || '',
-    mucosas: clinical.mucosas  || '',
-    pulso_digital: clinical.pulso_digital  || '',
-    aspecto: clinical.aspecto  || '',
-    locomotor: clinical.locomotor  || '',
-    respiratorio: clinical.respiratorio  || '',
-    circulatorio: clinical.circulatorio  || '',
-    digestivo: clinical.digestivo  || '',
-    genitourinario: clinical.genitourinario  || '',
-    sis_nervioso: clinical.sis_nervioso  || '',
-    oidos: clinical.oidos  || '',
-    glangios_linfaticos: clinical.glangios_linfaticos  || '',
-    piel: clinical.piel  || '',
-    diagnostico_integral: clinical.diagnostico_integral  || '',
-    tratamiento: clinical.tratamiento  || '',
-    prescripcion: clinical.prescripcion  || '',
-    observaciones: clinical.observaciones  || ''
+    Veterinario: clinical.Veterinario  || '',
+    Paciente: clinical.Paciente  || '',
+    Vacunas: clinical.Vacunas  || '',
+    Enfermedades: clinical.Enfermedades  || '',
+    Temperatura: clinical.Temperatura  || '',
+    Pulso: clinical.Pulso  || '',
+    Frecuencia_cardiaca: clinical.Frecuencia_cardiaca  || '',
+    Llenado_capilar: clinical.Llenado_capilar  || '',
+    Mucosas: clinical.Mucosas  || '',
+    Pulso_digital: clinical.Pulso_digital  || '',
+    Aspecto: clinical.Aspecto  || '',
+    Locomotor: clinical.Locomotor  || '',
+    Respiratorio: clinical.Respiratorio  || '',
+    Circulatorio: clinical.Circulatorio  || '',
+    Digestivo: clinical.Digestivo  || '',
+    Genitourinario: clinical.Genitourinario  || '',
+    Sis_nervioso: clinical.Sis_nervioso  || '',
+    Oidos: clinical.Oidos  || '',
+    Glangios_linfaticos: clinical.Glangios_linfaticos  || '',
+    Piel: clinical.Piel  || '',
+    Diagnostico_integral: clinical.Diagnostico_integral  || '',
+    Tratamiento: clinical.Tratamiento  || '',
+    Prescripcion: clinical.Prescripcion  || '',
+    Observaciones: clinical.Observaciones  || '',
+    Fecha: clinical.Fecha || '',
   };
 }, []);
 
@@ -101,21 +117,63 @@ function ClinicalHistory() {
   const [successSubMessage, setSuccessSubMessage] = useState('');
 
 
-  useEffect(() => {
-      const fetchData = () => {
-        const userStorage = localStorage.getItem('veterinario');
-        if (userStorage) {
-          setUserData(JSON.parse(userStorage));
-        }
-      };
-      fetchData();
-    }, []);
+  
+
+    
 
     const getAuthToken = useCallback(() => {
         const token = localStorage.getItem('token');
         console.log(token ? `Bearer ${token}` : "XXXX")
         return token ? `Bearer ${token}` : null;
     }, []);
+
+
+    const fetchPatients = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+        const token = getAuthToken();
+        if (!token) {
+            setError('No hay token de autenticación');
+            return;
+        }
+        const response = await fetch('http://localhost:3001/api/pacientes', {
+            method: 'GET',
+            headers: {
+                'Authorization': token,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al obtener los pacientes');
+        }
+
+        const data = await response.json();
+        setPatients(data);
+    } catch (error) {
+        console.error('Error obteniendo pacientes: ', error);
+        setError(`Error al cargar pacientes: ${error.message}`);
+    } finally {
+        setLoading(false);
+    }
+}, [getAuthToken]);
+
+  const fetchOwners = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch('http://localhost:3001/api/propietarios');
+            if (!response.ok) throw new Error('Error al obtener propietarios');
+            const data = await response.json();
+            setOwners(data);
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     //Obtener historias clinicas
     const fetchClinical = useCallback(async () => {
@@ -149,7 +207,9 @@ function ClinicalHistory() {
             }
 
             const data = await response.json();
+            console.log(data);
             const processedData = Array.isArray(data) ? data.map(normalizeClinicalData) : [normalizeClinicalData(data)];
+            console.log('data processed: ', processedData[0])
 
             if (!processedData.length){
                 setError('No se encontraron Historias Clinicas');
@@ -166,8 +226,6 @@ function ClinicalHistory() {
         }
 
     }, [getAuthToken, normalizeClinicalData])
-
- 
 
   // crear Historia clinica
 
@@ -197,33 +255,33 @@ function ClinicalHistory() {
       //Preparar Payload
       const payload = {
         ...newClinical,
-        veterinario: newClinical.veterinario,
-        paciente: newClinical.paciente,
-        vacunas: newClinical.vacunas,
-        enfermedades: newClinical.enfermedades,
-        temperatura: newClinical.temperatura,
-        pulso: newClinical.pulso,
-        frecuencia_cardiaca: newClinical.frecuencia_cardiaca,
-        llenado_capilar: newClinical.llenado_capilar,
-        mucosas: newClinical.mucosas,
-        pulso_digital: newClinical.pulso_digital,
-        aspecto: newClinical.aspecto,
-        locomotor: newClinical.locomotor,
-        respiratorio: newClinical.respiratorio,
-        circulatorio: newClinical.circulatorio,
-        digestivo: newClinical.digestivo,
-        genitourinario: newClinical.genitourinario,
-        sis_nervioso: newClinical.sis_nervioso,
-        oidos: newClinical.oidos,
-        glangios_linfaticos: newClinical.glangios_linfaticos,
-        piel: newClinical.piel,
-        diagnostico_integral: newClinical.diagnostico_integral,
-        tratamiento: newClinical.tratamiento,
-        prescripcion: newClinical.prescripcion,
-        observaciones: newClinical.observaciones
+        Veterinario: userData.idVeterinario,
+        Paciente: newClinical.Paciente,
+        Vacunas: newClinical.Vacunas,
+        Enfermedades: newClinical.Enfermedades,
+        Temperatura: newClinical.Temperatura,
+        Pulso: newClinical.Pulso,
+        Frecuencia_cardiaca: newClinical.Frecuencia_cardiaca,
+        Llenado_capilar: newClinical.Llenado_capilar,
+        Mucosas: newClinical.Mucosas,
+        Pulso_digital: newClinical.Pulso_digital,
+        Aspecto: newClinical.Aspecto,
+        Locomotor: newClinical.Locomotor,
+        Respiratorio: newClinical.Respiratorio,
+        Circulatorio: newClinical.Circulatorio,
+        Digestivo: newClinical.Digestivo,
+        Genitourinario: newClinical.Genitourinario,
+        Sis_nervioso: newClinical.Sis_nervioso,
+        Oidos: newClinical.Oidos,
+        Glangios_linfaticos: newClinical.Glangios_linfaticos,
+        Piel: newClinical.Piel,
+        Diagnostico_integral: newClinical.Diagnostico_integral,
+        Tratamiento: newClinical.Tratamiento,
+        Prescripcion: newClinical.Prescripcion,
+        Observaciones: newClinical.Observaciones
       };
 
-      const response = await fetch('http://localhost:3001/api/clinical_history',
+      const response = await fetch('http://localhost:3001/api/historia_clinica',
         {
           method: 'POST',
           headers:{
@@ -265,7 +323,7 @@ function ClinicalHistory() {
   const updateClinical = useCallback(async (idHistoria_clinica, clinicalData) => {
     try{
       const token = getAuthToken();
-      const response = await fetch(`http://localhost:3001/api/clinical_history/${idHistoria_clinica}`, {
+      const response = await fetch(`http://localhost:3001/api/historia_clinica/${idHistoria_clinica}`, {
         method: 'PUT',
         headers: {
           'Authorization': token,
@@ -290,7 +348,7 @@ function ClinicalHistory() {
   const deleteHistory = useCallback(async (idHistoria_clinica) => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`http://localhost:3001/api/clinical_history/${idHistoria_clinica}`, {
+      const response = await fetch(`http://localhost:3001/api/historia_clinica/${idHistoria_clinica}`, {
         method: 'DELETE',
         headers: {
           'Authorization': token,
@@ -312,8 +370,11 @@ function ClinicalHistory() {
 
   useEffect(() => {
     fetchClinical();
+    // fetchOwners();
+    // fetchPatients();
   }, [fetchClinical]);
 
+  console.log('datos: ', clinicals);
   //HANDLERS 
 
   const handleInputChange = (e) => {
@@ -328,7 +389,7 @@ function ClinicalHistory() {
 
 
   //Handler para mostrar detalles de la historia
-  const handleShowDetails = useCallback((history) => {
+  const handleShowDetails = useCallback((clinical) => {
     if (!clinical) {
       setError('Historia Clinica Invalida');
       return;
@@ -427,9 +488,10 @@ function ClinicalHistory() {
     if(!clinical?.idHistoria_clinica) return false;
     const searchLower = searchTerm.toLowerCase();
     return(
-      (clinical.veterinario?.toLowerCase() || '').includes(searchLower) || (clinical.paciente?.toLowerCase() || '').includes(searchLower) || (clinical.propietario?.toLowerCase() || '').includes(searchLower)
+      (clinical.Observaciones?.toLowerCase() || '').includes(searchLower) || (clinical.Paciente?.toLowerCase() || '').includes(searchLower) || (clinical.Propietario?.toLowerCase() || '').includes(searchLower)
     )
   })
+  console.log('historias filtradas: ', filteredClinicals)
 
 
 
@@ -462,7 +524,7 @@ function ClinicalHistory() {
                   <FaSearch />
                 </InputGroup.Text>
                 <Form.Control
-                  placeholder="Buscar por documento, nombre, apellido, municipio o email"
+                  placeholder="Buscar por Paciente, Propietario u Observaciones"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -506,30 +568,41 @@ function ClinicalHistory() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredClinicals.map((clinical) => (
+                  {clinicals.map((clinical) => (
                     <tr key= {clinical.idHistoria_clinica}>
                       <td>
                         <div className='d-flex align-items-center'>
                           <FaHorse className= 'me-2 text-warning'/>
-                          {clinical.paciente}
+                          {patients.find(patient => patient.idPaciente === clinical.Paciente)
+                            ? `${patients.find(patient => patient.idPaciente === clinical.Paciente).Nombre}`: 'No asignado'
+                          }
                         </div>
                       </td>
                       <td>
                         <div className='d-flex align-items-center'>
-                          <FaUserCircle className= 'me-2 text-warning'/>
-                          {clinical.propietario}
+                            <FaUser Circle className='me-2 text-warning' />
+                            {(() => {
+                                const patient = patients.find(patient => patient.idPaciente === clinical.Paciente);
+                                if (patient) {
+                                    const owner = owners.find(owner => owner.idPropietario === patient.Propietario);
+                                    return owner
+                                        ? `${owner.Nombre} ${owner.Apellido}`
+                                        : 'No asignado';
+                                }
+                                return 'No asignado';
+                            })()}
                         </div>
                       </td>
                       <td>
                         <div className='d-flex align-items-center'>
                           <FaClipboardList className= 'me-2 text-warning'/>
-                          {clinical.observaciones}
+                          {clinical.Observaciones}
                         </div>
                       </td>
                       <td>
                         <div className='d-flex align-items-center'>
-                          <FaCalendarAlt className= 'me-2 text-warning'/>
-                          {clinical.fecha}
+                          <FaCalendarAlt className='me-2 text-warning'/>
+                          {clinical.Fecha ? new Date(clinical.Fecha).toLocaleDateString('es-CO') : 'No disponible'}
                         </div>
                       </td>
                       <td>
@@ -598,7 +671,7 @@ function ClinicalHistory() {
                       <p className='mb-1'><strong>Veterinario</strong></p>
                       <p>
                         <Badge bg="info" className='fs-6'>
-                          {currentClinical.veterinario}
+                          {currentClinical.Veterinario}
                         </Badge>
                       </p>
                   </Col>
@@ -606,14 +679,16 @@ function ClinicalHistory() {
                       <p className='mb-1'><strong>Propietario</strong></p>
                       <p className='d-flex align-items-center'>
                         <FaUserCircle className="me-2 text-warning"/>
-                        {currentClinical.propietario}
+                        {currentClinical.Propietario}
                       </p>
                   </Col>
                   <Col sm={6}>
                       <p className='mb-1'><strong>Paciente</strong></p>
                       <p className='d-flex align-items-center'>
                         <FaHorse className="me-2 text-warning"/>
-                        {currentClinical.paciente}
+                        {patients.find(patient => patient.idPaciente === currentClinical.Paciente)
+                            ? `${patients.find(patient => patient.idPaciente === currentClinical.Paciente).Nombre}`: 'No asignado'
+                          }
                       </p>
                   </Col>
                 </Row>
@@ -623,98 +698,98 @@ function ClinicalHistory() {
               <Row className='mb-4'>
                 <Col sm={6}>
                   <p><strong>Vacunas:</strong></p>
-                  <p>{currentClinical.vacunas}</p>
+                  <p>{currentClinical.Vacunas}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Enfermedades:</strong></p>
-                  <p>{currentClinical.enfermedades}</p>
+                  <p>{currentClinical.Enfermedades}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Temperatura:</strong></p>
-                  <p>{currentClinical.temperatura}</p>
+                  <p>{currentClinical.Temperatura}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Pulso:</strong></p>
-                  <p>{currentClinical.pulso}</p>
+                  <p>{currentClinical.Pulso}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Frecuencia cardiaca:</strong></p>
-                  <p>{currentClinical.frecuencia_cardiaca}</p>
+                  <p>{currentClinical.Frecuencia_cardiaca}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Tiempo de llenado capilar:</strong></p>
-                  <p>{currentClinical.llenado_capilar}</p>
+                  <p>{currentClinical.Llenado_capilar}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Mucosas</strong></p>
-                  <p>{currentClinical.mucosas}</p>
+                  <p>{currentClinical.Mucosas}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Pulso digital:</strong></p>
-                  <p>{currentClinical.pulso_digital}</p>
+                  <p>{currentClinical.Pulso_digital}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Aspecto general:</strong></p>
-                  <p>{currentClinical.aspecto}</p>
+                  <p>{currentClinical.Aspecto}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Aparato locomotor</strong></p>
-                  <p>{currentClinical.locomotor}</p>
+                  <p>{currentClinical.Locomotor}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Aparato respiratorio:</strong></p>
-                  <p>{currentClinical.respiratorio}</p>
+                  <p>{currentClinical.Respiratorio}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Aparato circulatorio</strong></p>
-                  <p>{currentClinical.circulatorio}</p>
+                  <p>{currentClinical.Circulatorio}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Aparato digestivo</strong></p>
-                  <p>{currentClinical.digestivo}</p>
+                  <p>{currentClinical.Digestivo}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Aparato genitourinario</strong></p>
-                  <p>{currentClinical.genitourinario}</p>
+                  <p>{currentClinical.Genitourinario}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Sistema Nervioso</strong></p>
-                  <p>{currentClinical.sis_nervioso}</p>
+                  <p>{currentClinical.Sis_nervioso}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Oidos:</strong></p>
-                  <p>{currentClinical.oidos}</p>
+                  <p>{currentClinical.Oidos}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Glanglios linfaticos</strong></p>
-                  <p>{currentClinical.glangios_linfaticos}</p>
+                  <p>{currentClinical.Glangios_linfaticos}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Piel</strong></p>
-                  <p>{currentClinical.piel}</p>
+                  <p>{currentClinical.Piel}</p>
                 </Col>
                 <Col sm={6}>
-                  <p><strong>Diagnostico integral</strong></p>
-                  <p>{currentClinical.diagnostico_integral}</p>
+                  <p><strong>Diagnosticos presuntivos</strong></p>
+                  <p>{currentClinical.Diagnostico_integral}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Tratamiento:</strong></p>
-                  <p>{currentClinical.tratamiento}</p>
+                  <p>{currentClinical.Tratamiento}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Prescripcion:</strong></p>
-                  <p>{currentClinical.prescripcion}</p>
+                  <p>{currentClinical.Prescripcion}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Observaciones:</strong></p>
-                  <p>{currentClinical.observaciones}</p>
+                  <p>{currentClinical.Observaciones}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Fecha Historia Clinica</strong></p>
                   <p className="d-flex align-items-center">
                     <FaCalendarPlus className="me-2 text-warning" />
-                    {currentClinical.fecha ? 
-                      new Date(currentClinical.fecha).toLocaleDateString('es-CO') : 
+                    {currentClinical.Fecha ? 
+                      new Date(currentClinical.Fecha).toLocaleDateString('es-CO') : 
                       'No disponible'
                     }
                   </p>
@@ -754,52 +829,27 @@ function ClinicalHistory() {
       <h5 className='border-bottom pb-2 mb-3'>Información Básica</h5>
       <Row>
         <Col md={6}>
-          <Form.Group className="mb-3" controlId="formVeterinario">
-            <Form.Label>Veterinario *</Form.Label>
-            <Form.Control
-              type="text"
-              name="veterinario"
-              value={newClinical.veterinario}
-              onChange={handleInputChange}
-              required
-              placeholder="Nombre del veterinario"
-            />
-            <Form.Control.Feedback type="invalid">
-              El veterinario es obligatorio
-            </Form.Control.Feedback>
-          </Form.Group>
-        </Col>
-        <Col md={6}>
-          <Form.Group className="mb-3" controlId="formPropietario">
-            <Form.Label>Propietario *</Form.Label>
-            <Form.Control
-              type="text"
-              name="propietario"
-              value={newClinical.propietario}
-              onChange={handleInputChange}
-              required
-              placeholder="Nombre del propietario"
-            />
-            <Form.Control.Feedback type="invalid">
-              El propietario es obligatorio
-            </Form.Control.Feedback>
-          </Form.Group>
-        </Col>
-        <Col md={6}>
           <Form.Group className="mb-3" controlId="formPaciente">
             <Form.Label>Paciente *</Form.Label>
             <Form.Control
-              type="text"
-              name="paciente"
-              value={newClinical.paciente}
+              as="select"
+              name="Paciente"
+              value={newClinical.Paciente} // Para el formulario de creación
               onChange={handleInputChange}
               required
-              placeholder="Nombre del paciente"
-            />
+            >
+              <option value="">Seleccione un paciente</option>
+              {patients.map((patient) => (
+                <option key={patient.idPaciente} value={patient.idPaciente}>
+                  {patient.Nombre}
+                </option>
+              ))}
+            </Form.Control>
             <Form.Control.Feedback type="invalid">
               El paciente es obligatorio
             </Form.Control.Feedback>
           </Form.Group>
+
         </Col>
       </Row>
 
@@ -810,8 +860,8 @@ function ClinicalHistory() {
             <Form.Label>Vacunas *</Form.Label>
             <Form.Control
               type="text"
-              name="vacunas"
-              value={newClinical.vacunas}
+              name="Vacunas"
+              value={newClinical.Vacunas}
               onChange={handleInputChange}
               required
               placeholder="Vacunas administradas"
@@ -826,8 +876,8 @@ function ClinicalHistory() {
             <Form.Label>Enfermedades *</Form.Label>
             <Form.Control
               type="text"
-              name="enfermedades"
-              value={newClinical.enfermedades}
+              name="Enfermedades"
+              value={newClinical.Enfermedades}
               onChange={handleInputChange}
               required
               placeholder="Enfermedades conocidas"
@@ -842,8 +892,8 @@ function ClinicalHistory() {
             <Form.Label>Temperatura *</Form.Label>
             <Form.Control
               type="text"
-              name="temperatura"
-              value={newClinical.temperatura}
+              name="Temperatura"
+              value={newClinical.Temperatura}
               onChange={handleInputChange}
               required
               placeholder="Temperatura (°C)"
@@ -858,8 +908,8 @@ function ClinicalHistory() {
             <Form.Label>Pulso *</Form.Label>
             <Form.Control
               type="text"
-              name="pulso"
-              value={newClinical.pulso}
+              name="Pulso"
+              value={newClinical.Pulso}
               onChange={handleInputChange}
               required
               placeholder="Pulso (latidos/minuto)"
@@ -874,8 +924,8 @@ function ClinicalHistory() {
             <Form.Label>Frecuencia cardiaca *</Form.Label>
             <Form.Control
               type="text"
-              name="frecuencia_cardiaca"
-              value={newClinical.frecuencia_cardiaca}
+              name="Frecuencia_cardiaca"
+              value={newClinical.Frecuencia_cardiaca}
               onChange={handleInputChange}
               required
               placeholder="Frecuencia cardiaca"
@@ -890,8 +940,8 @@ function ClinicalHistory() {
             <Form.Label>Tiempo de llenado capilar *</Form.Label>
             <Form.Control
               type="text"
-              name="llenado_capilar"
-              value={newClinical.llenado_capilar}
+              name="Llenado_capilar"
+              value={newClinical.Llenado_capilar}
               onChange={handleInputChange}
               required
               placeholder="Tiempo de llenado capilar"
@@ -906,8 +956,8 @@ function ClinicalHistory() {
             <Form.Label>Mucosas *</Form.Label>
             <Form.Control
               type="text"
-              name="mucosas"
-              value={newClinical.mucosas}
+              name="Mucosas"
+              value={newClinical.Mucosas}
               onChange={handleInputChange}
               required
               placeholder="Estado de las mucosas"
@@ -922,8 +972,8 @@ function ClinicalHistory() {
             <Form.Label>Pulso digital *</Form.Label>
             <Form.Control
               type="text"
-              name="pulso_digital"
-              value={newClinical.pulso_digital}
+              name="Pulso_digital"
+              value={newClinical.Pulso_digital}
               onChange={handleInputChange}
               required
               placeholder="Estado del pulso digital"
@@ -938,8 +988,8 @@ function ClinicalHistory() {
             <Form.Label>Aspecto general *</Form.Label>
             <Form.Control
               type="text"
-              name="aspecto"
-              value={newClinical.aspecto}
+              name="Aspecto"
+              value={newClinical.Aspecto}
               onChange={handleInputChange}
               required
               placeholder="Descripción del aspecto"
@@ -954,8 +1004,8 @@ function ClinicalHistory() {
             <Form.Label>Aparato locomotor *</Form.Label>
             <Form.Control
               type="text"
-              name="locomotor"
-              value={newClinical.locomotor}
+              name="Locomotor"
+              value={newClinical.Locomotor}
               onChange={handleInputChange}
               required
               placeholder="Estado del aparato locomotor"
@@ -970,8 +1020,8 @@ function ClinicalHistory() {
             <Form.Label>Aparato respiratorio *</Form.Label>
             <Form.Control
               type="text"
-              name="respiratorio"
-              value={newClinical.respiratorio}
+              name="Respiratorio"
+              value={newClinical.Respiratorio}
               onChange={handleInputChange}
               required
               placeholder="Estado del aparato respiratorio"
@@ -986,8 +1036,8 @@ function ClinicalHistory() {
             <Form.Label>Aparato circulatorio *</Form.Label>
             <Form.Control
               type="text"
-              name="circulatorio"
-              value={newClinical.circulatorio}
+              name="Circulatorio"
+              value={newClinical.Circulatorio}
               onChange={handleInputChange}
               required
               placeholder="Estado del aparato circulatorio"
@@ -1002,8 +1052,8 @@ function ClinicalHistory() {
             <Form.Label>Aparato digestivo *</Form.Label>
             <Form.Control
               type="text"
-              name="digestivo"
-              value={newClinical.digestivo}
+              name="Digestivo"
+              value={newClinical.Digestivo}
               onChange={handleInputChange}
               required
               placeholder="Estado del aparato digestivo"
@@ -1018,8 +1068,8 @@ function ClinicalHistory() {
             <Form.Label>Aparato genitourinario *</Form.Label>
             <Form.Control
               type="text"
-              name="genitourinario"
-              value={newClinical.genitourinario}
+              name="Genitourinario"
+              value={newClinical.Genitourinario}
               onChange={handleInputChange}
               required
               placeholder="Estado del aparato genitourinario"
@@ -1034,8 +1084,8 @@ function ClinicalHistory() {
             <Form.Label>Sistema Nervioso *</Form.Label>
             <Form.Control
               type="text"
-              name="sis_nervioso"
-              value={newClinical.sis_nervioso}
+              name="Sis_nervioso"
+              value={newClinical.Sis_nervioso}
               onChange={handleInputChange}
               required
               placeholder="Estado del sistema nervioso"
@@ -1050,8 +1100,8 @@ function ClinicalHistory() {
             <Form.Label>Oídos *</Form.Label>
             <Form.Control
               type="text"
-              name="oidos"
-              value={newClinical.oidos}
+              name="Oidos"
+              value={newClinical.Oidos}
               onChange={handleInputChange}
               required
               placeholder="Estado de los oídos"
@@ -1066,8 +1116,8 @@ function ClinicalHistory() {
             <Form.Label>Glándios linfáticos *</Form.Label>
             <Form.Control
               type="text"
-              name="glangios_linfaticos"
-              value={newClinical.glangios_linfaticos}
+              name="Glangios_linfaticos"
+              value={newClinical.Glangios_linfaticos}
               onChange={handleInputChange}
               required
               placeholder="Estado de los glándios linfáticos"
@@ -1082,8 +1132,8 @@ function ClinicalHistory() {
             <Form.Label>Piel *</Form.Label>
             <Form.Control
               type="text"
-              name="piel"
-              value={newClinical.piel}
+              name="Piel"
+              value={newClinical.Piel}
               onChange={handleInputChange}
               required
               placeholder="Estado de la piel"
@@ -1098,8 +1148,8 @@ function ClinicalHistory() {
             <Form.Label>Diagnóstico integral *</Form.Label>
             <Form.Control
               type="text"
-              name="diagnostico_integral"
-              value={newClinical.diagnostico_integral}
+              name="Diagnostico_integral"
+              value={newClinical.Diagnostico_integral}
               onChange={handleInputChange}
               required
               placeholder="Diagnóstico integral"
@@ -1114,8 +1164,8 @@ function ClinicalHistory() {
             <Form.Label>Tratamiento *</Form.Label>
             <Form.Control
               type="text"
-              name="tratamiento"
-              value={newClinical.tratamiento}
+              name="Tratamiento"
+              value={newClinical.Tratamiento}
               onChange={handleInputChange}
               required
               placeholder="Tratamiento recomendado"
@@ -1130,8 +1180,8 @@ function ClinicalHistory() {
             <Form.Label>Prescripción *</Form.Label>
             <Form.Control
               type="text"
-              name="prescripcion"
-              value={newClinical.prescripcion}
+              name="Prescripcion"
+              value={newClinical.Prescripcion}
               onChange={handleInputChange}
               required
               placeholder="Prescripción médica"
@@ -1146,29 +1196,14 @@ function ClinicalHistory() {
             <Form.Label>Observaciones *</Form.Label>
             <Form.Control
               type="text"
-              name="observaciones"
-              value={newClinical.observaciones}
+              name="Observaciones"
+              value={newClinical.Observaciones}
               onChange={handleInputChange}
               required
               placeholder="Observaciones adicionales"
             />
             <Form.Control.Feedback type="invalid">
               Las observaciones son obligatorias
-            </Form.Control.Feedback>
-          </Form.Group>
-        </Col>
-        <Col md={6}>
-          <Form.Group className="mb-3" controlId="formFecha">
-            <Form.Label>Fecha Historia Clínica *</Form.Label>
-            <Form.Control
-              type="date"
-              name="fecha"
-              value={newClinical.fecha}
-              onChange={handleInputChange}
-              required
-            />
-            <Form.Control.Feedback type="invalid">
-              La fecha es obligatoria
             </Form.Control.Feedback>
           </Form.Group>
         </Col>
@@ -1208,48 +1243,27 @@ function ClinicalHistory() {
         <h5 className='border-bottom pb-2 mb-3'>Información Básica</h5>
         <Row>
           <Col md={6}>
-            <Form.Group className="mb-3" controlId="formVeterinario">
-              <Form.Label>Veterinario</Form.Label>
-              <Form.Control
-                type="text"
-                name="veterinario"
-                value={editClinical.veterinario || ''}
-                onChange={handleEditInputChange}
-                placeholder="Nombre del veterinario"
-              />
-            </Form.Group>
-          </Col>
-          <Col md={6}>
-            <Form.Group className="mb-3" controlId="formPropietario">
-              <Form.Label>Propietario *</Form.Label>
-              <Form.Control
-                type="text"
-                name="propietario"
-                value={editClinical.propietario || ''}
-                onChange={handleEditInputChange}
-                required
-                placeholder="Nombre del propietario"
-              />
-              <Form.Control.Feedback type="invalid">
-                El propietario es obligatorio
-              </Form.Control.Feedback>
-            </Form.Group>
-          </Col>
-          <Col md={6}>
             <Form.Group className="mb-3" controlId="formPaciente">
               <Form.Label>Paciente *</Form.Label>
               <Form.Control
-                type="text"
-                name="paciente"
-                value={editClinical.paciente || ''}
+                as="select"
+                name="Paciente"
+                value={editClinical.Paciente} // Para el formulario de edición
                 onChange={handleEditInputChange}
                 required
-                placeholder="Nombre del paciente"
-              />
+              >
+                <option value="">Seleccione un paciente</option>
+                {patients.map((patient) => (
+                  <option key={patient.idPaciente} value={patient.idPaciente}>
+                    {patient.Nombre} {patient.Apellido}
+                  </option>
+                ))}
+              </Form.Control>
               <Form.Control.Feedback type="invalid">
                 El paciente es obligatorio
               </Form.Control.Feedback>
             </Form.Group>
+
           </Col>
         </Row>
 
@@ -1260,8 +1274,8 @@ function ClinicalHistory() {
               <Form.Label>Vacunas</Form.Label>
               <Form.Control
                 type="text"
-                name="vacunas"
-                value={editClinical.vacunas || ''}
+                name="Vacunas"
+                value={editClinical.Vacunas || ''}
                 onChange={handleEditInputChange}
                 placeholder="Vacunas administradas"
               />
@@ -1272,8 +1286,8 @@ function ClinicalHistory() {
               <Form.Label>Enfermedades</Form.Label>
               <Form.Control
                 type="text"
-                name="enfermedades"
-                value={editClinical.enfermedades || ''}
+                name="Enfermedades"
+                value={editClinical.Enfermedades || ''}
                 onChange={handleEditInputChange}
                 placeholder="Enfermedades conocidas"
               />
@@ -1284,8 +1298,8 @@ function ClinicalHistory() {
               <Form.Label>Temperatura</Form.Label>
               <Form.Control
                 type="text"
-                name="temperatura"
-                value={editClinical.temperatura || ''}
+                name="Temperatura"
+                value={editClinical.Temperatura || ''}
                 onChange={handleEditInputChange}
                 placeholder="Temperatura (°C)"
               />
@@ -1296,8 +1310,8 @@ function ClinicalHistory() {
               <Form.Label>Pulso</Form.Label>
               <Form.Control
                 type="text"
-                name="pulso"
-                value={editClinical.pulso || ''}
+                name="Pulso"
+                value={editClinical.Pulso || ''}
                 onChange={handleEditInputChange}
                 placeholder="Pulso (latidos/minuto)"
               />
@@ -1308,8 +1322,8 @@ function ClinicalHistory() {
               <Form.Label>Frecuencia cardiaca</Form.Label>
               <Form.Control
                 type="text"
-                name="frecuencia_cardiaca"
-                value={editClinical.frecuencia_cardiaca || ''}
+                name="Frecuencia_cardiaca"
+                value={editClinical.Frecuencia_cardiaca || ''}
                 onChange={handleEditInputChange}
                 placeholder="Frecuencia cardiaca"
               />
@@ -1320,8 +1334,8 @@ function ClinicalHistory() {
               <Form.Label>Tiempo de llenado capilar</Form.Label>
               <Form.Control
                 type="text"
-                name="llenado_capilar"
-                value={editClinical.llenado_capilar || ''}
+                name="Llenado_capilar"
+                value={editClinical.Llenado_capilar || ''}
                 onChange={handleEditInputChange}
                 placeholder="Tiempo de llenado capilar"
               />
@@ -1332,8 +1346,8 @@ function ClinicalHistory() {
               <Form.Label>Mucosas</Form.Label>
               <Form.Control
                 type="text"
-                name="mucosas"
-                value={editClinical.mucosas || ''}
+                name="Mucosas"
+                value={editClinical.Mucosas || ''}
                 onChange={handleEditInputChange}
                 placeholder="Estado de las mucosas"
               />
@@ -1344,8 +1358,8 @@ function ClinicalHistory() {
               <Form.Label>Pulso digital</Form.Label>
               <Form.Control
                 type="text"
-                name="pulso_digital"
-                value={editClinical.pulso_digital || ''}
+                name="Pulso_digital"
+                value={editClinical.Pulso_digital || ''}
                 onChange={handleEditInputChange}
                 placeholder="Estado del pulso digital"
               />
@@ -1356,8 +1370,8 @@ function ClinicalHistory() {
               <Form.Label>Aspecto general</Form.Label>
               <Form.Control
                 type="text"
-                name="aspecto"
-                value={editClinical.aspecto || ''}
+                name="Aspecto"
+                value={editClinical.Aspecto || ''}
                 onChange={handleEditInputChange}
                 placeholder="Descripción del aspecto"
               />
@@ -1368,8 +1382,8 @@ function ClinicalHistory() {
               <Form.Label>Aparato locomotor</Form.Label>
               <Form.Control
                 type="text"
-                name="locomotor"
-                value={editClinical.locomotor || ''}
+                name="Locomotor"
+                value={editClinical.Locomotor || ''}
                 onChange={handleEditInputChange}
                 placeholder="Estado del aparato locomotor"
               />
@@ -1380,8 +1394,8 @@ function ClinicalHistory() {
               <Form.Label>Aparato respiratorio</Form.Label>
               <Form.Control
                 type="text"
-                name="respiratorio"
-                value={editClinical.respiratorio || ''}
+                name="Respiratorio"
+                value={editClinical.Respiratorio || ''}
                 onChange={handleEditInputChange}
                 placeholder="Estado del aparato respiratorio"
               />
@@ -1392,8 +1406,8 @@ function ClinicalHistory() {
               <Form.Label>Aparato circulatorio</Form.Label>
               <Form.Control
                 type="text"
-                name="circulatorio"
-                value={editClinical.circulatorio || ''}
+                name="Circulatorio"
+                value={editClinical.Circulatorio || ''}
                 onChange={handleEditInputChange}
                 placeholder="Estado del aparato circulatorio"
               />
@@ -1404,8 +1418,8 @@ function ClinicalHistory() {
               <Form.Label>Aparato digestivo</Form.Label>
               <Form.Control
                 type="text"
-                name="digestivo"
-                value={editClinical.digestivo || ''}
+                name="Digestivo"
+                value={editClinical.Digestivo || ''}
                 onChange={handleEditInputChange}
                 placeholder="Estado del aparato digestivo"
               />
@@ -1416,8 +1430,8 @@ function ClinicalHistory() {
               <Form.Label>Aparato genitourinario</Form.Label>
               <Form.Control
                 type="text"
-                name="genitourinario"
-                value={editClinical.genitourinario || ''}
+                name="Genitourinario"
+                value={editClinical.Genitourinario || ''}
                 onChange={handleEditInputChange}
                 placeholder="Estado del aparato genitourinario"
               />
@@ -1428,8 +1442,8 @@ function ClinicalHistory() {
               <Form.Label>Sistema Nervioso</Form.Label>
               <Form.Control
                 type="text"
-                name="sis_nervioso"
-                value={editClinical.sis_nervioso || ''}
+                name="Sis_nervioso"
+                value={editClinical.Sis_nervioso || ''}
                 onChange={handleEditInputChange}
                 placeholder="Estado del sistema nervioso"
               />
@@ -1440,8 +1454,8 @@ function ClinicalHistory() {
               <Form.Label>Oídos</Form.Label>
               <Form.Control
                 type="text"
-                name="oidos"
-                value={editClinical.oidos || ''}
+                name="Oidos"
+                value={editClinical.Oidos || ''}
                 onChange={handleEditInputChange}
                 placeholder="Estado de los oídos"
               />
@@ -1452,8 +1466,8 @@ function ClinicalHistory() {
               <Form.Label>Glándios linfáticos</Form.Label>
               <Form.Control
                 type="text"
-                name="glangios_linfaticos"
-                value={editClinical.glangios_linfaticos || ''}
+                name="Glangios_linfaticos"
+                value={editClinical.Glangios_linfaticos || ''}
                 onChange={handleEditInputChange}
                 placeholder="Estado de los glándios linfáticos"
               />
@@ -1464,8 +1478,8 @@ function ClinicalHistory() {
               <Form.Label>Piel</Form.Label>
               <Form.Control
                 type="text"
-                name="piel"
-                value={editClinical.piel || ''}
+                name="Piel"
+                value={editClinical.Piel || ''}
                 onChange={handleEditInputChange}
                 placeholder="Estado de la piel"
               />
@@ -1473,11 +1487,11 @@ function ClinicalHistory() {
           </Col>
           <Col md={6}>
             <Form.Group className="mb-3" controlId="formDiagnosticoIntegral">
-              <Form.Label>Diagnóstico integral</Form.Label>
+              <Form.Label>Diagnóstico presuntivos</Form.Label>
               <Form.Control
                 type="text"
-                name="diagnostico_integral"
-                value={editClinical.diagnostico_integral || ''}
+                name="Diagnostico_integral"
+                value={editClinical.Diagnostico_integral || ''}
                 onChange={handleEditInputChange}
                 placeholder="Diagnóstico integral"
               />
@@ -1488,8 +1502,8 @@ function ClinicalHistory() {
               <Form.Label>Tratamiento</Form.Label>
               <Form.Control
                 type="text"
-                name="tratamiento"
-                value={editClinical.tratamiento || ''}
+                name="Tratamiento"
+                value={editClinical.Tratamiento || ''}
                 onChange={handleEditInputChange}
                 placeholder="Tratamiento recomendado"
               />
@@ -1500,8 +1514,8 @@ function ClinicalHistory() {
               <Form.Label>Prescripción</Form.Label>
               <Form.Control
                 type="text"
-                name="prescripcion"
-                value={editClinical.prescripcion || ''}
+                name="Prescripcion"
+                value={editClinical.Prescripcion || ''}
                 onChange={handleEditInputChange}
                 placeholder="Prescripción médica"
               />
@@ -1512,8 +1526,8 @@ function ClinicalHistory() {
               <Form.Label>Observaciones</Form.Label>
               <Form.Control
                 type="text"
-                name="observaciones"
-                value={editClinical.observaciones || ''}
+                name="Observaciones"
+                value={editClinical.Observaciones || ''}
                 onChange={handleEditInputChange}
                 placeholder="Observaciones adicionales"
               />
@@ -1524,7 +1538,7 @@ function ClinicalHistory() {
               <Form.Label>Fecha Historia Clínica</Form.Label>
               <Form.Control
                 type="date"
-                name="fecha"
+                name="Fecha"
                 value={editClinical.fecha ? selectedClinical.fecha.split('T')[0] : ''}
                 onChange={handleEditInputChange}
               />

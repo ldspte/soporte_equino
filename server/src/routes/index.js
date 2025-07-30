@@ -5,11 +5,12 @@ const {db} = require('../database'); // Asegúrate de tener tu pool de conexione
 const SECRET_KEY = process.env.SECRET_KEY || 'lossimpsom';
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
 const nodemailer = require('nodemailer');
 const {getItems, getItemById, createItem, updateItem, deleteItem} = require('../controllers/itemsController');
 const {getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary} = require('../controllers/veterinaryController')
 const {getOwners, getOwnerById, createOwner, updateOwner, deleteOwner} = require('../controllers/ownerController');
-const {getClinicalHistiry, getClinicalHistoryById, createClinicalHistory, updateClinicalHistory, deleteClinicalHistory} = require('../controllers/clinicalHystory');
+const {getClinicalHistory, getClinicalHistoryById, createClinicalHistory, updateClinicalHistory, deleteClinicalHistory} = require('../controllers/clinicalHystory');
 const {getPatients, getPatientById, createPatient, updatePatient, deletePatient} = require('../controllers/patientController')
 
 // LOGIN VETERINARIOS
@@ -91,12 +92,15 @@ route.get('/api/insumos/:idInsumos', async (req, res) => {
     }
 });
 
-route.post('/api/insumos', async (req, res) => {
-    const { Nombre, Descripcion, Foto, Precio } = req.body;
-    try{
+const upload = multer();
+
+route.post('/api/insumos', upload.single('Foto'), async (req, res) => {
+    const { Nombre, Descripcion, Precio } = req.body; // Obtén los campos de texto
+    const Foto = req.file ? req.file.buffer : null; // Obtén el buffer del archivo subido
+    try {
         const values = await createItem(Nombre, Descripcion, Foto, Precio);
         res.status(201).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al crear el insumo' });
     }
@@ -269,7 +273,7 @@ route.delete('/api/propietarios/:idPropietario', async (req, res) => {
 
 route.get('/api/historia_clinica', async(req, res) => {
     try{
-        const values = await getClinicalHistiry();
+        const values = await getClinicalHistory();
         res.status(200).json(values);
     }catch (error) {
         console.error(error);

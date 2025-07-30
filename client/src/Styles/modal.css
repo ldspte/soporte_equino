@@ -1,0 +1,61 @@
+.modal-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centra el modal en la pantalla */
+    z-index: 1050; /* Asegúrate de que esté por encima de otros elementos */
+    width: 70%;
+}
+
+.modal-content {
+    background: white; /* Fondo blanco y opaco para el modal */
+    border-radius: 8px;
+    padding: 20px;
+    width: 50%; /* Ajusta el ancho según sea necesario */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.3s; /* Animación de entrada */
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    margin: 0;
+}
+
+.close {
+    border: none;
+    background: transparent;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.modal-body {
+    margin-top: 10px;
+    width: 100%;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.btn2 {
+    width: 100%; /* Botones ocupan todo el ancho */
+    margin-top: 10px; /* Espacio entre botones */
+}
+
+/* Animación de entrada */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

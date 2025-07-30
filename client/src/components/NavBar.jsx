@@ -8,17 +8,12 @@ import LoginModal from './LoginModal';
 export default function NavBar({}) {
     const [insumos, setInsumos] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    
     const handleClick = async (e) => {
         e.preventDefault();
         const response = await fetch('http://localhost:3001/api/insumos/');
         const data = await response.json();
-        setInsumos(data[0]);
-    }
-
-    const  [isLoggedIn, setIsLoggedIn] = useState(false);
-
-    const handleLogout = () => {
-        setIsLoggedIn(false)
+        setInsumos(data);
     }
 
     const resetInsumos = () => {
@@ -26,31 +21,37 @@ export default function NavBar({}) {
     }
     
     return (
-        <div>
-            <nav className='navmenu'>
-                <a href="index.html">
-                    <img src={Logo} alt="" />
+        <div className='container'>
+            <nav className='navbar navbar-expand-lg navbar-light bg-light'>
+                <a className='navbar-brand' href="index.html">
+                    <img src={Logo} alt="Logo" className='logo' />
                 </a>
-                <ul>
-                    <li><a href="" onClick={resetInsumos}>Inicio</a></li>
-                    <li><a href="#about" onClick={resetInsumos}>Acerca de Nosotros</a></li>
-                    <li><a href="" onClick={resetInsumos}>Servicios</a></li>
-                    <li><a href="#" onClick = {handleClick} >Insumos</a></li>
-                    <li><a href="" onClick={resetInsumos}>Doctores</a></li>
-                    <li><a href="" onClick={resetInsumos}>Contactanos</a></li>
-                </ul>
-            </nav>
-            {isLoggedIn ? (
-                <div>
-                    <span>Bienvenido, Usuario</span>
-                    <button onClick={handleLogout}>Cerrar Sesión</button>
+                <div className='collapse navbar-collapse justify-content-end' id='navbarNav'>
+                    <ul className='navbar-nav'>
+                        <li className='nav-item'>
+                            <a className='nav-link' href="" onClick={resetInsumos}>Inicio</a>
+                        </li>
+                        <li className='nav-item'>
+                            <a className='nav-link' href="#about" onClick={resetInsumos}>Acerca de Nosotros</a>
+                        </li>
+                        <li className='nav-item'>
+                            <a className='nav-link' href="" onClick={resetInsumos}>Servicios</a>
+                        </li>
+                        <li className='nav-item'>
+                            <a className='nav-link' href="#" onClick={handleClick}>Insumos</a>
+                        </li>
+                        <li className='nav-item'>
+                            <a className='nav-link' href="" onClick={resetInsumos}>Doctores</a>
+                        </li>
+                        <li className='nav-item'>
+                            <a className='nav-link' href="" onClick={resetInsumos}>Contactanos</a>
+                        </li>
+                    </ul>
+                    <button className='btn btn-warning ml-3' onClick={() => setIsModalOpen(true)}>Inicia Sesión</button>
                 </div>
-            ) : (
-                <button onClick={() => setIsModalOpen(true)}>Inicia Sesión</button>
-            )}
+            </nav>
             <LoginModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             {insumos ? (<Insumos insumos={insumos} setInsumos={setInsumos} />) : (<Content />)}
         </div>
     );
 }
-

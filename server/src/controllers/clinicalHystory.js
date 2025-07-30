@@ -1,7 +1,7 @@
 const {db} = require('../database');
 
 
-const getClinicalHistiry = async() => {
+const getClinicalHistory = async() => {
     const result = await db.query(`
         SELECT * FROM historia_clinica
     `)
@@ -45,7 +45,7 @@ const deleteClinicalHistory = async(idHistoria_clinica) => {
 }
 
 module.exports = {
-    getClinicalHistiry,
+    getClinicalHistory,
     getClinicalHistoryById,
     createClinicalHistory,
     updateClinicalHistory,

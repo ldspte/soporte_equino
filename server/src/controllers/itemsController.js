@@ -1,10 +1,11 @@
 const {db} = require('../database');
+const {fs} = require('fs')
 
 const getItems = async() => {
     const result = await db.query(`
         SELECT * FROM insumos
     `)
-    return result;
+    return result.length > 0 ? result[0] : null;
 }
 
 const getItemById = async(idInsumos) => {

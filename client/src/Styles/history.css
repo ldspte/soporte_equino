@@ -4,16 +4,16 @@
 }
 
 .pagination .page-item.active .page-link {
-  background-color: #ff8c00;
-  border-color: #ff8c00;
+  background-color: #1D2D44;
+  border-color: #1D2D44;
 }
 
 .pagination .page-link {
-  color: #ff8c00;
+  color: #1D2D44;
 }
 
 .pagination .page-link:hover {
-  color: #e67e00;
+  color: #1D2D44;
 }
 
 .action-buttons .btn {
@@ -30,26 +30,27 @@
 }
 
 .btn-warning {
-  background-color: #ff8c00;
-  border-color: #ff8c00;
+  background-color: #1D2D44;
+  border-color: #1D2D44;
+  color: white;
 }
 
 .btn-warning:hover {
-  background-color: #e67e00;
-  border-color: #e67e00;
+  background-color: white;
+  border-color: #1D2D44;
 }
 
 .btn-outline-warning {
-  color: #ff8c00;
-  border-color: #ff8c00;
+  color: #1D2D44;
+  border-color: #1D2D44;
 }
 
 .btn-outline-warning:hover {
-  background-color: #ff8c00;
+  background-color: #1D2D44;
   color: white;
 }
 
 .showing-entries {
-  color: #6c757d;
+  color: #444444;
   font-size: 0.875rem;
 }
