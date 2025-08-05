@@ -37,7 +37,6 @@ export default function Content() {
 
   return (
     <div>
-      <h1>CONTENIDO</h1>
       <div className="carousel">
         <div className="carousel-item" style={{ backgroundImage: `url(${images[currentIndex].src})` }}>
           <div className="container">

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import '../Styles/modal.css'; 
+import { Modal, Button, Form, Alert } from 'react-bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
-const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
+const LoginModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
+    
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -45,50 +47,41 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
     }
 
     return (
-        <div className="modal-container">
-            <div className="modal-content">
-                <div className="modal-header">
-                    <h5 className="modal-title">Iniciar Sesión</h5>
-                    <button type="button" className="close" onClick={onClose}>
-                        <span>&times;</span>
-                    </button>
-                </div>
-                <div className="modal-body">
-                    {error && <div className="alert alert-danger">{error}</div>}
-                    {success && <div className="alert alert-success">¡Login exitoso! Redirigiendo...</div>}
-                    <form onSubmit={handleSubmit}>
-                        <div className="form-group">
-                            <label htmlFor="username">Usuario:</label>
-                            <input 
-                                type="text" 
-                                id="username" 
-                                className="form-control" 
-                                value={email} 
-                                required 
-                                onChange={(e) => setEmail(e.target.value)} 
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="password">Contraseña:</label>
-                            <input 
-                                type="password" 
-                                id="password" 
-                                className="form-control" 
-                                value={password} 
-                                onChange={(e) => setPassword(e.target.value)} 
-                                required 
-                            />
-                        </div>
-                        <button type="submit" className="btn btn2 btn-warning" disabled={loading}>
-                            {loading ? 'Cargando...' : 'Iniciar Sesión'}
-                        </button>
-                        <button type="button" className=" btn btn2 btn-secondary" onClick={onClose}>
-                            Cerrar
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
+        <Modal show={isOpen} onHide={onClose}>
+            <Modal.Header closeButton>
+                <Modal.Title>Iniciar Sesión</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                {error && <Alert variant="danger">{error}</Alert>}
+                {success && <Alert variant="success">¡Login exitoso! Redirigiendo...</Alert>}
+                <Form onSubmit={handleSubmit}>
+                    <Form.Group controlId="username">
+                        <Form.Label>Usuario:</Form.Label>
+                        <Form.Control 
+                            type="text" 
+                            value={email} 
+                            required 
+                            onChange={(e) => setEmail(e.target.value)} 
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="password">
+                        <Form.Label>Contraseña:</Form.Label>
+                        <Form.Control 
+                            type="password" 
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)} 
+                            required 
+                        />
+                    </Form.Group>
+                    <Button variant="warning" type="submit" disabled={loading}>
+                        {loading ? 'Cargando...' : 'Iniciar Sesión'}
+                    </Button>
+                    <Button variant="secondary" onClick={onClose} className="ml-2">
+                        Cerrar
+                    </Button>
+                </Form>
+            </Modal.Body>
+        </Modal>
     );
 };
 

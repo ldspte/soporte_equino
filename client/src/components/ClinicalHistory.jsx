@@ -572,7 +572,7 @@ function ClinicalHistory() {
                     <tr key= {clinical.idHistoria_clinica}>
                       <td>
                         <div className='d-flex align-items-center'>
-                          <FaHorse className= 'me-2 text-warning'/>
+                          <FaHorse className= 'me-2'/>
                           {patients.find(patient => patient.idPaciente === clinical.Paciente)
                             ? `${patients.find(patient => patient.idPaciente === clinical.Paciente).Nombre}`: 'No asignado'
                           }

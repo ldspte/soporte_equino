@@ -1,12 +1,13 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Home from './Views/Home.jsx';
-import Landing from './Views/Landing.jsx';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import ClinicalHistory from './components/ClinicalHistory.jsx';
 import AuthenticatedLayout from './components/AuthenticatedLayout.jsx'; // Importa el nuevo layout
 import PatientManagement from './components/Patients.jsx';
 import Owners from './components/Owners.jsx';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import Home from './Views/Home.jsx';
 import Insumos from './components/InsumosComp.jsx';
+import Landing from './Views/Landing.jsx';
+import ClinicalHistory from './components/ClinicalHistory.jsx';
 
 const App = () => {
   return (

@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { Navbar, Nav, Button } from 'react-bootstrap';
 import Logo from '../assets/img/logo.png';
-import '../Styles/navBar.css';
 import Insumos from './Insumos';
 import Content from './Content';
 import LoginModal from './LoginModal';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import '../Styles/navbar.css';
 
-export default function NavBar({}) {
+export default function NavBar() {
     const [insumos, setInsumos] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     
@@ -22,34 +24,23 @@ export default function NavBar({}) {
     
     return (
         <div className='container'>
-            <nav className='navbar navbar-expand-lg navbar-light bg-light'>
-                <a className='navbar-brand' href="index.html">
+            <Navbar bg="light" expand="lg">
+                <Navbar.Brand href="index.html">
                     <img src={Logo} alt="Logo" className='logo' />
-                </a>
-                <div className='collapse navbar-collapse justify-content-end' id='navbarNav'>
-                    <ul className='navbar-nav'>
-                        <li className='nav-item'>
-                            <a className='nav-link' href="" onClick={resetInsumos}>Inicio</a>
-                        </li>
-                        <li className='nav-item'>
-                            <a className='nav-link' href="#about" onClick={resetInsumos}>Acerca de Nosotros</a>
-                        </li>
-                        <li className='nav-item'>
-                            <a className='nav-link' href="" onClick={resetInsumos}>Servicios</a>
-                        </li>
-                        <li className='nav-item'>
-                            <a className='nav-link' href="#" onClick={handleClick}>Insumos</a>
-                        </li>
-                        <li className='nav-item'>
-                            <a className='nav-link' href="" onClick={resetInsumos}>Doctores</a>
-                        </li>
-                        <li className='nav-item'>
-                            <a className='nav-link' href="" onClick={resetInsumos}>Contactanos</a>
-                        </li>
-                    </ul>
-                    <button className='btn btn-warning ml-3' onClick={() => setIsModalOpen(true)}>Inicia Sesión</button>
-                </div>
-            </nav>
+                </Navbar.Brand>
+                <Navbar.Toggle aria-controls="basic-navbar-nav" />
+                <Navbar.Collapse id="basic-navbar-nav">
+                    <Nav className="ml-auto">
+                        <Nav.Link href="" onClick={resetInsumos}>Inicio</Nav.Link>
+                        <Nav.Link href="#about" onClick={resetInsumos}>Acerca de Nosotros</Nav.Link>
+                        <Nav.Link href="" onClick={resetInsumos}>Servicios</Nav.Link>
+                        <Nav.Link href="#" onClick={handleClick}>Insumos</Nav.Link>
+                        <Nav.Link href="" onClick={resetInsumos}>Doctores</Nav.Link>
+                        <Nav.Link href="" onClick={resetInsumos}>Contactanos</Nav.Link>
+                    </Nav>
+                    <Button variant="warning" onClick={() => setIsModalOpen(true)}>Inicia Sesión</Button>
+                </Navbar.Collapse>
+            </Navbar>
             <LoginModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             {insumos ? (<Insumos insumos={insumos} setInsumos={setInsumos} />) : (<Content />)}
         </div>
