@@ -364,9 +364,9 @@ route.get('/api/pacientes/:idPaciente', async (req, res) => {
 });
 
 route.post('/api/pacientes', async (req, res) => {
-    const {Nombre, Raza, Edad, Sexo, Propietario} = req.body;
+    const {Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Propietario} = req.body;
     try{
-        const values = await createPatient(Nombre, Raza, Edad, Sexo, Propietario);
+        const values = await createPatient(Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Propietario);
         res.status(201).json(values);
     }catch (error) {
         console.error(error);
@@ -376,9 +376,9 @@ route.post('/api/pacientes', async (req, res) => {
 
 route.put('/api/pacientes/:idPaciente', async (req, res) => {
     const { idPaciente } = req.params;
-    const {Nombre, Raza, Edad, Sexo, Propietario} = req.body;
+    const {Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Propietario} = req.body;
     try{
-        const values = await updatePatient(idPaciente, Nombre, Raza, Edad, Sexo, Propietario);
+        const values = await updatePatient(idPaciente, Numero_registro, Numero_chip, Nombre, Raza, Edad, Sexo, Propietario);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Paciente no encontrado'});
         };
