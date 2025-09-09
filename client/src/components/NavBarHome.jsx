@@ -29,11 +29,12 @@ export default function NavBarHome() {
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto">
               <Nav.Link as={Link} to="/">Inicio</Nav.Link>
-              <Nav.Link as={Link} to="/historias-clinicas">Historias Clínicas</Nav.Link>
+              <Nav.Link as={Link} to="/historias-clinicas">Mis Historias Clínicas</Nav.Link>
               <Nav.Link as={Link} to="/veterinarios">Veterinarios</Nav.Link>
               <Nav.Link as={Link} to="/insumos">Insumos</Nav.Link>
               <Nav.Link as={Link} to="/propietarios">Propietarios</Nav.Link>
               <Nav.Link as={Link} to="/pacientes">Pacientes</Nav.Link>
+              <Nav.Link as={Link} to="/otras-historias">Otras Historias Clinicas</Nav.Link>
             </Nav>
             <Button variant="outline-danger" onClick={handleShowModal}>Cerrar Sesión</Button>
           </Navbar.Collapse>

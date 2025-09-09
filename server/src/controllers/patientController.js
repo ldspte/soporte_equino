@@ -18,20 +18,20 @@ const getPatientById = async(idPaciente) => {
     return result;
 };
 
-const createPatient = async(Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Propietario) => {
+const createPatient = async(Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) => {
     const result = await db.query(`
-        INSERT INTO Paciente (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Propietario) VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO Paciente (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Propietario]
+    [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario]
     );
     return result;
 }
 
-const updatePatient = async(idPaciente, Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Propietario) => {
+const updatePatient = async(idPaciente, Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) => {
     const result = await db.query(`
-        UPDATE Paciente SET Nombre = ?, Numero_registro = ?, Numero_chip = ?, Raza = ?, Edad = ?, Sexo = ?, Propietario = ? WHERE idPaciente = ?
+        UPDATE Paciente SET Nombre = ?, Numero_registro = ?, Numero_chip = ?, Raza = ?, Edad = ?, Sexo = ?, Foto = ?, Propietario = ? WHERE idPaciente = ?
     `,
-    [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Propietario, idPaciente]
+    [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario, idPaciente]
     );
     return result;
 }

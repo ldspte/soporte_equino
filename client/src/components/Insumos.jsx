@@ -12,7 +12,7 @@ export default function Insumos(props) {
                 {insumos.map((insumo) => (
                     <div className="insumos-container" key={insumo.idInsumos}>
                         <div>
-                            <img src={insumo.Foto} alt = {insumo.Nombre} />
+                            <img src={`http://localhost:3001/uploads/${insumo.Foto}`} alt={insumo.Nombre} style={{ width: '50px' }} />
                             <h2>{insumo.Nombre} </h2>
                             <h5>{insumo.Descripcion}</h5>
                             <p>${insumo.Precio}</p> 

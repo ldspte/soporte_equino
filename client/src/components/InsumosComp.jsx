@@ -160,7 +160,9 @@ function Insumos() {
                                     <tr key={insumo.idInsumos}>
                                         <td>{insumo.Nombre}</td>
                                         <td>{insumo.Descripcion}</td>
-                                        <td><img src={insumo.Foto} alt={insumo.Nombre} style={{ width: '50px' }} /></td>
+                                        <td>
+                                            <img src={`http://localhost:3001/uploads/${insumo.Foto}`} alt={insumo.Nombre} style={{ width: '50px' }} />
+                                        </td>
                                         <td>{insumo.Precio}</td>
                                         <td>
                                             <Button variant="outline-warning" onClick={() => handleEditInsumo(insumo)}>
@@ -184,7 +186,7 @@ function Insumos() {
                     <Modal.Title>Crear Insumo</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form onSubmit={handleSubmitNewInsumo}>
+                    <Form enctype="multipart/form-data" onSubmit={handleSubmitNewInsumo}>
                         <Form.Group controlId="formNombre">
                             <Form.Label>Nombre</Form.Label>
                             <Form.Control type="text" name="Nombre" value={newInsumo.Nombre} onChange={handleInputChange} required />

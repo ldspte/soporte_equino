@@ -8,6 +8,8 @@ import Home from './Views/Home.jsx';
 import Insumos from './components/InsumosComp.jsx';
 import Landing from './Views/Landing.jsx';
 import ClinicalHistory from './components/ClinicalHistory.jsx';
+import Veterinarios from './components/Veterinary.jsx';
+import OtherHistorys from './components/OtherHistory.jsx';
 
 const App = () => {
   return (
@@ -23,6 +25,8 @@ const App = () => {
             <Route path="/propietarios" element={<Owners />} />
             <Route path="/pacientes" element={<PatientManagement/>} />
             <Route path="/insumos" element={<Insumos/>} />
+            <Route path="/veterinarios" element={<Veterinarios />} />
+            <Route path="/otras-historias" element={<OtherHistorys />} />
           </Route>
         </Routes>
       </Router>
