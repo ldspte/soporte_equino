@@ -4,7 +4,7 @@ const app = express();
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
 dotenv.config();
-const PORT = procees.env.PORT || 3001;
+const PORT = process.env.PORT || 3001;
 
 const route = require('./routes/index'); // Asegúrate de que la ruta sea correcta
 
