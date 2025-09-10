@@ -33,9 +33,9 @@ export default function NavBar() {
                     <Nav className="ml-auto">
                         <Nav.Link href="" onClick={resetInsumos}>Inicio</Nav.Link>
                         <Nav.Link href="#about" onClick={resetInsumos}>Acerca de Nosotros</Nav.Link>
-                        <Nav.Link href="" onClick={resetInsumos}>Servicios</Nav.Link>
+                        <Nav.Link href="#services" onClick={resetInsumos}>Servicios</Nav.Link>
                         <Nav.Link href="#" onClick={handleClick}>Insumos</Nav.Link>
-                        <Nav.Link href="" onClick={resetInsumos}>Doctores</Nav.Link>
+                        <Nav.Link href="#doctors" onClick={resetInsumos}>Doctores</Nav.Link>
                         <Nav.Link href="" onClick={resetInsumos}>Contactanos</Nav.Link>
                     </Nav>
                     <Button variant="warning" onClick={() => setIsModalOpen(true)}>Inicia Sesión</Button>
