@@ -2,7 +2,6 @@ const express = require('express'); // Asegúrate de importar express
 const cors = require('cors');
 const app = express();
 const bcrypt = require('bcryptjs');
-dotenv.config();
 const PORT = process.env.PORT || 3001;
 
 const route = require('./routes/index'); // Asegúrate de que la ruta sea correcta
