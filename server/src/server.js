@@ -2,6 +2,9 @@ const express = require('express'); // Asegúrate de importar express
 const cors = require('cors');
 const app = express();
 const bcrypt = require('bcryptjs');
+const dotenv = require('dotenv');
+dotenv.config();
+const PORT = procees.env.PORT || 3001;
 
 const route = require('./routes/index'); // Asegúrate de que la ruta sea correcta
 
@@ -16,8 +19,8 @@ app.use((err, req, res, next) => {
 });
 
 // Iniciar el servidor
-app.listen(3001, () => {
-  console.log('Server listening on port 3001');
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
   // const contraseña = 'dani123';
   // const hashpassword = bcrypt.hashSync(contraseña, 10);
   // console.log(hashpassword);
