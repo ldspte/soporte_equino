@@ -5,7 +5,21 @@ const getItems = async() => {
     const result = await db.query(`
         SELECT * FROM insumos
     `)
-    return result.length > 0 ? result[0] : null;
+    const insumosConFoto = result.map(insumo => {
+        if (insumo.Foto) {
+            // Convierte el buffer binario a una cadena Base64
+            const base64String = insumo.Foto.toString('base64');
+            // Crea una "URL de datos"
+            const dataUrl = `data:image/jpeg;base64,${base64String}`;
+            return {
+                ...insumo,
+                Foto: dataUrl
+            };
+        }
+        return insumo;
+    });
+
+    return insumosConFoto;;
 }
 
 const getItemById = async(idInsumos) => {

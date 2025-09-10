@@ -36,7 +36,7 @@ export default function NavBar() {
                         <Nav.Link href="#services" onClick={resetInsumos}>Servicios</Nav.Link>
                         <Nav.Link href="#" onClick={handleClick}>Insumos</Nav.Link>
                         <Nav.Link href="#doctors" onClick={resetInsumos}>Doctores</Nav.Link>
-                        <Nav.Link href="" onClick={resetInsumos}>Contactanos</Nav.Link>
+                        <Nav.Link href="#contact" onClick={resetInsumos}>Contactanos</Nav.Link>
                     </Nav>
                     <Button variant="warning" onClick={() => setIsModalOpen(true)}>Inicia Sesión</Button>
                 </Navbar.Collapse>
