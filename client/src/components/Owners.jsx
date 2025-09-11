@@ -21,7 +21,7 @@ function Owners() {
     const fetchOwners = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:3001/api/propietarios');
+            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios');
             if (!response.ok) throw new Error('Error al obtener propietarios');
             const data = await response.json();
             setOwners(data);
@@ -45,7 +45,7 @@ function Owners() {
     const handleSubmitNewOwner = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch('http://localhost:3001/api/propietarios', {
+            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newOwner)
@@ -68,7 +68,7 @@ function Owners() {
     const handleSubmitEditOwner = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch(`http://localhost:3001/api/propietarios/${currentOwner.idPropietario}`, {
+            const response = await fetch(`https://soporte-equino.onrender.com/api/propietarios/${currentOwner.idPropietario}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(editOwner)
@@ -83,7 +83,7 @@ function Owners() {
 
     const handleDeleteOwner = async (idPropietario) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/propietarios/${idPropietario}`, {
+            const response = await fetch(`https://soporte-equino.onrender.com/api/propietarios/${idPropietario}`, {
                 method: 'DELETE'
             });
             if (!response.ok) throw new Error('Error al eliminar propietario');

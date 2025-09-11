@@ -13,7 +13,7 @@ export default function NavBar() {
     
     const handleClick = async (e) => {
         e.preventDefault();
-        const response = await fetch('http://localhost:3001/api/insumos/');
+        const response = await fetch('https://soporte-equino.onrender.com/api/insumos/');
         const data = await response.json();
         setInsumos(data);
     }

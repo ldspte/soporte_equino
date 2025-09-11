@@ -142,7 +142,7 @@ function ClinicalHistory() {
             setError('No hay token de autenticación');
             return;
         }
-        const response = await fetch('http://localhost:3001/api/pacientes', {
+        const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
             method: 'GET',
             headers: {
                 'Authorization': token,
@@ -167,7 +167,7 @@ function ClinicalHistory() {
   const fetchOwners = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:3001/api/propietarios');
+            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios');
             if (!response.ok) throw new Error('Error al obtener propietarios');
             const data = await response.json();
             setOwners(data);
@@ -190,7 +190,7 @@ function ClinicalHistory() {
               setLoading(false);
               return;
             }
-            const response = await fetch('http://localhost:3001/api/historia_clinica',
+            const response = await fetch('https://soporte-equino.onrender.com/api/historia_clinica',
             {
                 method: 'GET',
                 headers: {
@@ -289,7 +289,7 @@ function ClinicalHistory() {
         Observaciones: newClinical.Observaciones
       };
 
-      const response = await fetch('http://localhost:3001/api/historia_clinica',
+      const response = await fetch('https://soporte-equino.onrender.com/api/historia_clinica',
         {
           method: 'POST',
           headers:{
@@ -331,7 +331,7 @@ function ClinicalHistory() {
   const updateClinical = useCallback(async (idHistoria_clinica, clinicalData) => {
     try{
       const token = getAuthToken();
-      const response = await fetch(`http://localhost:3001/api/historia_clinica/${idHistoria_clinica}`, {
+      const response = await fetch(`https://soporte-equino.onrender.com/api/historia_clinica/${idHistoria_clinica}`, {
         method: 'PUT',
         headers: {
           'Authorization': token,
@@ -357,7 +357,7 @@ function ClinicalHistory() {
     const deleteHistory = useCallback(async (idHistoria_clinica) => {
       try {
         const token = getAuthToken();
-        const response = await fetch(`http://localhost:3001/api/historia_clinica/${idHistoria_clinica}`, {
+        const response = await fetch(`https://soporte-equino.onrender.com/api/historia_clinica/${idHistoria_clinica}`, {
           method: 'DELETE',
           headers: {
             'Authorization': token,

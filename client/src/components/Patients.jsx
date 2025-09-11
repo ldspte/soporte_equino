@@ -23,7 +23,7 @@ function PatientManagement() {
     const fetchPatients = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:3001/api/pacientes');
+            const response = await fetch('https://soporte-equino.onrender.com/api/pacientes');
             if (!response.ok) throw new Error('Error al obtener pacientes');
             const data = await response.json();
             setPatients(data);
@@ -37,7 +37,7 @@ function PatientManagement() {
     const fetchOwners = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:3001/api/propietarios');
+            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios');
             if (!response.ok) throw new Error('Error al obtener propietarios');
             const data = await response.json();
             setOwners(data);
@@ -62,7 +62,7 @@ function PatientManagement() {
         e.preventDefault();
         try {
             console.log(newPatient);
-            const response = await fetch('http://localhost:3001/api/pacientes', {
+            const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPatient)
@@ -85,7 +85,7 @@ function PatientManagement() {
     const handleSubmitEditPatient = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch(`http://localhost:3001/api/pacientes/${currentPatient.idPaciente}`, {
+            const response = await fetch(`https://soporte-equino.onrender.com/api/pacientes/${currentPatient.idPaciente}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(editPatient)
@@ -100,7 +100,7 @@ function PatientManagement() {
 
     const handleDeletePatient = async (idPaciente) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/pacientes/${idPaciente}`, {
+            const response = await fetch(`https://soporte-equino.onrender.com/api/pacientes/${idPaciente}`, {
                 method: 'DELETE'
             });
             if (!response.ok) throw new Error('Error al eliminar paciente');

@@ -20,7 +20,7 @@ function Insumos() {
     const fetchInsumos = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:3001/api/insumos');
+            const response = await fetch('https://soporte-equino.onrender.com/api/insumos');
             if (!response.ok) throw new Error('Error al obtener insumos');
             const data = await response.json();
             setInsumos(data);
@@ -53,7 +53,7 @@ function Insumos() {
         });
 
         try {
-            const response = await fetch('http://localhost:3001/api/insumos', {
+            const response = await fetch('https://soporte-equino.onrender.com/api/insumos', {
                 method: 'POST',
                 body: formData
             });
@@ -80,7 +80,7 @@ function Insumos() {
         });
 
         try {
-            const response = await fetch(`http://localhost:3001/api/insumos/${currentInsumo.idInsumos}`, {
+            const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${currentInsumo.idInsumos}`, {
                 method: 'PUT',
                 body: formData
             });
@@ -94,7 +94,7 @@ function Insumos() {
 
     const handleDeleteInsumo = async (idInsumos) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/insumos/${idInsumos}`, {
+            const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${idInsumos}`, {
                 method: 'DELETE'
             });
             if (!response.ok) throw new Error('Error al eliminar insumo');

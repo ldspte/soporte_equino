@@ -84,7 +84,7 @@ const Veterinarios = () => {
         return;
       }
       
-      const response = await fetch('http://localhost:3001/api/veterinarios', {
+      const response = await fetch('https://soporte-equino.onrender.com/api/veterinarios', {
         method: 'GET',
         headers: {
           'Authorization': token,
@@ -159,7 +159,7 @@ const Veterinarios = () => {
         Correo: newVeterinario.Correo.trim(),
       };
 
-      const response = await fetch('http://localhost:3001/api/veterinarios', {
+      const response = await fetch('https://soporte-equino.onrender.com/api/veterinarios', {
         method: 'POST',
         headers: {
           'Authorization': token,
@@ -200,7 +200,7 @@ const Veterinarios = () => {
   const updateVeterinario = useCallback(async (idVeterinario, veterinarioData) => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`http://localhost:3001/api/veterinarios/${idVeterinario}`, {
+      const response = await fetch(`https://soporte-equino.onrender.com/api/veterinarios/${idVeterinario}`, {
         method: 'PUT',
         headers: {
           'Authorization': token,
@@ -224,7 +224,7 @@ const Veterinarios = () => {
   const deleteVeterinario = useCallback(async (veterinarioId) => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`http://localhost:3001/api/veterinarios/${veterinarioId}`, {
+      const response = await fetch(`https://soporte-equino.onrender.com/api/veterinarios/${veterinarioId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': token,

@@ -41,7 +41,7 @@ function OtherHistorys() {
       if (paciente.trim()) params.append('paciente', paciente.trim());
       if (propietario.trim()) params.append('propietario', propietario.trim());
 
-      const response = await fetch(`http://localhost:3001/api/historia_clinica/buscar?${params.toString()}`, {
+      const response = await fetch(`https://soporte-equino.onrender.com/api/historia_clinica/buscar?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': token,
