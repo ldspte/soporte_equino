@@ -2,14 +2,14 @@ const {db} = require('../database.js');
 
 const getOwners = async() => {
   const results = await db.query(`
-    SELECT * FROM Propietario  
+    SELECT * FROM propietario  
   `)
   return results.length > 0 ? results[0] : null;
 }
 
 const getOwnerById = async(idPropietario) => {
     const result = await db.query(`
-        SELECT * FROM Propietario WHERE idPropietario = ?
+        SELECT * FROM propietario WHERE idPropietario = ?
     `,
     [idPropietario]
     );
@@ -18,7 +18,7 @@ const getOwnerById = async(idPropietario) => {
 
 const createOwner = async(Cedula, Nombre, Apellido, Telefono) => {
     const result = await db.query(`
-        INSERT INTO Propietario (Cedula, Nombre, Apellido, Telefono) VALUES  (?, ?, ?, ?)
+        INSERT INTO propietario (Cedula, Nombre, Apellido, Telefono) VALUES  (?, ?, ?, ?)
     `,
     [Cedula, Nombre, Apellido, Telefono]
     );
@@ -27,7 +27,7 @@ const createOwner = async(Cedula, Nombre, Apellido, Telefono) => {
 
 const updateOwner = async(idPropietario, Cedula, Nombre, Apellido, Telefono) => {
     const result = await db.query(`
-        UPDATE Propietario SET  Cedula = ?, Nombre = ?, Apellido = ?, Telefono = ? WHERE idPropietario = ?
+        UPDATE propietario SET  Cedula = ?, Nombre = ?, Apellido = ?, Telefono = ? WHERE idPropietario = ?
     `,
     [Cedula, Nombre, Apellido, Telefono, idPropietario]
     );
@@ -36,7 +36,7 @@ const updateOwner = async(idPropietario, Cedula, Nombre, Apellido, Telefono) => 
 
 const deleteOwner = async(idPropietario) => {
     const result = await db.query(`
-        DELETE FROM Propietario WHERE idPropietario = ?
+        DELETE FROM propietario WHERE idPropietario = ?
     `,
     [idPropietario]
     );
