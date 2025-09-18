@@ -20,7 +20,7 @@ const getPatientById = async(idPaciente) => {
 
 const createPatient = async(Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) => {
     const result = await db.query(`
-        INSERT INTO Paciente (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO paciente (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario]
     );
@@ -29,7 +29,7 @@ const createPatient = async(Nombre, Numero_registro, Numero_chip, Raza, Edad, Se
 
 const updatePatient = async(idPaciente, Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) => {
     const result = await db.query(`
-        UPDATE Paciente SET Nombre = ?, Numero_registro = ?, Numero_chip = ?, Raza = ?, Edad = ?, Sexo = ?, Foto = ?, Propietario = ? WHERE idPaciente = ?
+        UPDATE paciente SET Nombre = ?, Numero_registro = ?, Numero_chip = ?, Raza = ?, Edad = ?, Sexo = ?, Foto = ?, Propietario = ? WHERE idPaciente = ?
     `,
     [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario, idPaciente]
     );
