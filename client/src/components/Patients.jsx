@@ -11,8 +11,8 @@ function PatientManagement() {
     const [error, setError] = useState(null);
     const [showNewPatientModal, setShowNewPatientModal] = useState(false);
     const [showEditPatientModal, setShowEditPatientModal] = useState(false);
-    const [newPatient, setNewPatient] = useState({ Nombre: '', Edad: '', Raza: '', Sexo: '', Propietario: '' });
-    const [editPatient, setEditPatient] = useState({ Nombre: '', Edad: '', Raza: '', Sexo: '', Propietario: '' });
+    const [newPatient, setNewPatient] = useState({ Nombre: '', Numero_registro:'',Numero_chip:'', Edad: '', Raza: '', Sexo: '', Foto:'', Propietario: '' });
+    const [editPatient, setEditPatient] = useState({ Nombre: '', Numero_registro:'',Numero_chip:'', Edad: '', Raza: '', Sexo: '', Foto:'', Propietario: ''});
     const [currentPatient, setCurrentPatient] = useState(null);
 
     useEffect(() => {
@@ -70,7 +70,7 @@ function PatientManagement() {
             if (!response.ok) throw new Error('Error al crear paciente');
             fetchPatients();
             setShowNewPatientModal(false);
-            setNewPatient({ Nombre: '', Edad: '', Raza: '', Sexo: '', Propietario: '' });
+            setNewPatient({ Nombre: '', Numero_registro: '', Numero_chip:'', Edad: '', Raza: '', Sexo: '', Foto:'', Propietario: '' });
         } catch (error) {
             setError(error.message);
         }
@@ -155,7 +155,7 @@ function PatientManagement() {
                     <tr>
                         <th>#</th> {/* Nueva columna para enumerar */}
                         <th>Nombre</th>
-                        <th>Edad</th>
+                        <th>Numero Registro</th>
                         <th>Raza</th>
                         <th>Sexo</th>
                         <th>Propietario</th>
@@ -167,7 +167,7 @@ function PatientManagement() {
                         <tr key={patient.idPaciente}>
                             <td>{index + 1}</td> {/* Mostrar el índice + 1 para enumerar desde 1 */}
                             <td>{patient.Nombre}</td>
-                            <td>{patient.Edad}</td>
+                            <td>{patient.Numero_registro}</td>
                             <td>{patient.Raza}</td>
                             <td>{patient.Sexo}</td>
                             <td>
@@ -203,6 +203,14 @@ function PatientManagement() {
                             <Form.Label>Nombre</Form.Label>
                             <Form.Control type="text" name="Nombre" value={newPatient.Nombre} onChange={handleInputChange} required />
                         </Form.Group>
+                        <Form.Group controlId="formNumero">
+                            <Form.Label>Numero de Registro</Form.Label>
+                            <Form.Control type="text" name="Numero_registro" value={newPatient.Numero_registro} onChange={handleInputChange}  />
+                        </Form.Group>
+                        <Form.Group controlId="formChip">
+                            <Form.Label>Numero Chip</Form.Label>
+                            <Form.Control type="text" name="Numero_chip" value={newPatient.Numero_chip} onChange={handleInputChange}  />
+                        </Form.Group>
                         <Form.Group controlId="formEdad">
                             <Form.Label>Edad</Form.Label>
                             <Form.Control type="text" name="Edad" value={newPatient.Edad} onChange={handleInputChange} required />
@@ -218,6 +226,10 @@ function PatientManagement() {
                                 <option value="M">Masculino</option>
                                 <option value="F">Femenino</option>
                             </Form.Control>
+                        </Form.Group>
+                        <Form.Group controlId="formFoto">
+                            <Form.Label>Foto</Form.Label>
+                            <Form.Control type="file" name="Foto" value={newPatient.Foto} onChange={handleInputChange} required />
                         </Form.Group>
                         <Form.Group controlId="formPropietario">
                             <Form.Label>Propietario</Form.Label>
@@ -243,6 +255,14 @@ function PatientManagement() {
                         <Form.Group controlId="formNombre">
                             <Form.Label>Nombre</Form.Label>
                             <Form.Control type="text" name="Nombre" value={editPatient.Nombre} onChange={handleEditInputChange} required />
+                        </Form.Group>
+                        <Form.Group controlId="formNumero">
+                            <Form.Label>Numero de Registro</Form.Label>
+                            <Form.Control type="text" name="Numero_registro" value={editPatient.Numero_registro} onChange={handleEditInputChange} />
+                        </Form.Group>
+                        <Form.Group controlId="formChip">
+                            <Form.Label>Numero de Chip</Form.Label>
+                            <Form.Control type="text" name="Numero_chip" value={editPatient.Numero_chip} onChange={handleEditInputChange}/>
                         </Form.Group>
                         <Form.Group controlId="formEdad">
                             <Form.Label>Edad</Form.Label>

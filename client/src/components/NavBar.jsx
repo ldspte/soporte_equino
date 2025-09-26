@@ -23,7 +23,7 @@ export default function NavBar() {
     }
     
     return (
-        <div className='container'>
+        <div className='container sticky-top'>
             <Navbar bg="light" expand="lg">
                 <Navbar.Brand href="index.html">
                     <img src={Logo} alt="Logo" className='logo' />

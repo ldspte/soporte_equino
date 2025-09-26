@@ -250,7 +250,7 @@ function ClinicalHistory() {
 
     try {
       setIsUpdating(true);
-      if(!newClinical.veterinario || !newClinical.paciente){
+      if(!newClinical.Paciente){
           alert('Por favor llena todos los campos');
           return;
       }
@@ -866,7 +866,7 @@ function ClinicalHistory() {
                     <option value="">Seleccione un paciente</option>
                     {patients.map((patient) => (
                       <option key={patient.idPaciente} value={patient.idPaciente}>
-                        {patient.Nombre}
+                        {patient.Nombre} {patient.Numero_registro}
                       </option>
                     ))}
                   </Form.Control>
