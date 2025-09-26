@@ -16,6 +16,8 @@ import doctor2 from '../assets/img/doctors/doctors-2.jpg';
 import doctor3 from '../assets/img/doctors/doctors-3.jpg';
 import doctor4 from '../assets/img/doctors/doctors-4.jpg';
 
+
+
 const doctors = [
   {
     id: 1,
@@ -92,7 +94,7 @@ const images = [
  const services = [
     {
       id: 1,
-      icon: <FaHeartbeat size={40} className="text-warning" />,
+      icon: <FaHeartbeat size={40} className="text-primary" />,
       title: 'Urgencias Medicas',
       description: 'Atendemos cualquier caso en todo el departamento 24h',
       delay: 100,
@@ -100,7 +102,7 @@ const images = [
     },
     {
       id: 2,
-      icon: <FaPills size={40} className="text-warning" />,
+      icon: <FaPills size={40} className="text-primary" />,
       title: 'Insumos Medicos',
       description: 'Venta de insumos medicos para veterinaria',
       delay: 200,
@@ -108,7 +110,7 @@ const images = [
     },
     {
       id: 3,
-      icon: <FaHospitalUser  size={40} className="text-warning" />,
+      icon: <FaHospitalUser  size={40} className="text-primary" />,
       title: 'Seguimiento',
       description: '',
       delay: 300,
@@ -116,7 +118,7 @@ const images = [
     },
     {
       id: 4,
-      icon: <FaDna size={40} className="text-warning" />,
+      icon: <FaDna size={40} className="text-primary" />,
       title: 'Reproducción Equina',
       description: '',
       delay: 400,
@@ -127,6 +129,11 @@ const images = [
 export default function Content() {
   const [index, setIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [flippedCardId, setFlippedCardId] = useState(null);
+
+  const handleCardClick = (id) => {
+    setFlippedCardId(flippedCardId === id ? null : id);
+  };
 
   useEffect(() => {
     const interval = !isHovered ? setInterval(() => {
@@ -169,7 +176,9 @@ export default function Content() {
     <section
       id="call-to-action"
       className="call-to-action section"
+      data-aos="fade-right"
       style={{ backgroundColor: '#0d3b66', color: 'white', padding: '3rem 0' }}
+      
     >
       <Container>
         <Row
@@ -200,7 +209,7 @@ export default function Content() {
     </section>
 
     
-    <section id="about" className="about section">
+    <section id="about" className="about section" data-aos="fade-left">
       {/* Section Title */}
       <Container className="section-title" data-aos="fade-up">
         <h2>
@@ -255,7 +264,7 @@ export default function Content() {
     </section>
     
 
-    <section id="services" className="services section">
+    <section id="services" className="services section" data-aos="fade-right">
       {/* Section Title */}
       <Container className="section-title" data-aos="fade-up">
         <h2>Servicios</h2>
@@ -263,7 +272,7 @@ export default function Content() {
       </Container>
 
       <Container>
-        <Row className="gy-4">
+        <Row className="gy-4 justify-content-center">
           {services.map(({ id, icon, title, description, delay, href }) => (
             <Col
               key={id}
@@ -288,7 +297,7 @@ export default function Content() {
       </Container>
     </section>
 
-    <section id="doctors" className="doctors section light-background">
+    <section id="doctors" className="doctors section light-background" data-aos="fade-left">
       {/* Section Title */}
       <Container className="section-title" data-aos="fade-up">
         <h2>Doctores</h2>
@@ -296,43 +305,55 @@ export default function Content() {
       </Container>
 
       <Container>
-        <Row className="gy-4">
-          {doctors.map(({ id, name, role, imgSrc, social, delay }) => (
-            <Col
-              key={id}
-              lg={3}
-              md={6}
-              className="d-flex align-items-stretch"
-              data-aos="fade-up"
-              data-aos-delay={delay}
-            >
-              <Card className="team-member border-0 shadow-sm w-100">
-                <div className="member-img position-relative">
-                  <Image src={imgSrc} alt={name} fluid />
-                  <div className="social position-absolute top-0 end-0 p-2 d-flex gap-2">
-                    <a href={social.twitter} aria-label={`${name} Twitter`} target="_blank" rel="noopener noreferrer">
-                      <BsTwitter size={20} className="text-primary" />
-                    </a>
-                    <a href={social.facebook} aria-label={`${name} Facebook`} target="_blank" rel="noopener noreferrer">
-                      <BsFacebook size={20} className="text-primary" />
-                    </a>
-                    <a href={social.instagram} aria-label={`${name} Instagram`} target="_blank" rel="noopener noreferrer">
-                      <BsInstagram size={20} className="text-danger" />
-                    </a>
-                    <a href={social.linkedin} aria-label={`${name} LinkedIn`} target="_blank" rel="noopener noreferrer">
-                      <BsLinkedin size={20} className="text-primary" />
-                    </a>
-                  </div>
+  <Row className="gy-4">
+    {doctors.map(({ id, name, role, imgSrc, social, delay }) => (
+      <Col
+        key={id}
+        lg={3}
+        md={6}
+        className="d-flex align-items-stretch"
+        data-aos="fade-up"
+        data-aos-delay={delay}
+      >
+        <div className={`card-flip-container ${flippedCardId === id ? 'flipped' : ''}`} onClick={() => handleCardClick(id)}>
+          <div className="card-flipper">
+            {/* Cara frontal de la tarjeta */}
+            <div className="front-card team-member border-0 shadow-sm w-100">
+              <div className="member-img position-relative">
+                <Image src={imgSrc} alt={name} fluid />
+              </div>
+              <div className="member-info text-center">
+                <h4 className="mb-1">{name}</h4>
+                <p className="text-muted">{role}</p>
+              </div>
+            </div>
+
+            {/* Cara trasera de la tarjeta */}
+            <div className="back-card team-member border-0 shadow-sm w-100 p-4">
+              <div className="d-flex flex-column align-items-center justify-content-center h-100">
+                <h5 className="mb-3">Redes Sociales</h5>
+                <div className="social d-flex gap-2">
+                  <a href={social.twitter} aria-label={`${name} Twitter`} target="_blank" rel="noopener noreferrer">
+                    <BsTwitter size={20} className="twitter-icon-color" />
+                  </a>
+                  <a href={social.facebook} aria-label={`${name} Facebook`} target="_blank" rel="noopener noreferrer">
+                    <BsFacebook size={20} className="facebook-icon-color" />
+                  </a>
+                  <a href={social.instagram} aria-label={`${name} Instagram`} target="_blank" rel="noopener noreferrer">
+                    <BsInstagram size={20} className="instagram-icon-color" />
+                  </a>
+                  <a href={social.linkedin} aria-label={`${name} LinkedIn`} target="_blank" rel="noopener noreferrer">
+                    <BsLinkedin size={20} className="linkedin-icon-color" />
+                  </a>
                 </div>
-                <Card.Body className="member-info text-center">
-                  <Card.Title as="h4" className="mb-1">{name}</Card.Title>
-                  <Card.Text className="text-muted">{role}</Card.Text>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </Container>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Col>
+    ))}
+  </Row>
+</Container>
     </section>
 
     </div>
