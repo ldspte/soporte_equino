@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ForgotPasswordModal from './ForgotPasswordModal';
+import { useAuth } from './AuthProvider'
 
-const LoginModal = ({ isOpen, onClose }) => {
+const LoginModal = ({ isOpen, onClose,  }) => {
     if (!isOpen) return null;
-    
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -48,9 +49,8 @@ const LoginModal = ({ isOpen, onClose }) => {
         }
     }
     const handleOpenForgotModal = () => {
-        onClose();
-        setShowForgotModal(true);
-    }
+        onOpenForgot(); // Llama a la función del componente padre (NavBar)
+    };
 
     return (
         <>

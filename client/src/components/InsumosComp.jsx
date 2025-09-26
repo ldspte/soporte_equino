@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Row, Col, InputGroup, Form, Modal, Alert } from 'react-bootstrap';
-import { FaSearch, FaEdit, FaTrashAlt, FaPlus } from 'react-icons/fa';
+import { FaSearch, FaEdit, FaTrashAlt, FaPlus, FaTag, FaMoneyBill } from 'react-icons/fa';
 
 function Insumos() {
     const [insumos, setInsumos] = useState([]);
@@ -10,34 +10,52 @@ function Insumos() {
     const [showNewInsumoModal, setShowNewInsumoModal] = useState(false);
     const [showEditInsumoModal, setShowEditInsumoModal] = useState(false);
     const [currentInsumo, setCurrentInsumo] = useState(null);
-    const [newInsumo, setNewInsumo] = useState({ Nombre: '', Descripcion: '', Foto: null, Precio: '' });
-    const [editInsumo, setEditInsumo] = useState({ Nombre: '', Descripcion: '', Foto: null, Precio: '' });
+    const [newInsumo, setNewInsumo] = useState({ Nombre: '', Descripcion: '', Precio: '' });
+    const [newInsumoFile, setNewInsumoFile] = useState(null);
+    const [editInsumo, setEditInsumo] = useState({ Nombre: '', Descripcion: '', Precio: '' });
 
-    useEffect(() => {
-        fetchInsumos();
-    }, []);
+    // --- Funciones de Utilidad y Hooks ---
 
     const getAuthToken = useCallback(() => {
         const token = localStorage.getItem('token');
-        console.log(token ? `Bearer ${token}` : "XXXX")
         return token ? `Bearer ${token}` : null;
-      }, []);
-    
+    }, []);
 
-    const fetchInsumos = async () => {
-        setLoading(true);
+    // Hook para cargar datos iniciales y asegurar que se ejecute solo si hay token
+    useEffect(() => {
         const token = getAuthToken();
-        if (!token) {
+        if (token) {
+            fetchInsumos(token);
+        } else {
             setError('No autorizado. Por favor, inicia sesión.');
+        }
+    }, [getAuthToken]);
+
+    // --- Lógica de Fetch de Datos ---
+
+    const fetchInsumos = async (token) => {
+        setLoading(true);
+        setError(null);
+        
+        if (!token) {
             setLoading(false);
             return;
         }
+        
         try {
             const response = await fetch('https://soporte-equino.onrender.com/api/insumos', {
                 method: 'GET',
-                headers: { 'Authorization': token, 'Content-Type': 'application/json' } 
+                headers: { 'Authorization': `Bearer ${token}` , 'Content-Type': 'application/json'} // Enviamos el token
             });
-            if (!response.ok) throw new Error('Error al obtener insumos');
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    setError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    return; 
+                }
+                throw new Error(`Error ${response.status} al obtener insumos`);
+            }
+            
             const data = await response.json();
             setInsumos(data);
         } catch (error) {
@@ -47,13 +65,15 @@ function Insumos() {
         }
     };
 
+    // --- Handlers de Formulario ---
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewInsumo(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleFileChange = (e) => {
-        setNewInsumo(prev => ({ ...prev, Foto: e.target.files[0] }));
+    const handleNewFileChange = (e) => {
+        setNewInsumoFile(e.target.files[0]); // Guardamos el objeto File
     };
 
     const handleEditInputChange = (e) => {
@@ -63,26 +83,39 @@ function Insumos() {
 
     const handleSubmitNewInsumo = async (e) => {
         e.preventDefault();
+        
+        const token = getAuthToken();
+        if (!token) {
+            setError('No autorizado. Por favor, inicia sesión.');
+            return;
+        }
+        
         const formData = new FormData();
-        Object.entries(newInsumo).forEach(([key, value]) => {
-            formData.append(key, value);
-        });
+        formData.append('Nombre', newInsumo.Nombre);
+        formData.append('Descripcion', newInsumo.Descripcion);
+        formData.append('Precio', newInsumo.Precio);
+        if (newInsumoFile) {
+            formData.append('Foto', newInsumoFile);
+        }
 
         try {
-            const token = getAuthToken();
-            if (!token) {
-                setError('No autorizado. Por favor, inicia sesión.');
-                return;
-            }
             const response = await fetch('https://soporte-equino.onrender.com/api/insumos', {
                 method: 'POST',
-                headers: { 'Authorization': token },
+                // IMPORTANTE: NO establecemos Content-Type, el navegador lo hace por FormData.
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'}, 
                 body: formData
             });
-            if (!response.ok) throw new Error('Error al crear insumo');
-            fetchInsumos();
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Error al crear insumo');
+            }
+            
+            fetchInsumos(token);
             setShowNewInsumoModal(false);
-            setNewInsumo({ Nombre: '', Descripcion: '', Foto: null, Precio: '' });
+            setNewInsumo({ Nombre: '', Descripcion: '', Precio: '' });
+            setNewInsumoFile(null);
+            setError(null);
         } catch (error) {
             setError(error.message);
         }
@@ -90,58 +123,88 @@ function Insumos() {
 
     const handleEditInsumo = (insumo) => {
         setCurrentInsumo(insumo);
-        setEditInsumo(insumo);
+        // Creamos una copia del insumo sin la foto (la foto se maneja por separado)
+        setEditInsumo({ Nombre: insumo.Nombre, Descripcion: insumo.Descripcion, Precio: insumo.Precio, Foto: insumo.Foto });
         setShowEditInsumoModal(true);
     };
 
     const handleSubmitEditInsumo = async (e) => {
         e.preventDefault();
+        
+        const token = getAuthToken();
+        if (!token) {
+            setError('No autorizado. Por favor, inicia sesión.');
+            return;
+        }
+
         const formData = new FormData();
-        Object.entries(editInsumo).forEach(([key, value]) => {
-            formData.append(key, value);
-        });
+        formData.append('Nombre', editInsumo.Nombre);
+        formData.append('Descripcion', editInsumo.Descripcion);
+        formData.append('Precio', editInsumo.Precio);
+        
+        // Manejamos la foto de edición si se seleccionó un nuevo archivo
+        const photoInput = e.target.elements.formEditFoto.files[0];
+        if (photoInput) {
+            formData.append('Foto', photoInput); // Si hay archivo, lo añadimos
+        } else {
+            // Si no hay archivo nuevo, enviamos el nombre del archivo existente si se requiere actualizar otros campos
+             formData.append('Foto', editInsumo.Foto || ''); 
+        }
 
         try {
-            const token = getAuthToken();
-            if (!token) {
-                setError('No autorizado. Por favor, inicia sesión.');
-                return;
-            }
             const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${currentInsumo.idInsumos}`, {
                 method: 'PUT',
-                headers: { 'Authorization': token },
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: formData
             });
-            if (!response.ok) throw new Error('Error al actualizar insumo');
-            fetchInsumos();
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Error al actualizar insumo');
+            }
+            
+            fetchInsumos(token);
             setShowEditInsumoModal(false);
+            setError(null);
         } catch (error) {
             setError(error.message);
         }
     };
 
     const handleDeleteInsumo = async (idInsumos) => {
+        const token = getAuthToken();
+        if (!token) {
+            setError('No autorizado. Por favor, inicia sesión.');
+            return;
+        }
+        
         try {
-            const token = getAuthToken();
-            if (!token) {
-                setError('No autorizado. Por favor, inicia sesión.');
-                return;
-            }
             const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${idInsumos}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+                // Para DELETE con JSON, Content-Type es opcional pero se puede mantener
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
             });
-            if (!response.ok) throw new Error('Error al eliminar insumo');
-            fetchInsumos();
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Error al eliminar insumo');
+            }
+            
+            fetchInsumos(token);
+            setError(null);
         } catch (error) {
             setError(error.message);
         }
     };
 
+    // --- Lógica de Filtro ---
+
     const filteredInsumos = insumos.filter(insumo => 
-        insumo.Nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        insumo.Descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+        insumo.Nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        insumo.Descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    // --- Renderizado ---
 
     return (
         <div>
@@ -152,12 +215,13 @@ function Insumos() {
                 </Button>
             </div>
             {error && <Alert variant="danger">{error}</Alert>}
+            
             <Card className="mb-4">
                 <Card.Body>
                     <Row>
                         <Col md={6}>
                             <InputGroup>
-                                <InputGroup.Text>
+                                <InputGroup.Text className='bg-warning text-white'>
                                     <FaSearch />
                                 </InputGroup.Text>
                                 <Form.Control
@@ -179,63 +243,73 @@ function Insumos() {
                             </div>
                         </div>
                     ) : (
-                        <Table hover>
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Foto</th>
-                                    <th>Precio</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredInsumos.map(insumo => (
-                                    <tr key={insumo.idInsumos}>
-                                        <td>{insumo.Nombre}</td>
-                                        <td>{insumo.Descripcion}</td>
-                                        <td>
-                                            <img src={`http://localhost:3001/uploads/${insumo.Foto}`} alt={insumo.Nombre} style={{ width: '50px' }} />
-                                        </td>
-                                        <td>{insumo.Precio}</td>
-                                        <td>
-                                            <Button variant="outline-warning" onClick={() => handleEditInsumo(insumo)}>
-                                                <FaEdit />
-                                            </Button>
-                                            <Button variant="outline-danger" onClick={() => handleDeleteInsumo(insumo.idInsumos)}>
-                                                <FaTrashAlt />
-                                            </Button>
-                                        </td>
+                        <div className="table-responsive">
+                            <Table hover>
+                                <thead>
+                                    <tr>
+                                        <th><FaTag className='me-1'/> Nombre</th>
+                                        <th>Descripción</th>
+                                        <th>Foto</th>
+                                        <th><FaMoneyBill className='me-1'/> Precio</th>
+                                        <th>Acciones</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </Table>
+                                </thead>
+                                <tbody>
+                                    {filteredInsumos.map(insumo => (
+                                        <tr key={insumo.idInsumos}>
+                                            <td>{insumo.Nombre}</td>
+                                            <td>{insumo.Descripcion}</td>
+                                            <td>
+                                                {/* URL de foto apuntando al servidor de Render */}
+                                                <img 
+                                                    src={`https://soporte-equino.onrender.com/uploads/${insumo.Foto}`} 
+                                                    alt={insumo.Nombre} 
+                                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} 
+                                                />
+                                            </td>
+                                            <td>{insumo.Precio}</td>
+                                            <td>
+                                                <Button variant="outline-warning" size="sm" className='me-2' onClick={() => handleEditInsumo(insumo)}>
+                                                    <FaEdit />
+                                                </Button>
+                                                <Button variant="outline-danger" size="sm" onClick={() => handleDeleteInsumo(insumo.idInsumos)}>
+                                                    <FaTrashAlt />
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
                     )}
                 </Card.Body>
             </Card>
 
             {/* Modal para crear nuevo insumo */}
-            <Modal show={showNewInsumoModal} onHide={() => setShowNewInsumoModal(false)}>
+            <Modal show={showNewInsumoModal} onHide={() => setShowNewInsumoModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Crear Insumo</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form enctype="multipart/form-data" onSubmit={handleSubmitNewInsumo}>
-                        <Form.Group controlId="formNombre">
+                    <Form onSubmit={handleSubmitNewInsumo}>
+                        <Form.Group controlId="formNombre" className='mb-2'>
                             <Form.Label>Nombre</Form.Label>
                             <Form.Control type="text" name="Nombre" value={newInsumo.Nombre} onChange={handleInputChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formDescripcion">
+                        <Form.Group controlId="formDescripcion" className='mb-2'>
                             <Form.Label>Descripción</Form.Label>
                             <Form.Control type="text" name="Descripcion" value={newInsumo.Descripcion} onChange={handleInputChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formFoto">
+                        <Form.Group controlId="formFoto" className='mb-2'>
                             <Form.Label>Foto</Form.Label>
-                            <Form.Control type="file" name="Foto" onChange={handleFileChange} required />
+                            <Form.Control type="file" name="Foto" onChange={handleNewFileChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formPrecio">
+                        <Form.Group controlId="formPrecio" className='mb-4'>
                             <Form.Label>Precio</Form.Label>
-                            <Form.Control type="number" name="Precio" value={newInsumo.Precio} onChange={handleInputChange} required />
+                            <InputGroup>
+                                <InputGroup.Text>$</InputGroup.Text>
+                                <Form.Control type="number" name="Precio" value={newInsumo.Precio} onChange={handleInputChange} required />
+                            </InputGroup>
                         </Form.Group>
                         <Button type="submit" variant="warning">Crear Insumo</Button>
                     </Form>
@@ -243,27 +317,36 @@ function Insumos() {
             </Modal>
 
             {/* Modal para editar insumo */}
-            <Modal show={showEditInsumoModal} onHide={() => setShowEditInsumoModal(false)}>
+            <Modal show={showEditInsumoModal} onHide={() => setShowEditInsumoModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Editar Insumo</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSubmitEditInsumo}>
-                        <Form.Group controlId="formNombre">
+                        <Form.Group controlId="formEditNombre" className='mb-2'>
                             <Form.Label>Nombre</Form.Label>
                             <Form.Control type="text" name="Nombre" value={editInsumo.Nombre} onChange={handleEditInputChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formDescripcion">
+                        <Form.Group controlId="formEditDescripcion" className='mb-2'>
                             <Form.Label>Descripción</Form.Label>
                             <Form.Control type="text" name="Descripcion" value={editInsumo.Descripcion} onChange={handleEditInputChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formFoto">
-                            <Form.Label>Foto</Form.Label>
-                            <Form.Control type="file" name="Foto" onChange={handleFileChange} />
+                        <Form.Group controlId="formEditFoto" className='mb-2'>
+                            <Form.Label>Foto (Dejar vacío para no cambiar)</Form.Label>
+                            {/* Usamos handleNewFileChange temporalmente para capturar el nuevo archivo si lo hay */}
+                            <Form.Control type="file" name="Foto" onChange={handleNewFileChange} />
+                            {currentInsumo?.Foto && (
+                                <p className="mt-2 text-muted small">
+                                    Archivo actual: **{currentInsumo.Foto}**
+                                </p>
+                            )}
                         </Form.Group>
-                        <Form.Group controlId="formPrecio">
+                        <Form.Group controlId="formEditPrecio" className='mb-4'>
                             <Form.Label>Precio</Form.Label>
-                            <Form.Control type="number" name="Precio" value={editInsumo.Precio} onChange={handleEditInputChange} required />
+                            <InputGroup>
+                                <InputGroup.Text>$</InputGroup.Text>
+                                <Form.Control type="number" name="Precio" value={editInsumo.Precio} onChange={handleEditInputChange} required />
+                            </InputGroup>
                         </Form.Group>
                         <Button type="submit" variant="warning">Actualizar Insumo</Button>
                     </Form>

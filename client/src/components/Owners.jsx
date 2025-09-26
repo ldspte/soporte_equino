@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Row, Col, InputGroup, Form, Modal, Alert } from 'react-bootstrap';
-import { FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus } from 'react-icons/fa';
-// import '../Styles/owner.css';
+import { FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus, FaPhone, FaIdCard } from 'react-icons/fa';
 
 function Owners() {
     const [owners, setOwners] = useState([]);
@@ -14,34 +13,54 @@ function Owners() {
     const [newOwner, setNewOwner] = useState({ Cedula: '', Nombre: '', Apellido: '', Telefono: '' });
     const [editOwner, setEditOwner] = useState({ Cedula: '', Nombre: '', Apellido: '', Telefono: '' });
 
-    useEffect(() => {
-        fetchOwners();
-    }, []);
+    // --- Funciones de Utilidad y Hooks ---
+
     const getAuthToken = useCallback(() => {
         const token = localStorage.getItem('token');
-        console.log(token ? `Bearer ${token}` : "XXXX")
-        return token ? `Bearer ${token}` : null;
-      }, []);
+        // El token viene con el prefijo 'Bearer ' para el header
+        return token ? `Bearer ${token}` : null; 
+    }, []);
     
-
-    const fetchOwners = async () => {
-        setLoading(true);
+    // Hook para cargar datos iniciales y asegurar que se ejecute solo si hay token
+    useEffect(() => {
         const token = getAuthToken();
+        if (token) {
+            // Pasamos el token directamente a la función fetchOwners
+            fetchOwners(token); 
+        } else {
+            setError('No autorizado. Por favor, inicia sesión.');
+        }
+    }, [getAuthToken]);
+
+    // --- Lógica de Fetch de Datos ---
+
+    const fetchOwners = async (token) => {
+        setLoading(true);
+        setError(null);
+        
         if (!token) {
             setError('No autorizado. Por favor, inicia sesión.');
             setLoading(false);
             return;
         }
-        try {
 
+        try {
             const response = await fetch('https://soporte-equino.onrender.com/api/propietarios',{
                 method: 'GET',
                 headers: {
-                    'Authorization': token,
+                    'Authorization': `Bearer ${token}`, // Usamos el token con 'Bearer ' incluido
                     'Content-Type': 'application/json'
                 }
             });
-            if (!response.ok) throw new Error('Error al obtener propietarios');
+            
+            if (!response.ok) {
+                 if (response.status === 401) {
+                     setError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                     return; 
+                 }
+                 throw new Error(`Error ${response.status} al obtener propietarios`);
+            }
+            
             const data = await response.json();
             setOwners(data);
         } catch (error) {
@@ -51,6 +70,8 @@ function Owners() {
         }
     };
 
+    // --- Handlers de Formulario ---
+    
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewOwner(prev => ({ ...prev, [name]: value }));
@@ -63,23 +84,31 @@ function Owners() {
 
     const handleSubmitNewOwner = async (e) => {
         e.preventDefault();
+        const token = getAuthToken();
+        if (!token) {
+            setError('No autorizado. Por favor, inicia sesión.');
+            return;
+        }
+        
         try {
-            const token = getAuthToken();
-            if (!token) {
-                setError('No autorizado. Por favor, inicia sesión.');
-                return;
-            }
             const response = await fetch('https://soporte-equino.onrender.com/api/propietarios', {
                 method: 'POST',
                 headers: { 
-                    'Authorization': token,
-                    'Content-Type': 'application/json' },
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json' 
+                },
                 body: JSON.stringify(newOwner)
             });
-            if (!response.ok) throw new Error('Error al crear propietario');
-            fetchOwners();
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Error al crear propietario');
+            }
+            
+            fetchOwners(token);
             setShowNewOwnerModal(false);
             setNewOwner({ Cedula: '', Nombre: '', Apellido: '', Telefono: '' });
+            setError(null);
         } catch (error) {
             setError(error.message);
         }
@@ -87,59 +116,83 @@ function Owners() {
 
     const handleEditOwner = (owner) => {
         setCurrentOwner(owner);
-        setEditOwner(owner);
+        // Usamos spread operator para crear una copia limpia
+        setEditOwner({...owner}); 
         setShowEditOwnerModal(true);
     };
 
     const handleSubmitEditOwner = async (e) => {
         e.preventDefault();
+        const token = getAuthToken();
+        if (!token) {
+            setError('No autorizado. Por favor, inicia sesión.');
+            return;
+        }
+        
         try {
-            const token = getAuthToken();
-            if (!token) {
-                setError('No autorizado. Por favor, inicia sesión.');
-                return;
-            }
             const response = await fetch(`https://soporte-equino.onrender.com/api/propietarios/${currentOwner.idPropietario}`, {
                 method: 'PUT',
                 headers: { 
-                    'Authorization': token,
-                    'Content-Type': 'application/json' },
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json' 
+                },
                 body: JSON.stringify(editOwner)
             });
-            if (!response.ok) throw new Error('Error al actualizar propietario');
-            fetchOwners();
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Error al actualizar propietario');
+            }
+            
+            fetchOwners(token);
             setShowEditOwnerModal(false);
+            setError(null);
         } catch (error) {
             setError(error.message);
         }
     };
 
     const handleDeleteOwner = async (idPropietario) => {
+        const token = getAuthToken();
+        if (!token) {
+            setError('No autorizado. Por favor, inicia sesión.');
+            return;
+        }
+        
         try {
-            const token = getAuthToken();
-            if (!token) {
-                setError('No autorizado. Por favor, inicia sesión.');
-                return;
-            }
             const response = await fetch(`https://soporte-equino.onrender.com/api/propietarios/${idPropietario}`, {
                 method: 'DELETE', 
                 headers: { 
-                    'Authorization': token,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
-            if (!response.ok) throw new Error('Error al eliminar propietario');
-            fetchOwners();
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Error al eliminar propietario');
+            }
+            
+            fetchOwners(token);
+            setError(null);
         } catch (error) {
             setError(error.message);
         }
     };
 
-    const filteredOwners = owners.filter(owner => 
-        owner.Cedula.toString().includes(searchTerm) ||
-        owner.Nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        owner.Apellido.toLowerCase().includes(searchTerm.toLowerCase()) 
-    );
+    // --- Lógica de Filtro ---
+    
+    const filteredOwners = owners.filter(owner => {
+        const termLower = searchTerm.toLowerCase();
+        return (
+            owner.Cedula?.toString().includes(searchTerm) || // Búsqueda por Cédula (parcial)
+            owner.Nombre?.toLowerCase().includes(termLower) || 
+            owner.Apellido?.toLowerCase().includes(termLower) ||
+            owner.Telefono?.includes(searchTerm) 
+        );
+    });
+
+    // --- Renderizado ---
 
     return (
         <div>
@@ -150,16 +203,17 @@ function Owners() {
                 </Button>
             </div>
             {error && <Alert variant="danger">{error}</Alert>}
+            
             <Card className="mb-4">
                 <Card.Body>
                     <Row>
                         <Col md={6}>
                             <InputGroup>
-                                <InputGroup.Text>
+                                <InputGroup.Text className='bg-warning text-white'>
                                     <FaSearch />
                                 </InputGroup.Text>
                                 <Form.Control
-                                    placeholder="Buscar por Cedula, Nombre o Apellido"
+                                    placeholder="Buscar por Cédula, Nombre, Apellido o Teléfono"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -177,59 +231,61 @@ function Owners() {
                             </div>
                         </div>
                     ) : (
-                        <Table hover>
-                            <thead>
-                                <tr>
-                                    <th>Cédula</th>
-                                    <th>Nombre</th>
-                                    <th>Apellido</th>
-                                    <th>Teléfono</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredOwners.map(owner => (
-                                    <tr key={owner.idPropietario}>
-                                        <td>{owner.Cedula}</td>
-                                        <td>{owner.Nombre}</td>
-                                        <td>{owner.Apellido}</td>
-                                        <td>{owner.Telefono}</td>
-                                        <td>
-                                            <Button variant="outline-warning" onClick={() => handleEditOwner(owner)}>
-                                                <FaEdit />
-                                            </Button>
-                                            <Button variant="outline-danger" onClick={() => handleDeleteOwner(owner.idPropietario)}>
-                                                <FaTrashAlt />
-                                            </Button>
-                                        </td>
+                        <div className="table-responsive">
+                            <Table hover>
+                                <thead>
+                                    <tr>
+                                        <th><FaIdCard className='me-1'/> Cédula</th>
+                                        <th><FaUserCircle className='me-1'/> Nombre</th>
+                                        <th>Apellido</th>
+                                        <th><FaPhone className='me-1'/> Teléfono</th>
+                                        <th>Acciones</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </Table>
+                                </thead>
+                                <tbody>
+                                    {filteredOwners.map(owner => (
+                                        <tr key={owner.idPropietario}>
+                                            <td>{owner.Cedula}</td>
+                                            <td>{owner.Nombre}</td>
+                                            <td>{owner.Apellido}</td>
+                                            <td>{owner.Telefono}</td>
+                                            <td>
+                                                <Button variant="outline-warning" size="sm" className='me-2' onClick={() => handleEditOwner(owner)}>
+                                                    <FaEdit />
+                                                </Button>
+                                                <Button variant="outline-danger" size="sm" onClick={() => handleDeleteOwner(owner.idPropietario)}>
+                                                    <FaTrashAlt />
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
                     )}
                 </Card.Body>
             </Card>
 
             {/* Modal para crear nuevo propietario */}
-            <Modal show={showNewOwnerModal} onHide={() => setShowNewOwnerModal(false)}>
+            <Modal show={showNewOwnerModal} onHide={() => setShowNewOwnerModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Crear Propietario</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSubmitNewOwner}>
-                        <Form.Group controlId="formCedula">
+                        <Form.Group controlId="formCedula" className='mb-2'>
                             <Form.Label>Cédula</Form.Label>
                             <Form.Control type="number" name="Cedula" value={newOwner.Cedula} onChange={handleInputChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formNombre">
+                        <Form.Group controlId="formNombre" className='mb-2'>
                             <Form.Label>Nombre</Form.Label>
                             <Form.Control type="text" name="Nombre" value={newOwner.Nombre} onChange={handleInputChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formApellido">
+                        <Form.Group controlId="formApellido" className='mb-2'>
                             <Form.Label>Apellido</Form.Label>
                             <Form.Control type="text" name="Apellido" value={newOwner.Apellido} onChange={handleInputChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formTelefono">
+                        <Form.Group controlId="formTelefono" className='mb-4'>
                             <Form.Label>Teléfono</Form.Label>
                             <Form.Control type="text" name="Telefono" value={newOwner.Telefono} onChange={handleInputChange} required />
                         </Form.Group>
@@ -239,27 +295,28 @@ function Owners() {
             </Modal>
 
             {/* Modal para editar propietario */}
-            <Modal show={showEditOwnerModal} onHide={() => setShowEditOwnerModal(false)}>
+            <Modal show={showEditOwnerModal} onHide={() => setShowEditOwnerModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Editar Propietario</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSubmitEditOwner}>
-                        <Form.Group controlId="formCedula">
+                        <Form.Group controlId="formEditCedula" className='mb-2'>
                             <Form.Label>Cédula</Form.Label>
-                            <Form.Control type="text" name="cedula" value={editOwner.Cedula} onChange={handleEditInputChange} required />
+                            {/* Usamos el nombre del campo como está en el estado: Cedula */}
+                            <Form.Control type="number" name="Cedula" value={editOwner.Cedula} onChange={handleEditInputChange} required /> 
                         </Form.Group>
-                        <Form.Group controlId="formNombre">
+                        <Form.Group controlId="formEditNombre" className='mb-2'>
                             <Form.Label>Nombre</Form.Label>
-                            <Form.Control type="text" name="nombre" value={editOwner.Nombre} onChange={handleEditInputChange} required />
+                            <Form.Control type="text" name="Nombre" value={editOwner.Nombre} onChange={handleEditInputChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formApellido">
+                        <Form.Group controlId="formEditApellido" className='mb-2'>
                             <Form.Label>Apellido</Form.Label>
-                            <Form.Control type="text" name="apellido" value={editOwner.Apellido} onChange={handleEditInputChange} required />
+                            <Form.Control type="text" name="Apellido" value={editOwner.Apellido} onChange={handleEditInputChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formTelefono">
+                        <Form.Group controlId="formEditTelefono" className='mb-4'>
                             <Form.Label>Teléfono</Form.Label>
-                            <Form.Control type="text" name="telefono" value={editOwner.Telefono} onChange={handleEditInputChange} required />
+                            <Form.Control type="text" name="Telefono" value={editOwner.Telefono} onChange={handleEditInputChange} required />
                         </Form.Group>
                         <Button type="submit" variant="warning">Actualizar Propietario</Button>
                     </Form>
