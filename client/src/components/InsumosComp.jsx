@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Row, Col, InputGroup, Form, Modal, Alert } from 'react-bootstrap';
 import { FaSearch, FaEdit, FaTrashAlt, FaPlus } from 'react-icons/fa';
 
@@ -17,10 +17,26 @@ function Insumos() {
         fetchInsumos();
     }, []);
 
+    const getAuthToken = useCallback(() => {
+        const token = localStorage.getItem('token');
+        console.log(token ? `Bearer ${token}` : "XXXX")
+        return token ? `Bearer ${token}` : null;
+      }, []);
+    
+
     const fetchInsumos = async () => {
         setLoading(true);
+        const token = getAuthToken();
+        if (!token) {
+            setError('No autorizado. Por favor, inicia sesión.');
+            setLoading(false);
+            return;
+        }
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/insumos');
+            const response = await fetch('https://soporte-equino.onrender.com/api/insumos', {
+                method: 'GET',
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' } 
+            });
             if (!response.ok) throw new Error('Error al obtener insumos');
             const data = await response.json();
             setInsumos(data);
@@ -53,8 +69,14 @@ function Insumos() {
         });
 
         try {
+            const token = getAuthToken();
+            if (!token) {
+                setError('No autorizado. Por favor, inicia sesión.');
+                return;
+            }
             const response = await fetch('https://soporte-equino.onrender.com/api/insumos', {
                 method: 'POST',
+                headers: { 'Authorization': token },
                 body: formData
             });
             if (!response.ok) throw new Error('Error al crear insumo');
@@ -80,8 +102,14 @@ function Insumos() {
         });
 
         try {
+            const token = getAuthToken();
+            if (!token) {
+                setError('No autorizado. Por favor, inicia sesión.');
+                return;
+            }
             const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${currentInsumo.idInsumos}`, {
                 method: 'PUT',
+                headers: { 'Authorization': token },
                 body: formData
             });
             if (!response.ok) throw new Error('Error al actualizar insumo');
@@ -94,8 +122,14 @@ function Insumos() {
 
     const handleDeleteInsumo = async (idInsumos) => {
         try {
+            const token = getAuthToken();
+            if (!token) {
+                setError('No autorizado. Por favor, inicia sesión.');
+                return;
+            }
             const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${idInsumos}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
             if (!response.ok) throw new Error('Error al eliminar insumo');
             fetchInsumos();

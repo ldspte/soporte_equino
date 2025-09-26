@@ -17,11 +17,30 @@ function Owners() {
     useEffect(() => {
         fetchOwners();
     }, []);
+    const getAuthToken = useCallback(() => {
+        const token = localStorage.getItem('token');
+        console.log(token ? `Bearer ${token}` : "XXXX")
+        return token ? `Bearer ${token}` : null;
+      }, []);
+    
 
     const fetchOwners = async () => {
         setLoading(true);
+        const token = getAuthToken();
+        if (!token) {
+            setError('No autorizado. Por favor, inicia sesión.');
+            setLoading(false);
+            return;
+        }
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios');
+
+            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios',{
+                method: 'GET',
+                headers: {
+                    'Authorization': token,
+                    'Content-Type': 'application/json'
+                }
+            });
             if (!response.ok) throw new Error('Error al obtener propietarios');
             const data = await response.json();
             setOwners(data);
@@ -45,9 +64,16 @@ function Owners() {
     const handleSubmitNewOwner = async (e) => {
         e.preventDefault();
         try {
+            const token = getAuthToken();
+            if (!token) {
+                setError('No autorizado. Por favor, inicia sesión.');
+                return;
+            }
             const response = await fetch('https://soporte-equino.onrender.com/api/propietarios', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Authorization': token,
+                    'Content-Type': 'application/json' },
                 body: JSON.stringify(newOwner)
             });
             if (!response.ok) throw new Error('Error al crear propietario');
@@ -68,9 +94,16 @@ function Owners() {
     const handleSubmitEditOwner = async (e) => {
         e.preventDefault();
         try {
+            const token = getAuthToken();
+            if (!token) {
+                setError('No autorizado. Por favor, inicia sesión.');
+                return;
+            }
             const response = await fetch(`https://soporte-equino.onrender.com/api/propietarios/${currentOwner.idPropietario}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Authorization': token,
+                    'Content-Type': 'application/json' },
                 body: JSON.stringify(editOwner)
             });
             if (!response.ok) throw new Error('Error al actualizar propietario');
@@ -83,8 +116,17 @@ function Owners() {
 
     const handleDeleteOwner = async (idPropietario) => {
         try {
+            const token = getAuthToken();
+            if (!token) {
+                setError('No autorizado. Por favor, inicia sesión.');
+                return;
+            }
             const response = await fetch(`https://soporte-equino.onrender.com/api/propietarios/${idPropietario}`, {
-                method: 'DELETE'
+                method: 'DELETE', 
+                headers: { 
+                    'Authorization': token,
+                    'Content-Type': 'application/json'
+                }
             });
             if (!response.ok) throw new Error('Error al eliminar propietario');
             fetchOwners();

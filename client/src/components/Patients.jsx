@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Row, Col, InputGroup, Form, Modal, Alert } from 'react-bootstrap';
 import { FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus } from 'react-icons/fa';
 // import '../Styles/patient.css';
@@ -20,10 +20,26 @@ function PatientManagement() {
         fetchOwners();
     }, []);
 
+    const getAuthToken = useCallback(() => {
+        const token = localStorage.getItem('token');
+        console.log(token ? `Bearer ${token}` : "XXXX")
+        return token ? `Bearer ${token}` : null;
+      }, []);
+    
+
     const fetchPatients = async () => {
         setLoading(true);
+        const token = getAuthToken();
+        if (!token) {
+            setError('No autorizado. Por favor, inicia sesión.');
+            setLoading(false);
+            return;
+        }
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/pacientes');
+            const response = await fetch('https://soporte-equino.onrender.com/api/pacientes',{
+                method: 'GET',
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+            });
             if (!response.ok) throw new Error('Error al obtener pacientes');
             const data = await response.json();
             setPatients(data);
@@ -36,8 +52,17 @@ function PatientManagement() {
 
     const fetchOwners = async () => {
         setLoading(true);
+        const token = getAuthToken();
+        if (!token) {
+            setError('No autorizado. Por favor, inicia sesión.');
+            setLoading(false);
+            return;
+        }
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios');
+            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios',{
+                method: 'GET',
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+            });
             if (!response.ok) throw new Error('Error al obtener propietarios');
             const data = await response.json();
             setOwners(data);
@@ -61,10 +86,15 @@ function PatientManagement() {
     const handleSubmitNewPatient = async (e) => {
         e.preventDefault();
         try {
+            const token = getAuthToken();
+            if (!token) {
+                setError('No autorizado. Por favor, inicia sesión.');
+                return;
+            }
             console.log(newPatient);
             const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Authorization': token },
                 body: JSON.stringify(newPatient)
             });
             if (!response.ok) throw new Error('Error al crear paciente');
@@ -85,9 +115,14 @@ function PatientManagement() {
     const handleSubmitEditPatient = async (e) => {
         e.preventDefault();
         try {
+            const token = getAuthToken();
+            if (!token) {
+                setError('No autorizado. Por favor, inicia sesión.');
+                return;
+            }
             const response = await fetch(`https://soporte-equino.onrender.com/api/pacientes/${currentPatient.idPaciente}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Authorization': token },
                 body: JSON.stringify(editPatient)
             });
             if (!response.ok) throw new Error('Error al actualizar paciente');
@@ -100,8 +135,14 @@ function PatientManagement() {
 
     const handleDeletePatient = async (idPaciente) => {
         try {
+            const token = getAuthToken();
+            if (!token) {
+                setError('No autorizado. Por favor, inicia sesión.');
+                return;
+            }
             const response = await fetch(`https://soporte-equino.onrender.com/api/pacientes/${idPaciente}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
             if (!response.ok) throw new Error('Error al eliminar paciente');
             fetchPatients();

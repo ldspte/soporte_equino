@@ -166,7 +166,7 @@ export default function Content() {
             <Carousel.Caption className="custom-caption">
               <h2 className="carousel-title">{image.title}</h2>
               <p className="carousel-description">{image.description}</p>
-              <a href="#about" className="btn-get-started">Leer Más</a>
+              <a href="#about" className="button2 btn">Leer Más</a>
             </Carousel.Caption>
           </Carousel.Item>
         ))}
@@ -195,7 +195,7 @@ export default function Content() {
                 atenderte
               </p>
               <Button
-                href="#appointment"
+                href="#doctors"
                 variant="primary"
                 className="cta-btn"
                 style={{ backgroundColor: '#084c8d', borderColor: '#084c8d' }}
@@ -300,7 +300,7 @@ export default function Content() {
     <section id="doctors" className="doctors section light-background" data-aos="fade-left">
       {/* Section Title */}
       <Container className="section-title" data-aos="fade-up">
-        <h2>Doctores</h2>
+        <h2 className='text-center'>Doctores Activos</h2>
         <p>Tenemos un equipo que brinda apoyo 24h y especializado en equinos</p>
       </Container>
 

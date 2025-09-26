@@ -166,8 +166,22 @@ function ClinicalHistory() {
 
   const fetchOwners = async () => {
         setLoading(true);
+        const token = getAuthToken();
+        if (!token) {
+            setError('No hay token de autenticación');
+            setLoading(false);
+            return;
+        }
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios');
+            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios',{
+              method: 'GET',
+              headers: {
+                'Authorization': token,
+                'Content-Type': 'application/json'
+              }
+            }
+
+            );
             if (!response.ok) throw new Error('Error al obtener propietarios');
             const data = await response.json();
             setOwners(data);
