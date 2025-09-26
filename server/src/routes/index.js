@@ -9,12 +9,39 @@ const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 // const upload = multer({ dest: 'uploads/' }); // Configura multer para manejar archivos subidos
 const {getItems, getItemById, createItem, updateItem, deleteItem} = require('../controllers/itemsController');
 const {getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary} = require('../controllers/veterinaryController')
 const {getOwners, getOwnerById, createOwner, updateOwner, deleteOwner} = require('../controllers/ownerController');
 const {getClinicalHistory, getClinicalHistoryById, createClinicalHistory, updateClinicalHistory, deleteClinicalHistory} = require('../controllers/clinicalHystory');
 const {getPatients, getPatientById, createPatient, updatePatient, deletePatient} = require('../controllers/patientController')
+
+
+//RUTAS PROTEGIDAS
+const authenticateToken = (req, res, next) => {
+    // Obtener el token del encabezado de la solicitud
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // El token se envía como "Bearer TOKEN"
+
+    if (!token) {
+        // Si no hay token, el usuario no está autenticado
+        return res.status(401).send('Acceso denegado. No se proporcionó token de autenticación.');
+    }
+
+    // Verificar el token
+    jwt.verify(token, SECRET_KEY, (err, user) => {
+        if (err) {
+            // Si el token no es válido o ha expirado
+            return res.status(403).send('Token de autenticación inválido.');
+        }
+
+        // Si el token es válido, guardar los datos del usuario en el objeto de solicitud
+        // para que las rutas puedan acceder a ellos
+        req.user = user;
+        next(); // Continuar con la siguiente función (la ruta)
+    });
+};
 
 // LOGIN VETERINARIOS
 route.post('/api/login', [
@@ -145,7 +172,7 @@ route.delete('/api/insumos/:idInsumos', async (req, res) => {
 
 // VETERINARIOS
 
-route.get('/api/veterinarios', async(req, res) => {
+route.get('/api/veterinarios', authenticateToken ,async(req, res) => {
     try{
         const values = await getVeterinarys();
         res.status(200).json(values);
@@ -155,7 +182,7 @@ route.get('/api/veterinarios', async(req, res) => {
     }
 });
 
-route.get('/api/veterinarios/:idVeterinario', async (req, res) => {
+route.get('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
     const { idVeterinario } = req.params;
     try{
         const values = await getVeterinaryById(idVeterinario);
@@ -170,7 +197,7 @@ route.get('/api/veterinarios/:idVeterinario', async (req, res) => {
 });
 
 
-route.post('/api/veterinarios', async (req, res) => {
+route.post('/api/veterinarios', authenticateToken,  async (req, res) => {
     const { Cedula, Nombre, Apellido, Correo } = req.body;
     try{
         const values = await createVeterinary(Cedula, Nombre, Apellido, Correo);
@@ -181,7 +208,7 @@ route.post('/api/veterinarios', async (req, res) => {
     }
 });
 
-route.put('/api/veterinarios/:idVeterinario', async (req, res) => {
+route.put('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
     const { idVeterinario } = req.params;
     const {Cedula, Nombre, Apellido, Correo} = req.body;
     try{
@@ -196,7 +223,7 @@ route.put('/api/veterinarios/:idVeterinario', async (req, res) => {
     }
 });
 
-route.delete('/api/veterinarios/:idVeterinario', async (req, res) => {
+route.delete('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
     const { idVeterinario } = req.params;
     try{
         const values = await deleteVeterinary(idVeterinario);
@@ -212,7 +239,7 @@ route.delete('/api/veterinarios/:idVeterinario', async (req, res) => {
 
 //PROPIETARIOS
 
-route.get('/api/propietarios', async(req, res) => {
+route.get('/api/propietarios', authenticateToken, async(req, res) => {
     try{
         const values = await getOwners();
         res.status(200).json(values);
@@ -222,7 +249,7 @@ route.get('/api/propietarios', async(req, res) => {
     }
 });
 
-route.get('/api/propietarios/:idPropietario', async (req, res) => {
+route.get('/api/propietarios/:idPropietario', authenticateToken, async (req, res) => {
     const { idPropietario } = req.params;
     try{
         const values = await getOwnerById(idPropietario);
@@ -236,7 +263,7 @@ route.get('/api/propietarios/:idPropietario', async (req, res) => {
     }
 });
 
-route.post('/api/propietarios', async (req, res) => {
+route.post('/api/propietarios', authenticateToken, async (req, res) => {
     const {Cedula, Nombre, Apellido, Telefono} = req.body;
     try{
         const values = await createOwner(Cedula, Nombre, Apellido, Telefono);
@@ -247,7 +274,7 @@ route.post('/api/propietarios', async (req, res) => {
     }
 });
 
-route.put('/api/propietarios/:idPropietario', async (req, res) => {
+route.put('/api/propietarios/:idPropietario', authenticateToken, async (req, res) => {
     const { idPropietario } = req.params;
     const {Cedula, Nombre, Apellido, Telefono} = req.body;
     try{
@@ -262,7 +289,7 @@ route.put('/api/propietarios/:idPropietario', async (req, res) => {
     }
 });
 
-route.delete('/api/propietarios/:idPropietario', async (req, res) => {
+route.delete('/api/propietarios/:idPropietario', authenticateToken, async (req, res) => {
     const { idPropietario } = req.params;
     try{
         const values = await deleteOwner(idPropietario);
@@ -278,7 +305,7 @@ route.delete('/api/propietarios/:idPropietario', async (req, res) => {
 
 //HISTORIA CLINICA
 
-route.get('/api/historia_clinica', async(req, res) => {
+route.get('/api/historia_clinica', authenticateToken, async(req, res) => {
     try{
         const values = await getClinicalHistory();
         res.status(200).json(values);
@@ -288,7 +315,7 @@ route.get('/api/historia_clinica', async(req, res) => {
     }
 });
 
-route.get('/api/historia_clinica/:idHistoria_clinica', async (req, res) => {
+route.get('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async (req, res) => {
     const { idHistoria_clinica } = req.params;
     try{
         const values = await getClinicalHistoryById(idHistoria_clinica);
@@ -302,7 +329,7 @@ route.get('/api/historia_clinica/:idHistoria_clinica', async (req, res) => {
     }
 });
 
-route.post('/api/historia_clinica', async (req, res) => {
+route.post('/api/historia_clinica', authenticateToken, async (req, res) => {
     const {Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliege_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas} = req.body;
     try{
         const values = await createClinicalHistory(Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliege_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas);
@@ -313,7 +340,7 @@ route.post('/api/historia_clinica', async (req, res) => {
     }
 });
 
-route.put('/api/historia_clinica/:idHistoria_clinica', async (req, res) => {
+route.put('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async (req, res) => {
     const { idHistoria_clinica } = req.params;
     const {Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliege_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas} = req.body;
     try{
@@ -328,7 +355,7 @@ route.put('/api/historia_clinica/:idHistoria_clinica', async (req, res) => {
     }
 });
 
-route.delete('/api/historia_clinica/:idHistoria_clinica', async (req, res) => {
+route.delete('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async (req, res) => {
     const { idHistoria_clinica } = req.params;
     try{
         const values = await deleteClinicalHistory(idHistoria_clinica);
@@ -346,7 +373,7 @@ route.delete('/api/historia_clinica/:idHistoria_clinica', async (req, res) => {
 
 // PACIENTES
 
-route.get('/api/pacientes', async(req, res) => {
+route.get('/api/pacientes', authenticateToken, async(req, res) => {
     try{
         const values = await getPatients();
         res.status(200).json(values);
@@ -356,7 +383,7 @@ route.get('/api/pacientes', async(req, res) => {
     }
 });
 
-route.get('/api/pacientes/:idPaciente', async (req, res) => {
+route.get('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
     const { idPaciente } = req.params;
     try{
         const values = await getPatientById(idPaciente);
@@ -370,7 +397,7 @@ route.get('/api/pacientes/:idPaciente', async (req, res) => {
     }
 });
 
-route.post('/api/pacientes', async (req, res) => {
+route.post('/api/pacientes', authenticateToken, async (req, res) => {
     const {Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario} = req.body;
     try{
         const values = await createPatient(Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario);
@@ -381,7 +408,7 @@ route.post('/api/pacientes', async (req, res) => {
     }
 });
 
-route.put('/api/pacientes/:idPaciente', async (req, res) => {
+route.put('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
     const { idPaciente } = req.params;
     const {Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario} = req.body;
     try{
@@ -396,7 +423,7 @@ route.put('/api/pacientes/:idPaciente', async (req, res) => {
     }
 });
 
-route.delete('/api/paciente/:idPaciente', async (req, res) => {
+route.delete('/api/paciente/:idPaciente', authenticateToken, async (req, res) => {
     const { idPaciente } = req.params;
     try{
         const values = await deletePatient(idPaciente);
@@ -429,35 +456,27 @@ const resetTokens = new Map();
 // NUEVA RUTA para recuperar contraseña
 route.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
-  
-  console.log('📧 Solicitud de recuperación para:', email);
-  
-  try {
-    // Aquí deberías verificar si el usuario existe en tu BD
-    // Por ahora simulamos que existe
-    const usuarioExiste = true; // Reemplaza con tu lógica de BD
-    
-    if (!usuarioExiste) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'No encontramos una cuenta con ese correo electrónico' 
-      });
-    }
-    
-    // Generar token único
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const tokenExpiry = Date.now() + 3600000; // 1 hora
-    
-    // Guardar token
-    resetTokens.set(resetToken, {
-      email: email.toLowerCase(),
-      expires: tokenExpiry,
-      used: false
-    });
-    
-    // URL para restablecer
-    const resetLink = `http://localhost:3001/reset-password/${resetToken}`;
-    
+
+    try {
+        // 1. Verificar si el usuario existe en la base de datos
+        const [user] = await db.query('SELECT * FROM veterinario WHERE Correo = ?', [email]);
+        if (!user.length) {
+            // No reveles si el correo existe por motivos de seguridad
+            return res.json({ success: true, message: 'Si el correo existe, se ha enviado un enlace de recuperación.' });
+        }
+
+        const idVeterinario = user[0].idVeterinario;
+
+        // 2. Generar el token y la fecha de expiración
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const tokenExpiry = new Date(Date.now() + 3600000); // 1 hora de validez
+
+        // 3. Almacenar el token y su expiración en la base de datos
+        await db.query('UPDATE veterinario SET resetToken = ?, resetTokenExpiry = ? WHERE idVeterinario = ?', [resetToken, tokenExpiry, idVeterinario]);
+
+        // 4. Crear el enlace para el email
+        const resetLink = `https://www.soporteequino.com/reset-password/${resetToken}`; // Asegúrate de que esta URL sea la de tu frontend
+
     // Configurar email
     const mailOptions = {
       from: '"Mi App Móvil" <michelleandrea217@gmail.com>',
@@ -565,48 +584,44 @@ route.get('/reset-password/:token', (req, res) => {
 
 // NUEVA RUTA para procesar la nueva contraseña
 route.post('/reset-password/:token', async (req, res) => {
- 
-  const { token } = req.params;
-  const { password, confirmPassword } = req.body;
-  
-  const tokenData = resetTokens.get(token);
-  
-  if (!tokenData || Date.now() > tokenData.expires || tokenData.used) {
-    return res.send('<h2>❌ Error: Enlace inválido o expirado</h2>');
-  }
-  
-  if (password !== confirmPassword) {
-    return res.send('<h2>❌ Error: Las contraseñas no coinciden</h2>');
-  }
-  
-  // Marcar token como usado
-  tokenData.used = true;
-  resetTokens.set(token, tokenData);
-  try {
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    const correo_conductor = tokenData.correo_conductor;
-  
-    const result = await newpasswordDriver(correo_conductor, hashedPassword);
-  
-    console.log(`🔑 Nueva contraseña para ${tokenData.correo_conductor}:`, hashedPassword);
-    if (result.affectedRows === 0) {
-      return res.status(404).send('<h2>❌ Error: Usuario no encontrado</h2>');
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+
+    // 1. Validar las contraseñas
+    if (password !== confirmPassword) {
+        return res.status(400).json({ success: false, message: 'Las contraseñas no coinciden' });
     }
-  
-    res.send(`
-      <html>
-        <body style="font-family: Arial; text-align: center; padding: 50px;">
-          <h2 style="color: #27ae60;">✅ ¡Contraseña actualizada!</h2>
-          <p>Tu contraseña ha sido actualizada exitosamente.</p>
-          <p>Ya puedes iniciar sesión en la app.</p>
-        </body>
-      </html>
-    `);
     
-  } catch (error) {
-    console.error("Error al actualizar la contraseña:", error);
-    return res.status(500).send('<h2>❌ Error interno al actualizar la contraseña</h2>');
-  }
+    try {
+        // 2. Buscar el token en la base de datos y verificar su validez y expiración
+        const [user] = await db.query('SELECT * FROM veterinario WHERE resetToken = ? AND resetTokenExpiry > ?', [token, new Date()]);
+
+        if (!user.length) {
+            return res.status(400).json({ success: false, message: 'El enlace es inválido o ha expirado.' });
+        }
+
+        const idVeterinario = user[0].idVeterinario;
+
+        // 3. Hashear la nueva contraseña
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // 4. Actualizar la contraseña del usuario y eliminar el token de la base de datos
+        const [updateResult] = await db.query(
+            'UPDATE veterinario SET Contraseña = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE idVeterinario = ?', 
+            [hashedPassword, idVeterinario]
+        );
+        
+        if (updateResult.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+        }
+        
+        // 5. Responder con un mensaje de éxito en formato JSON
+        res.status(200).json({ success: true, message: 'Contraseña actualizada exitosamente.' });
+
+    } catch (error) {
+        console.error("Error al actualizar la contraseña:", error);
+        res.status(500).json({ success: false, message: 'Error interno al actualizar la contraseña.' });
+    }
 });
 
 module.exports = route

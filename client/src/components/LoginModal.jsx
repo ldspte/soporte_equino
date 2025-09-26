@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import ForgotPasswordModal from './ForgotPasswordModal';
 
 const LoginModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
@@ -10,6 +11,7 @@ const LoginModal = ({ isOpen, onClose }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [showForgotModal, setShowForgotModal] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -47,6 +49,7 @@ const LoginModal = ({ isOpen, onClose }) => {
     }
 
     return (
+        <>
         <Modal show={isOpen} onHide={onClose}>
             <Modal.Header closeButton>
                 <Modal.Title>Iniciar Sesión</Modal.Title>
@@ -80,8 +83,18 @@ const LoginModal = ({ isOpen, onClose }) => {
                         Cerrar
                     </Button>
                 </Form>
+                <div className="text-center mt-3">
+                    <Button variant="link" onClick={handleOpenForgotModal}>
+                        ¿Olvidaste tu contraseña?
+                    </Button>
+                </div>
             </Modal.Body>
         </Modal>
+        <ForgotPasswordModal 
+                isOpen={showForgotModal} 
+                onClose={() => setShowForgotModal(false)} 
+            />
+        </>
     );
 };
 

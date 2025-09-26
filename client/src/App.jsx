@@ -13,6 +13,9 @@ import Landing from './Views/Landing.jsx';
 import ClinicalHistory from './components/ClinicalHistory.jsx';
 import Veterinarios from './components/Veterinary.jsx';
 import OtherHistorys from './components/OtherHistory.jsx';
+import ResetPasswordPage from './components/ResetPasswordPage.jsx';
+import { AuthProvider } from './components/AuthProvider.jsx'; // Importa el proveedor
+import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 const App = () => {
   useEffect(() => {
@@ -23,22 +26,27 @@ const App = () => {
 }, []);
   return (
     <div>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          
-          {/* Rutas que requieren el navbar */}
-          <Route element={<AuthenticatedLayout />}>
-            <Route path="/home" element={<Home />} />
-            <Route path="/historias-clinicas" element={<ClinicalHistory />} />
-            <Route path="/propietarios" element={<Owners />} />
-            <Route path="/pacientes" element={<PatientManagement/>} />
-            <Route path="/insumos" element={<Insumos/>} />
-            <Route path="/veterinarios" element={<Veterinarios />} />
-            <Route path="/otras-historias" element={<OtherHistorys />} />
-          </Route>
-        </Routes>
-      </Router>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            
+            {/* Rutas que requieren el navbar */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AuthenticatedLayout />}>
+                <Route path="/home" element={<Home />} />
+                <Route path="/historias-clinicas" element={<ClinicalHistory />} />
+                <Route path="/propietarios" element={<Owners />} />
+                <Route path="/pacientes" element={<PatientManagement/>} />
+                <Route path="/insumos" element={<Insumos/>} />
+                <Route path="/veterinarios" element={<Veterinarios />} />
+                <Route path="/otras-historias" element={<OtherHistorys />} />
+              </Route>
+            </Route>
+          </Routes>
+        </Router>
+      </AuthProvider>
     </div>
   );
 };
