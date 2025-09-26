@@ -282,7 +282,7 @@ export default function Content() {
               data-aos-delay={delay}
               className="d-flex"
             >
-              <Card className="service-item position-relative flex-fill border-0 shadow-sm">
+              <Card className="service-item position-relative flex-fill border-0 shadow-sm text-center">
                 <Card.Body>
                   <div className="icon mb-3">{icon}</div>
                   <Card.Title as="a" href={href} className="stretched-link text-decoration-none text-dark">
