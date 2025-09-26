@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Router, Route, Routes } from 'react-router-dom';
 import { useEffect } from 'react';
 import AuthenticatedLayout from './components/AuthenticatedLayout.jsx'; // Importa el nuevo layout
 import PatientManagement from './components/Patients.jsx';
@@ -27,7 +27,6 @@ const App = () => {
   return (
     <div>
       <AuthProvider>
-        <Router>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
@@ -45,7 +44,6 @@ const App = () => {
               </Route>
             </Route>
           </Routes>
-        </Router>
       </AuthProvider>
     </div>
   );

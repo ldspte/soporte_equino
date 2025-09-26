@@ -47,6 +47,10 @@ const LoginModal = ({ isOpen, onClose }) => {
             setLoading(false);
         }
     }
+    const handleOpenForgotModal = () => {
+        onClose();
+        setShowForgotModal(true);
+    }
 
     return (
         <>
