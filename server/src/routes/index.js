@@ -470,7 +470,7 @@ route.post('/forgot-password', async (req, res) => {
         // 2. Generar el token y la fecha de expiración
         const resetToken = crypto.randomBytes(32).toString('hex');
         const tokenExpiry = new Date(Date.now() + 3600000); // 1 hora de validez
-
+        
         // 3. Almacenar el token y su expiración en la base de datos
         await db.query('UPDATE veterinario SET resetToken = ?, resetTokenExpiry = ? WHERE idVeterinario = ?', [resetToken, tokenExpiry, idVeterinario]);
 
