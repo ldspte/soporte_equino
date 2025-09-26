@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { useEffect } from 'react';
 import AuthenticatedLayout from './components/AuthenticatedLayout.jsx'; // Importa el nuevo layout
 import PatientManagement from './components/Patients.jsx';
 import Owners from './components/Owners.jsx';
