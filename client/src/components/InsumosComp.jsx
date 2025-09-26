@@ -45,7 +45,7 @@ function Insumos() {
         try {
             const response = await fetch('https://soporte-equino.onrender.com/api/insumos', {
                 method: 'GET',
-                headers: { 'Authorization': `Bearer ${token}` , 'Content-Type': 'application/json'} // Enviamos el token
+                headers: { 'Authorization': token , 'Content-Type': 'application/json'} // Enviamos el token
             });
             
             if (!response.ok) {
@@ -102,7 +102,7 @@ function Insumos() {
             const response = await fetch('https://soporte-equino.onrender.com/api/insumos', {
                 method: 'POST',
                 // IMPORTANTE: NO establecemos Content-Type, el navegador lo hace por FormData.
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'}, 
+                headers: { 'Authorization': token, 'Content-Type': 'application/json'}, 
                 body: formData
             });
             
@@ -154,7 +154,7 @@ function Insumos() {
         try {
             const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${currentInsumo.idInsumos}`, {
                 method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' },
                 body: formData
             });
 
@@ -182,7 +182,7 @@ function Insumos() {
             const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${idInsumos}`, {
                 method: 'DELETE',
                 // Para DELETE con JSON, Content-Type es opcional pero se puede mantener
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
             
             if (!response.ok) {

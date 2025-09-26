@@ -37,7 +37,7 @@ function Owners() {
     const fetchOwners = async (token) => {
         setLoading(true);
         setError(null);
-        
+        console.log('Usando token para fetchOwners:', `Bearer ${token}`);
         if (!token) {
             setError('No autorizado. Por favor, inicia sesión.');
             setLoading(false);
@@ -48,7 +48,7 @@ function Owners() {
             const response = await fetch('https://soporte-equino.onrender.com/api/propietarios',{
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}`, // Usamos el token con 'Bearer ' incluido
+                    'Authorization': token, // Usamos el token con 'Bearer ' incluido
                     'Content-Type': 'application/json'
                 }
             });
@@ -94,7 +94,7 @@ function Owners() {
             const response = await fetch('https://soporte-equino.onrender.com/api/propietarios', {
                 method: 'POST',
                 headers: { 
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': token,
                     'Content-Type': 'application/json' 
                 },
                 body: JSON.stringify(newOwner)
@@ -133,7 +133,7 @@ function Owners() {
             const response = await fetch(`https://soporte-equino.onrender.com/api/propietarios/${currentOwner.idPropietario}`, {
                 method: 'PUT',
                 headers: { 
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': token,
                     'Content-Type': 'application/json' 
                 },
                 body: JSON.stringify(editOwner)
@@ -163,7 +163,7 @@ function Owners() {
             const response = await fetch(`https://soporte-equino.onrender.com/api/propietarios/${idPropietario}`, {
                 method: 'DELETE', 
                 headers: { 
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': token,
                     'Content-Type': 'application/json'
                 }
             });

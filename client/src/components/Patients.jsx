@@ -49,7 +49,7 @@ function PatientManagement() {
         try {
             const response = await fetch('https://soporte-equino.onrender.com/api/pacientes',{
                 method: 'GET',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
             
             if (!response.ok) {
@@ -83,7 +83,7 @@ function PatientManagement() {
         try {
             const response = await fetch('https://soporte-equino.onrender.com/api/propietarios',{
                 method: 'GET',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
             
             if (!response.ok) {
@@ -126,7 +126,7 @@ function PatientManagement() {
         try {
             const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                headers: { 'Content-Type': 'application/json', 'Authorization': token },
                 body: JSON.stringify(newPatient)
             });
             
@@ -162,7 +162,7 @@ function PatientManagement() {
         try {
             const response = await fetch(`https://soporte-equino.onrender.com/api/pacientes/${currentPatient.idPaciente}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                headers: { 'Content-Type': 'application/json', 'Authorization': token },
                 body: JSON.stringify(editPatient)
             });
             
@@ -189,7 +189,7 @@ function PatientManagement() {
         try {
             const response = await fetch(`https://soporte-equino.onrender.com/api/pacientes/${idPaciente}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
             
             if (!response.ok) {

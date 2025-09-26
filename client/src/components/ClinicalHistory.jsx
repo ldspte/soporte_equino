@@ -145,7 +145,7 @@ function ClinicalHistory() {
         const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': token,
                 'Content-Type': 'application/json'
             }
         });
@@ -176,7 +176,7 @@ function ClinicalHistory() {
             const response = await fetch('https://soporte-equino.onrender.com/api/propietarios',{
               method: 'GET',
               headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': token,
                 'Content-Type': 'application/json'
               }
             }
@@ -208,7 +208,7 @@ function ClinicalHistory() {
             {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': token,
                     'Content-Type': 'application/json'
                 }
             });
@@ -307,7 +307,7 @@ function ClinicalHistory() {
         {
           method: 'POST',
           headers:{
-            'Authorization': `Bearer ${token}`,
+            'Authorization': token,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload)
@@ -328,7 +328,7 @@ function ClinicalHistory() {
       setTimeout(() => setShowSuccessModal(false), 3000);
 
       setClinical(prevClinicals => [normalizeClinicalData(data.clinical || data), ...prevClinicals]);
-      setNewClinical(initialCLinicalState);
+      setNewClinical(initialClinicalState);
       setValidated(false);
 
     } catch (error) {
@@ -348,7 +348,7 @@ function ClinicalHistory() {
       const response = await fetch(`https://soporte-equino.onrender.com/api/historia_clinica/${idHistoria_clinica}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': token,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(clinicalData)
@@ -374,7 +374,7 @@ function ClinicalHistory() {
         const response = await fetch(`https://soporte-equino.onrender.com/api/historia_clinica/${idHistoria_clinica}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': token,
             'Content-Type': 'application/json'
           }
         });
