@@ -101,7 +101,7 @@ route.post('/api/send-password', (req, res) => {
 
 // INSUMOS
 
-route.get('/api/insumos', async (req, res) => {
+route.get('/api/insumos', authenticateToken, async (req, res) => {
     try{
         const values = await getItems();
         res.status(200).json(values);
@@ -111,7 +111,7 @@ route.get('/api/insumos', async (req, res) => {
     }
 });
 
-route.get('/api/insumos/:idInsumos', async (req, res) => {
+route.get('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
     const { idInsumos } = req.params;
     try{
         const values = await getItemById(idInsumos);
@@ -155,7 +155,7 @@ route.get('/api/insumos/:idInsumos', async (req, res) => {
 // });
 
 
-route.delete('/api/insumos/:idInsumos', async (req, res) => {
+route.delete('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
     const { idInsumos } = req.params;
     try{
         const values = await deleteItem(idInsumos);
