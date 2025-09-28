@@ -33,18 +33,33 @@ function ClinicalHistory() {
   const [currentClinical, setCurrentClinical] = useState(null);
   const [clinicalToDelete, setClinicalToDelete] = useState(null);
 
-  useEffect(() => {
-    const fetchData = () => {
-      const userStorage = localStorage.getItem('veterinario');
-      if (userStorage) {
-        setUserData(JSON.parse(userStorage));
-      }
-    };
-    fetchData();
-    fetchClinical();
-    fetchOwners();
-    fetchPatients();
+  const getAuthToken = useCallback(() => {
+    const token = localStorage.getItem('token');
+    console.log(token ? `Bearer ${token}` : "XXXX")
+    return token ? `Bearer ${token}` : null;
   }, []);
+
+  useEffect(() => {
+    const userStorage = localStorage.getItem('veterinario');
+    
+    if (userStorage) {
+      const data = JSON.parse(userStorage);
+
+      if (data.user){
+        setUserData(data.user[0]);
+      }
+    }
+
+    console.log('userData cargado: ', userData);
+    const token = getAuthToken();
+    if (token) {
+      fetchClinical(token);
+      fetchOwners(token);
+      fetchPatients(token);
+    } else {
+      setError('No hay token de autenticación. Por favor, inicia sesión.');
+    }
+  }, [getAuthToken]);
 
   const initialClinicalState = {
     Veterinario: '',
@@ -125,23 +140,13 @@ function ClinicalHistory() {
   const [successMessage, setSuccessMessage] = useState('');
   const [successSubMessage, setSuccessSubMessage] = useState('');
 
-  const getAuthToken = useCallback(() => {
-    const token = localStorage.getItem('token');
-    console.log(token ? `Bearer ${token}` : "XXXX")
-    return token ? `Bearer ${token}` : null;
-  }, []);
+  
 
-
-  const fetchPatients = useCallback(async () => {
+  const fetchPatients = useCallback(async (token) => {
     setLoading(true);
     setError(null);
-
+    if (!token) return;
     try {
-        const token = getAuthToken();
-        if (!token) {
-            setError('No hay token de autenticación');
-            return;
-        }
         const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
             method: 'GET',
             headers: {
@@ -162,11 +167,10 @@ function ClinicalHistory() {
     } finally {
         setLoading(false);
     }
-  }, [getAuthToken]);
+  }, []);
 
-  const fetchOwners = async () => {
+  const fetchOwners = async (token) => {
         setLoading(true);
-        const token = getAuthToken();
         if (!token) {
             setError('No hay token de autenticación');
             setLoading(false);
@@ -193,17 +197,17 @@ function ClinicalHistory() {
     };
 
     //Obtener historias clinicas
-    const fetchClinical = useCallback(async () => {
+    const fetchClinical = useCallback(async (token) => {
         setLoading(true);
         setError(null);
-
-        try {
-            const token = getAuthToken();
-            if (!token) {
+        if (!token) {
               setError('No hay token de autenticación');
               setLoading(false);
               return;
-            }
+        }
+        try {
+            
+            
             const response = await fetch('https://soporte-equino.onrender.com/api/historia_clinica',
             {
                 method: 'GET',
@@ -242,7 +246,7 @@ function ClinicalHistory() {
             setLoading(false);
         }
 
-    }, [getAuthToken, normalizeClinicalData]);
+    }, [normalizeClinicalData]);
 
   // crear Historia clinica
 
@@ -251,8 +255,8 @@ function ClinicalHistory() {
     const form = e.currentTarget;
     const token = getAuthToken();
 
-    if(!token) {
-        setError('No hay token de autenticacion');
+    if(!token || !userData?.idVeterinario ) {
+        setError('No hay token de autenticacion, No se identifica al Veterinario Logueado');
         return;
     }
 
@@ -272,7 +276,7 @@ function ClinicalHistory() {
       //Preparar Payload
       const payload = {
         ...newClinical,
-        Veterinario: newClinical.Veterinario,
+        Veterinario: userData.idVeterinario,
         Paciente: newClinical.Paciente,
         Anamnesis: newClinical.Anamnesis,
         Enfermedades: newClinical.Enfermedades,
@@ -461,7 +465,9 @@ function ClinicalHistory() {
     try {
       setLoading(true);
       const {idHistoria_clinica, ...clinicalData} = editClinical;
-      await updateClinical(idHistoria_clinica, driverData);
+      const payload = { ...clinicalData, Veterinario: userData.idVeterinario };
+      console.log('Payload para actualizar: ', payload);
+      await updateClinical(idHistoria_clinica, payload);
       await fetchClinical();
       setShowEditClinicalModal(false);
       setEditValidated(false);
@@ -681,14 +687,6 @@ function ClinicalHistory() {
               <Col md={8}>
                 <Row>
                   <Col sm={6}>
-                    <p className='mb-1'><strong>Veterinario</strong></p>
-                    <p>
-                      <Badge bg="info" className='fs-6'>
-                        {currentClinical.Veterinario}
-                      </Badge>
-                    </p>
-                  </Col>
-                  <Col sm={6}>
                     <p className='mb-1'><strong>Propietario</strong></p>
                     <p className='d-flex align-items-center'>
                       <FaUser Circle className="me-2 text-warning" />
@@ -852,21 +850,6 @@ function ClinicalHistory() {
           <Form noValidate validated={validated} onSubmit={handleSubmitNewHistory}>
             <h5 className='border-bottom pb-2 mb-3'>Información Básica</h5>
             <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3" controlId="formVeterinario">
-                  <Form.Label>Veterinario *</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="Veterinario"
-                    value={newClinical.Veterinario}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    El veterinario es obligatorio
-                  </Form.Control.Feedback>
-                </Form.Group>
-              </Col>
               <Col md={6}>
                 <Form.Group className="mb-3" controlId="formPaciente">
                   <Form.Label>Paciente *</Form.Label>
@@ -1316,21 +1299,6 @@ function ClinicalHistory() {
             <Form noValidate validated={editValidated} onSubmit={handleSubmitEditClinical}>
               <h5 className='border-bottom pb-2 mb-3'>Información Básica</h5>
               <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3" controlId="formVeterinario">
-                    <Form.Label>Veterinario *</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="Veterinario"
-                      value={editClinical.Veterinario}
-                      onChange={handleEditInputChange}
-                      required
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      El veterinario es obligatorio
-                    </Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3" controlId="formPaciente">
                     <Form.Label>Paciente *</Form.Label>
