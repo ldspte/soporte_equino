@@ -95,23 +95,23 @@ const getVeterinaryById = async(idVeterinario) => {
     return result;
 };
 
-const createVeterinary = async(Cedula, Nombre, Apellido, Correo) => {
+const createVeterinary = async(Cedula, Nombre, Apellido, Correo, Foto) => {
     const password = generatePassword();
     const Contraseña = await bcrypt.hash(password, 10);
     const result = await db.query(`
-        INSERT INTO veterinario (Cedula, Nombre, Apellido, Correo, Contraseña) VALUES (?, ?, ?, ?, ?)
+        INSERT INTO veterinario (Cedula, Nombre, Apellido, Correo, Contraseña, Foto) VALUES (?, ?, ?, ?, ?, ?)
     `,
-    [Cedula, Nombre, Apellido, Correo, Contraseña]
+    [Cedula, Nombre, Apellido, Correo, Contraseña, Foto]
     );
     await sendPasswordEmail(Correo, password); // Enviar correo con la contraseña
     return result;
 }
 
-const updateVeterinary = async(idVeterinario, Cedula, Nombre, Apellido, Correo) => {
+const updateVeterinary = async(idVeterinario, Cedula, Nombre, Apellido, Correo, Foto) => {
     const result = await db.query(`
-        UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ? WHERE idVeterinario = ?
+        UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Foto = ? WHERE idVeterinario = ?
     `,
-    [Cedula, Nombre, Apellido, Correo, idVeterinario]
+    [Cedula, Nombre, Apellido, Correo, Foto, idVeterinario]
     );
     return result;
 }

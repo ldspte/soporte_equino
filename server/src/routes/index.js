@@ -5,12 +5,23 @@ const {db} = require('../database'); // Asegúrate de tener tu pool de conexione
 const SECRET_KEY = process.env.SECRET_KEY || 'lossimpsom';
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-// const multer = require('multer');
+const multer = require('multer');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-// const upload = multer({ dest: 'uploads/' }); // Configura multer para manejar archivos subidos
+// --- Configuración de Multer ---
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // Define la carpeta donde se guardarán los archivos
+        cb(null, 'uploads/'); 
+    },
+    filename: (req, file, cb) => {
+        // Crea un nombre de archivo único para evitar colisiones
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+const upload = multer({ storage: storage });
 const {getItems, getItemById, createItem, updateItem, deleteItem} = require('../controllers/itemsController');
 const {getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary} = require('../controllers/veterinaryController')
 const {getOwners, getOwnerById, createOwner, updateOwner, deleteOwner} = require('../controllers/ownerController');
@@ -125,34 +136,34 @@ route.get('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
     }
 });
 
-// route.post('/api/insumos', upload.single('Foto'), async (req, res) => {
-//     const { Nombre, Descripcion, Precio } = req.body;
-//     const Foto = req.file ? req.file.filename : null; // Guarda solo el nombre del archivo
-//     // fs.renameSync(req.file.path, Foto);
-//     try {
-//         const values = await createItem(Nombre, Descripcion, Foto, Precio);
-//         res.status(201).json(values);
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'Error al crear el insumo' });
-//     }
-// });
+route.post('/api/insumos', authenticateToken, upload.single('Foto'), async (req, res) => {
+    const { Nombre, Descripcion, Precio } = req.body;
+    const Foto = req.file ? req.file.filename : null; // Guarda solo el nombre del archivo
+    // fs.renameSync(req.file.path, Foto);
+    try {
+        const values = await createItem(Nombre, Descripcion, Foto, Precio);
+        res.status(201).json(values);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al crear el insumo' });
+    }
+});
 
-// route.put('/api/insumos/:idInsumos', upload.single('Foto'), async (req, res) => {
-//     const { idInsumos } = req.params;
-//     const { Nombre, Descripcion, Precio } = req.body;
-//     const Foto = req.file ? req.originalname : null; // Guarda solo el nombre del archivo
-//     try {
-//         const values = await updateItem(idInsumos, Nombre, Descripcion, Foto, Precio);
-//         if (values.affectedRows === 0) {
-//             return res.status(404).json({ error: 'Insumo no encontrado' });
-//         }
-//         res.status(200).json(values);
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'Error al actualizar el insumo' });
-//     }
-// });
+route.put('/api/insumos/:idInsumos', upload.single('Foto'), async (req, res) => {
+    const { idInsumos } = req.params;
+    const { Nombre, Descripcion, Precio } = req.body;
+    const Foto = req.file ? req.originalname : null; // Guarda solo el nombre del archivo
+    try {
+        const values = await updateItem(idInsumos, Nombre, Descripcion, Foto, Precio);
+        if (values.affectedRows === 0) {
+            return res.status(404).json({ error: 'Insumo no encontrado' });
+        }
+        res.status(200).json(values);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al actualizar el insumo' });
+    }
+});
 
 
 route.delete('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
@@ -198,9 +209,9 @@ route.get('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res
 
 
 route.post('/api/veterinarios', authenticateToken,  async (req, res) => {
-    const { Cedula, Nombre, Apellido, Correo } = req.body;
+    const { Cedula, Nombre, Apellido, Correo, Foto } = req.body;
     try{
-        const values = await createVeterinary(Cedula, Nombre, Apellido, Correo);
+        const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Foto);
         res.status(201).json(values);
     }catch (error) {
         console.error(error);
@@ -210,9 +221,9 @@ route.post('/api/veterinarios', authenticateToken,  async (req, res) => {
 
 route.put('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
     const { idVeterinario } = req.params;
-    const {Cedula, Nombre, Apellido, Correo} = req.body;
+    const {Cedula, Nombre, Apellido, Correo, Foto} = req.body;
     try{
-        const values = await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo);
+        const values = await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Foto);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Veterinario no encontrado' });
         }
@@ -330,9 +341,9 @@ route.get('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async 
 });
 
 route.post('/api/historia_clinica', authenticateToken, async (req, res) => {
-    const {Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliege_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas} = req.body;
+    const {Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto} = req.body;
     try{
-        const values = await createClinicalHistory(Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliege_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas);
+        const values = await createClinicalHistory(Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto);
         res.status(201).json(values);
     }catch (error) {
         console.error(error);
@@ -342,9 +353,9 @@ route.post('/api/historia_clinica', authenticateToken, async (req, res) => {
 
 route.put('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async (req, res) => {
     const { idHistoria_clinica } = req.params;
-    const {Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliege_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas} = req.body;
+    const {Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto} = req.body;
     try{
-        const values = await updateClinicalHistory(idHistoria_clinica, Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliege_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas);
+        const values = await updateClinicalHistory(idHistoria_clinica, Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Historia Clinica no encontrada' });
         }
