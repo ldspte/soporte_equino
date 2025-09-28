@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Logo from '../assets/img/logo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import { Navbar, Nav, Button, Modal, Badge } from 'react-bootstrap';
-import { FaSignOutAlt, FaBookMedical, FaUserMd, FaWarehouse, FaUserTie, FaHorse } from 'react-icons/fa';
+import { FaSignOutAlt, FaBookMedical, FaUserMd, FaWarehouse, FaUserTie, FaHorse, FaUserCircle } from 'react-icons/fa';
 
 // Definición de Roles
 // Los roles deben coincidir con lo que devuelve tu backend (e.g., 'Administrador', 'Veterinario')
@@ -36,8 +36,8 @@ export default function NavBarHome() {
             try {
                 const userData = JSON.parse(userStorage);
                 // Asumiendo que la estructura guardada es { token: '...', user: { Rol: '...' } }
-                setUserRole(userData.user?.Rol); 
-                setUserName(userData.user?.Nombre);
+                setUserRole(userData.user[0]?.Rol); 
+                setUserName(userData.user[0]?.Nombre);
             } catch (e) {
                 console.error("Error al parsear datos del veterinario:", e);
                 // Si hay un error, forzar el cierre de sesión
@@ -71,7 +71,7 @@ export default function NavBarHome() {
                             {NAV_PERMISSIONS.map((item) => (
                                 item.roles.includes(userRole) && (
                                     <Nav.Link key={item.path} as={Link} to={item.path}>
-                                        <item.icon className="me-1 text-warning"/> {item.name}
+                                        <item.icon className="me-1 text-primary"/> {item.name}
                                     </Nav.Link>
                                 )
                             ))}

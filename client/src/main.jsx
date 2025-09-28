@@ -7,7 +7,7 @@ import './Styles/main.css';
 // Aquí está la clave: envuelve tu componente App
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename='/'>
       <App />
     </BrowserRouter>
   </React.StrictMode>
