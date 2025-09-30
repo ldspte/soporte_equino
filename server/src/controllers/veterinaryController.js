@@ -107,11 +107,11 @@ const createVeterinary = async(Cedula, Nombre, Apellido, Correo, Foto) => {
     return result;
 }
 
-const updateVeterinary = async(idVeterinario, Cedula, Nombre, Apellido, Correo, Foto) => {
+const updateVeterinary = async(idVeterinario, Cedula, Nombre, Apellido, Correo, Foto, Estado) => {
     const result = await db.query(`
-        UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Foto = ? WHERE idVeterinario = ?
+        UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Foto = ?, Estado = ? WHERE idVeterinario = ?
     `,
-    [Cedula, Nombre, Apellido, Correo, Foto, idVeterinario]
+    [Cedula, Nombre, Apellido, Correo, Foto, Estado, idVeterinario]
     );
     return result;
 }
