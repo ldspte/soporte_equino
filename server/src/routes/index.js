@@ -9,19 +9,19 @@ const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const multer = require('multer');
+// const multer = require('multer');
 // --- Configuración de Multer ---
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        // Define la carpeta donde se guardarán los archivos
-        cb(null, 'uploads/'); 
-    },
-    filename: (req, file, cb) => {
-        // Crea un nombre de archivo único para evitar colisiones
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
-const upload = multer({ storage: storage });
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         // Define la carpeta donde se guardarán los archivos
+//         cb(null, 'uploads/'); 
+//     },
+//     filename: (req, file, cb) => {
+//         // Crea un nombre de archivo único para evitar colisiones
+//         cb(null, Date.now() + '-' + file.originalname);
+//     }
+// });
+// const upload = multer({ storage: storage });
 const {getItems, getItemById, createItem, updateItem, deleteItem} = require('../controllers/itemsController');
 const {getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary} = require('../controllers/veterinaryController')
 const {getOwners, getOwnerById, createOwner, updateOwner, deleteOwner} = require('../controllers/ownerController');
@@ -136,34 +136,34 @@ route.get('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
     }
 });
 
-route.post('/api/insumos', authenticateToken, upload.single('Foto'), async (req, res) => {
-    const { Nombre, Descripcion, Precio } = req.body;
-    const Foto = req.file ? req.file.filename : null; // Guarda solo el nombre del archivo
-    // fs.renameSync(req.file.path, Foto);
-    try {
-        const values = await createItem(Nombre, Descripcion, Foto, Precio);
-        res.status(201).json(values);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al crear el insumo' });
-    }
-});
+// route.post('/api/insumos', authenticateToken, upload.single('Foto'), async (req, res) => {
+//     const { Nombre, Descripcion, Precio } = req.body;
+//     const Foto = req.file ? req.file.filename : null; // Guarda solo el nombre del archivo
+//     // fs.renameSync(req.file.path, Foto);
+//     try {
+//         const values = await createItem(Nombre, Descripcion, Foto, Precio);
+//         res.status(201).json(values);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Error al crear el insumo' });
+//     }
+// });
 
-route.put('/api/insumos/:idInsumos', upload.single('Foto'), async (req, res) => {
-    const { idInsumos } = req.params;
-    const { Nombre, Descripcion, Precio } = req.body;
-    const Foto = req.file ? req.originalname : null; // Guarda solo el nombre del archivo
-    try {
-        const values = await updateItem(idInsumos, Nombre, Descripcion, Foto, Precio);
-        if (values.affectedRows === 0) {
-            return res.status(404).json({ error: 'Insumo no encontrado' });
-        }
-        res.status(200).json(values);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al actualizar el insumo' });
-    }
-});
+// route.put('/api/insumos/:idInsumos', upload.single('Foto'), async (req, res) => {
+//     const { idInsumos } = req.params;
+//     const { Nombre, Descripcion, Precio } = req.body;
+//     const Foto = req.file ? req.originalname : null; // Guarda solo el nombre del archivo
+//     try {
+//         const values = await updateItem(idInsumos, Nombre, Descripcion, Foto, Precio);
+//         if (values.affectedRows === 0) {
+//             return res.status(404).json({ error: 'Insumo no encontrado' });
+//         }
+//         res.status(200).json(values);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Error al actualizar el insumo' });
+//     }
+// });
 
 
 route.delete('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
