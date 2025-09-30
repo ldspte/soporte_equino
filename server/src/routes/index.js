@@ -5,11 +5,11 @@ const {db} = require('../database'); // Asegúrate de tener tu pool de conexione
 const SECRET_KEY = process.env.SECRET_KEY || 'lossimpsom';
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const multer = require('multer');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const multer = require('multer');
 // --- Configuración de Multer ---
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
