@@ -8,10 +8,146 @@ import {
 // URL base de tu backend en Render
 const API_URL = 'https://soporte-equino.onrender.com/api';
 
+const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => {
+    const [formData, setFormData] = useState(profileData || {});
+    const [file, setFile] = useState(null);
+    const [validated, setValidated] = useState(false);
+
+    // Sincroniza los datos iniciales cuando se abre el modal
+    useEffect(() => {
+        if (isOpen && profileData) {
+            setFormData(profileData);
+            setFile(null); // Limpiar archivo al abrir
+            setValidated(false);
+        }
+    }, [isOpen, profileData]);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleFileChange = (e) => {
+        setFile(e.target.files[0]);
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        if (form.checkValidity() === false) {
+            e.stopPropagation();
+            setValidated(true);
+            return;
+        }
+        onSave(formData, file);
+    };
+
+    return (
+        <Modal show={isOpen} onHide={onClose} centered size="lg">
+            <Modal.Header closeButton className='border-bottom border-warning'>
+                <Modal.Title><FaEdit className="me-2 text-warning"/> Editar Perfil</Modal.Title>
+            </Modal.Header>
+            <Form noValidate validated={validated} onSubmit={handleSubmit}>
+                <Modal.Body>
+                    <Alert variant="info">
+                        **Nota:** Si deseas cambiar tu contraseña, utiliza el proceso de "Olvidé mi contraseña" en el login.
+                    </Alert>
+                    <h5 className="border-bottom pb-2 mb-3">Información Personal</h5>
+                    <Row>
+                        <Col md={6}>
+                            <Form.Group className="mb-3" controlId="editNombre">
+                                <Form.Label>Nombre *</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="Nombre"
+                                    value={formData.Nombre || ''}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                                <Form.Control.Feedback type="invalid">El nombre es obligatorio.</Form.Control.Feedback>
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                            <Form.Group className="mb-3" controlId="editApellido">
+                                <Form.Label>Apellido</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="Apellido"
+                                    value={formData.Apellido || ''}
+                                    onChange={handleInputChange}
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                            <Form.Group className="mb-3" controlId="editCedula">
+                                <Form.Label>Cédula *</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="Cedula"
+                                    value={formData.Cedula || ''}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                                <Form.Control.Feedback type="invalid">La cédula es obligatoria.</Form.Control.Feedback>
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                            <Form.Group className="mb-3" controlId="editCorreo">
+                                <Form.Label>Correo Electrónico *</Form.Label>
+                                <Form.Control
+                                    type="email"
+                                    name="Correo"
+                                    value={formData.Correo || ''}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                                <Form.Control.Feedback type="invalid">Ingrese un correo válido.</Form.Control.Feedback>
+                            </Form.Group>
+                        </Col>
+                        <Col md={12}>
+                            <Form.Group className="mb-3" controlId="editFoto">
+                                <Form.Label>Foto de Perfil (Opcional)</Form.Label>
+                                <Form.Control
+                                    type="file"
+                                    name="Foto"
+                                    onChange={handleFileChange}
+                                />
+                                {profileData?.Foto && (
+                                    <p className="mt-1 text-muted small">
+                                        Archivo actual: **{profileData.Foto}**
+                                    </p>
+                                )}
+                            </Form.Group>
+                        </Col>
+                    </Row>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={onClose} disabled={loading}>
+                        <FaTimes className="me-2"/> Cancelar
+                    </Button>
+                    <Button variant="warning" type="submit" disabled={loading}>
+                        {loading ? (
+                            <><Spinner animation="border" size="sm" className="me-2"/> Guardando...</>
+                        ) : (
+                            <><FaSave className="me-2"/> Guardar Cambios</>
+                        )}
+                    </Button>
+                </Modal.Footer>
+            </Form>
+        </Modal>
+    );
+};
+
+
 const VeterinarioDashboard = () => {
     // Estado del usuario logueado
     const [veterinarioData, setVeterinarioData] = useState(null);
     const [veterinarioID, setVeterinarioID] = useState(null);
+
+    // NUEVOS ESTADOS DE EDICIÓN
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editProfile, setEditProfile] = useState(null);
+
 
     // Estados de datos
     const [historyCount, setHistoryCount] = useState(0);
@@ -148,6 +284,68 @@ const VeterinarioDashboard = () => {
             setError(`Error al actualizar el estado: ${err.message}`);
         }
     };
+    const handleShowEditModal = () => {
+        // Asegurar que los datos del perfil actual se carguen al estado de edición antes de abrir
+        setEditProfile(veterinarioData); 
+        setShowEditModal(true);
+    };
+
+    const handleSubmitEditProfile = async (formData, file) => {
+        const token = getAuthToken();
+        if (!veterinarioData || !token) return;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            // 1. Construir FormData (Necesario para manejar archivos/fotos)
+            const dataToSend = new FormData();
+            Object.entries(formData).forEach(([key, value]) => {
+                dataToSend.append(key, value);
+            });
+
+            // 2. Adjuntar el archivo de foto si existe
+            if (file) {
+                // 'Foto' debe coincidir con el campo de Multer en el backend
+                dataToSend.append('Foto', file); 
+            } else if (veterinarioData.Foto) {
+                // Si no se sube una nueva foto, envía el nombre de la foto actual
+                // para que el backend sepa que no debe borrar el archivo existente.
+                dataToSend.append('Foto', veterinarioData.Foto); 
+            } else {
+                 dataToSend.append('Foto', '');
+            }
+
+            // 3. Enviar PUT request a la API
+            const response = await fetch(`${API_URL}/veterinarios/${veterinarioData.idVeterinario}`, {
+                method: 'PUT',
+                // IMPORTANTE: SOLO Authorization, NO Content-Type para FormData
+                headers: { 'Authorization': token }, 
+                body: dataToSend
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Error al actualizar perfil');
+            }
+
+            // 4. Recargar datos del usuario para actualizar el Dashboard
+            const updatedData = await response.json(); 
+            
+            // Refrescar el localStorage con los nuevos datos (si tu backend devuelve el objeto completo)
+            const userStorage = JSON.parse(localStorage.getItem('veterinario'));
+            localStorage.setItem('veterinario', JSON.stringify({ ...userStorage, user: [updatedData] }));
+
+            setVeterinarioData(updatedData);
+            setEditProfile(updatedData); // Actualizar los datos del modal de edición
+            setShowEditModal(false);
+
+        } catch (err) {
+            setError(`Error al actualizar el perfil: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
     
     if (!veterinarioData && !loading) {
         return <Alert variant="danger" className="text-center mt-5">No se pudo cargar la información del usuario logueado. Por favor, inicie sesión de nuevo.</Alert>;
@@ -218,6 +416,32 @@ const VeterinarioDashboard = () => {
                         </Card.Body>
                     </Card>
                 </Col>
+                <Col lg={4} className="mb-4">
+                    <Card className="shadow-sm h-100 border-warning">
+                        <Card.Body className="text-center">
+                            {/* ... (Visualización de foto, estado y datos) */}
+                            <Button 
+                                variant="outline-warning"
+                                onClick={handleShowEditModal} // Botón para abrir el modal
+                                className="mt-3 w-100"
+                                disabled={loading}
+                            >
+                                <FaEdit className="me-2"/> Editar Información
+                            </Button>
+                            
+                            <hr />
+
+                            {/* ... (Información General) */}
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <EditProfileModal
+                    isOpen={showEditModal}
+                    onClose={() => setShowEditModal(false)}
+                    profileData={editProfile}
+                    onSave={handleSubmitEditProfile}
+                    loading={loading}
+                />
 
                 {/* LADO IZQUIERDO: Resumen y Datos Filtrados */}
                 <Col lg={8}>
