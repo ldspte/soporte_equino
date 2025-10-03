@@ -80,7 +80,7 @@ export default function NavBarHome() {
                         <Nav>
                             {userName && (
                                 <Nav.Item className="d-flex align-items-center me-3">
-                                    <Badge bg="warning" className="text-dark">
+                                    <Badge bg="white" className="text-dark">
                                         <FaUserCircle className="me-1"/> {userName}
                                     </Badge>
                                 </Nav.Item>
