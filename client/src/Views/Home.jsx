@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Card, Button, ListGroup, Badge, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, ListGroup, Badge, Alert, Spinner, Modal, Form } from 'react-bootstrap';
 import {
     FaUserMd, FaEnvelope, FaIdCard, FaClock, FaBookMedical, FaHorse, FaUserTie,
-    FaCheckCircle, FaTimesCircle, FaToggleOn, FaToggleOff, FaUserCircle
+    FaCheckCircle, FaTimesCircle, FaToggleOn, FaToggleOff, FaUserCircle, FaEdit, FaTimes, FaSave
 } from 'react-icons/fa';
 
 // URL base de tu backend en Render
@@ -44,8 +44,8 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
 
     return (
         <Modal show={isOpen} onHide={onClose} centered size="lg">
-            <Modal.Header closeButton className='border-bottom border-warning'>
-                <Modal.Title><FaEdit className="me-2 text-warning"/> Editar Perfil</Modal.Title>
+            <Modal.Header closeButton className='border-bottom border-primary'>
+                <Modal.Title><FaEdit className="me-2 text-primary"/> Editar Perfil</Modal.Title>
             </Modal.Header>
             <Form noValidate validated={validated} onSubmit={handleSubmit}>
                 <Modal.Body>
@@ -125,7 +125,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
                     <Button variant="secondary" onClick={onClose} disabled={loading}>
                         <FaTimes className="me-2"/> Cancelar
                     </Button>
-                    <Button variant="warning" type="submit" disabled={loading}>
+                    <Button variant="primary" type="submit" disabled={loading}>
                         {loading ? (
                             <><Spinner animation="border" size="sm" className="me-2"/> Guardando...</>
                         ) : (
@@ -362,7 +362,7 @@ const VeterinarioDashboard = () => {
 
     return (
         <Container className="my-5">
-            <h1 className="mb-4 text-warning">
+            <h1 className="mb-4 text-primary">
                 <FaUserMd className="me-2"/> Bienvenido Dr(a). {NombreCompleto || 'Invitado'}
             </h1>
             
@@ -371,7 +371,7 @@ const VeterinarioDashboard = () => {
             <Row>
                 {/* LADO DERECHO: Perfil del Veterinario */}
                 <Col lg={4} className="mb-4">
-                    <Card className="shadow-sm h-100 border-warning">
+                    <Card className="shadow-sm h-100 border-primary">
                         <Card.Body className="text-center">
                             {/* Foto y Nombre */}
                             <div className="mb-3">
@@ -379,10 +379,10 @@ const VeterinarioDashboard = () => {
                                     <img 
                                         src={`https://soporte-equino.onrender.com/uploads/${Foto}`} 
                                         alt="Foto Perfil" 
-                                        style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '50%', border: '4px solid #ffc107' }} 
+                                        style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '50%', border: '4px solid #0000' }} 
                                     />
                                 ) : (
-                                    <FaUserCircle size={120} className='text-warning' />
+                                    <FaUserCircle size={120} className='text-primary' />
                                 )}
                             </div>
                             <Card.Title>{NombreCompleto}</Card.Title>
@@ -410,18 +410,18 @@ const VeterinarioDashboard = () => {
 
                             {/* Información General */}
                             <ListGroup variant="flush" className="text-start">
-                                <ListGroup.Item><FaIdCard className="me-2 text-warning"/> Cédula: {Cedula}</ListGroup.Item>
-                                <ListGroup.Item><FaEnvelope className="me-2 text-warning"/> Email: {Correo}</ListGroup.Item>
+                                <ListGroup.Item><FaIdCard className="me-2 text-primary"/> Cédula: {Cedula}</ListGroup.Item>
+                                <ListGroup.Item><FaEnvelope className="me-2 text-primary"/> Email: {Correo}</ListGroup.Item>
                             </ListGroup>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col lg={4} className="mb-4">
-                    <Card className="shadow-sm h-100 border-warning">
+                    <Card className="shadow-sm h-100 border-primary">
                         <Card.Body className="text-center">
                             {/* ... (Visualización de foto, estado y datos) */}
                             <Button 
-                                variant="outline-warning"
+                                variant="outline-primary"
                                 onClick={handleShowEditModal} // Botón para abrir el modal
                                 className="mt-3 w-100"
                                 disabled={loading}
@@ -450,7 +450,7 @@ const VeterinarioDashboard = () => {
                         <Col md={4} className="mb-3">
                             <Card className="shadow-sm text-center">
                                 <Card.Body>
-                                    <FaBookMedical size={30} className="text-warning mb-2" />
+                                    <FaBookMedical size={30} className="text-primary mb-2" />
                                     <Card.Title>{loading ? <Spinner animation="border" size="sm" /> : historyCount}</Card.Title>
                                     <Card.Text>Historias Clínicas</Card.Text>
                                 </Card.Body>
@@ -459,7 +459,7 @@ const VeterinarioDashboard = () => {
                         <Col md={4} className="mb-3">
                             <Card className="shadow-sm text-center">
                                 <Card.Body>
-                                    <FaHorse size={30} className="text-warning mb-2" />
+                                    <FaHorse size={30} className="text-primary mb-2" />
                                     <Card.Title>{loading ? <Spinner animation="border" size="sm" /> : patientCount}</Card.Title>
                                     <Card.Text>Pacientes Asignados</Card.Text>
                                 </Card.Body>
@@ -468,7 +468,7 @@ const VeterinarioDashboard = () => {
                         <Col md={4} className="mb-3">
                             <Card className="shadow-sm text-center">
                                 <Card.Body>
-                                    <FaUserTie size={30} className="text-warning mb-2" />
+                                    <FaUserTie size={30} className="text-primary mb-2" />
                                     <Card.Title>{loading ? <Spinner animation="border" size="sm" /> : ownerCount}</Card.Title>
                                     <Card.Text>Propietarios</Card.Text>
                                 </Card.Body>
@@ -478,10 +478,10 @@ const VeterinarioDashboard = () => {
 
                     {/* Historias Clínicas Recientes */}
                     <Card className="shadow-sm border-info">
-                        <Card.Header className="bg-info text-white">
-                            <FaClock className="me-2" /> Últimas Historias Registradas
+                        <Card.Header className="bg-primary text-white">
+                            <FaClock className="me-2"  /> Últimas Historias Registradas
                         </Card.Header>
-                        <ListGroup variant="flush">
+                        <ListGroup variant="primary">
                             {recentHistories.length > 0 ? (
                                 recentHistories.map(h => (
                                     <ListGroup.Item key={h.idHistoria_clinica} className="d-flex justify-content-between align-items-center">
@@ -489,7 +489,7 @@ const VeterinarioDashboard = () => {
                                             <strong>{h.Paciente || 'Paciente Desconocido'}</strong>
                                             <p className="mb-0 text-muted small">Obs: {h.Observaciones.substring(0, 50)}...</p>
                                         </div>
-                                        <Badge bg="warning" className="text-dark">
+                                        <Badge bg="primary" className="text-dark">
                                             {new Date(h.Fecha).toLocaleDateString('es-CO')}
                                         </Badge>
                                     </ListGroup.Item>
