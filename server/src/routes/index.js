@@ -122,6 +122,16 @@ route.get('/api/insumos', authenticateToken, async (req, res) => {
     }
 });
 
+route.get('/api/insumosview', async (req, res) => {
+    try{
+        const values = await getItems();
+        res.status(200).json(values);
+    }catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al obtener los insumos' });
+    }
+});
+
 route.get('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
     const { idInsumos } = req.params;
     try{
@@ -184,6 +194,16 @@ route.delete('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
 // VETERINARIOS
 
 route.get('/api/veterinarios', authenticateToken ,async(req, res) => {
+    try{
+        const values = await getVeterinarys();
+        res.status(200).json(values);
+    }catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al obtener los Veterinarios' });
+    }
+});
+
+route.get('/api/veterinariosstatus', async(req, res) => {
     try{
         const values = await getVeterinarys();
         res.status(200).json(values);
