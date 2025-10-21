@@ -104,7 +104,7 @@ export default function Content() {
 
 
     return (
-        // CONTENEDOR PRINCIPAL: Fondo oscuro
+        // CONTENEDOR PRINCIPAL: Fondo oscuro #1D2D44
         <div style={{ backgroundColor: '#1D2D44', color: 'white' }}>
             <div className="carousel-container">
                 {/* --- SECCIÓN CAROUSEL --- */}
@@ -162,7 +162,7 @@ export default function Content() {
                 </Container>
             </section>
 
-            {/* --- SECCIÓN ACERCA DE NOSOTROS --- */}
+            {/* --- SECCIÓN ACERCA DE NOSOTROS (BLANCO) --- */}
             <section id="about" className="about section" data-aos="fade-left" style={{ backgroundColor: 'white', color: '#1D2D44', padding: '60px 0' }}>
                 <Container className="section-title" data-aos="fade-up">
                     <h2>Acerca De Nosotros</h2>
@@ -212,7 +212,7 @@ export default function Content() {
                 </Container>
             </section>
             
-            {/* --- SECCIÓN SERVICIOS --- */}
+            {/* --- SECCIÓN SERVICIOS (AZUL OSCURO #1D2D44 - Heredado) --- */}
             <section id="services" className="services section" data-aos="fade-right" style={{ padding: '60px 0' }}>
                 <Container className="section-title" data-aos="fade-up">
                     <h2 className="text-white">Servicios</h2>
@@ -236,8 +236,8 @@ export default function Content() {
                 </Container>
             </section>
 
-            {/* --- SECCIÓN DOCTORES ACTIVOS --- */}
-            <section id="doctors" className="doctors section" data-aos="fade-left" style={{ padding: '60px 0' }}>
+            {/* --- SECCIÓN DOCTORES ACTIVOS (AZUL #084C8D) --- */}
+            <section id="doctors" className="doctors section" data-aos="fade-left" style={{ padding: '60px 0', backgroundColor: '#084C8D' }}>
                 <Container className="section-title" data-aos="fade-up">
                     <h2 className='text-center text-white'>Doctores Activos</h2>
                     <p className="text-white">Tenemos un equipo que brinda apoyo 24h y especializado en equinos</p>
@@ -266,7 +266,7 @@ export default function Content() {
                                     >
                                         <div className={`card-flip-container ${flippedCardId === doctor.idVeterinario ? 'flipped' : ''}`} onClick={() => handleCardClick(doctor.idVeterinario)}>
                                             <div className="card-flipper">
-                                                {/* Cara frontal de la tarjeta */}
+                                                {/* Cara frontal de la tarjeta (BLANCA) */}
                                                 <div className="front-card team-member border-0 shadow-lg w-100" style={{ backgroundColor: 'white', color: '#1D2D44' }}>
                                                     <div className="member-img position-relative text-center p-3">
                                                         {doctor.Foto ? (
@@ -287,7 +287,7 @@ export default function Content() {
                                                     </div>
                                                 </div>
 
-                                                {/* Cara trasera de la tarjeta */}
+                                                {/* Cara trasera de la tarjeta (BLANCA) */}
                                                 <div className="back-card team-member border-0 shadow-lg w-100 p-4" style={{ backgroundColor: 'white', color: '#1D2D44' }}>
                                                     <div className="d-flex flex-column align-items-center justify-content-center h-100">
                                                         <h5 className="mb-3 text-primary">Contáctalo</h5>
