@@ -1,4 +1,7 @@
-
+.logo{
+  max-width: 200px;
+  height: auto;
+}
 
 .container{
   position: sticky;
