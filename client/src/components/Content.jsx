@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Carousel from 'react-bootstrap/Carousel';
-import { Container, Row, Col, Button, Card, Image, Spinner, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Button, Card, Image, Spinner, Badge, Alert } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../Styles/content.css';
 import Image1 from '../assets/img/hero-carousel/hero-carousel-1.jpg';
 import Image2 from '../assets/img/hero-carousel/hero-carousel-2.jpg';
 import Image3 from '../assets/img/hero-carousel/hero-carousel-3.jpg';
 import video from '../assets/img/100658-video-720.mp4';
-import { BsTwitter, BsFacebook, BsInstagram, BsLinkedin, BsWhatsapp } from 'react-icons/bs'; // Importamos BsWhatsapp
+import { BsTwitter, BsFacebook, BsInstagram, BsLinkedin, BsWhatsapp } from 'react-icons/bs';
 import {
     FaHeartbeat, FaPills, FaHospitalUser, FaDna, FaUserMd, FaStar, FaUserCircle
 } from 'react-icons/fa';
@@ -46,8 +46,6 @@ export default function Content() {
             setLoading(true);
             setError(null);
             try {
-                // NOTA: Asumo que esta ruta es PÚBLICA, ya que está en la página de aterrizaje (Landing)
-                // y que el backend devuelve un campo 'Redes' como string JSON.
                 const response = await fetch(`${API_URL}/veterinariosstatus`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' }
@@ -57,11 +55,9 @@ export default function Content() {
                 }
                 const data = await response.json();
                 
-                // Asegurar que solo se muestren los activos y parsear el JSON de Redes
                 const activeDoctors = data.filter(d => d.Estado === 'Activo').map(d => {
                     let redes = {};
                     try {
-                        // Intenta parsear el campo Redes (si viene como string JSON)
                         redes = d.Redes ? JSON.parse(d.Redes) : {};
                     } catch (e) {
                         console.warn("Error parseando JSON de Redes:", d.Redes);
@@ -78,12 +74,10 @@ export default function Content() {
             }
         };
 
-        // Inicia el carrusel (si no está en hover)
         const interval = !isHovered ? setInterval(() => {
             setIndex((prevIndex) => (prevIndex + 1) % images.length);
         }, 5000) : null;
         
-        // Carga los datos de los doctores
         fetchDoctors();
 
         return () => interval && clearInterval(interval);
@@ -100,8 +94,6 @@ export default function Content() {
             if (i < fullStars) {
                 stars.push(<FaStar key={i} color="#ffc107" size={14} />);
             } else if (hasHalfStar && i === fullStars) {
-                // Aquí podrías poner una media estrella si tienes el icono,
-                // por simplicidad, dejamos el espacio como vacío
                 stars.push(<FaStar key={i} color="#e4e5e9" size={14} />); 
             } else {
                 stars.push(<FaStar key={i} color="#e4e5e9" size={14} />);
@@ -112,7 +104,8 @@ export default function Content() {
 
 
     return (
-        <div>
+        // CONTENEDOR PRINCIPAL: Fondo oscuro
+        <div style={{ backgroundColor: '#1D2D44', color: 'white' }}>
             <div className="carousel-container">
                 {/* --- SECCIÓN CAROUSEL --- */}
                 <Carousel 
@@ -170,11 +163,10 @@ export default function Content() {
             </section>
 
             {/* --- SECCIÓN ACERCA DE NOSOTROS --- */}
-            <section id="about" className="about section" data-aos="fade-left">
+            <section id="about" className="about section" data-aos="fade-left" style={{ backgroundColor: 'white', color: '#1D2D44', padding: '60px 0' }}>
                 <Container className="section-title" data-aos="fade-up">
                     <h2>Acerca De Nosotros</h2>
-                    <p>Soporte Equino fue fundado por un veterinario especializado en equinos, quien reconoció una carencia en la disponibilidad de veterinarios de campo, especialmente en situaciones de emergencia y durante fines de semana y festividades como diciembre. Nuestra plataforma está diseñada para optimizar la búsqueda de colegas capacitados, permitiendo a los veterinarios de campo remitir rápidamente a profesionales disponibles, garantizando así una atención oportuna y eficaz. Además, facilitamos a los propietarios el contacto con veterinarios cercanos o de confianza. Soporte Equino también ofrece un sistema para elaborar historias clínicas concisas y confiables, lo que facilita la evaluación de pacientes, criaderos y propietarios. Asimismo, nuestra plataforma proporcionará insumos y artículos esenciales para los entusiastas del mundo animal, fomentando la pasión por el campo de generación en generación.
-</p>
+                    <p>Soporte Equino fue fundado por un veterinario especializado en equinos, quien reconoció una carencia en la disponibilidad de veterinarios de campo, especialmente en situaciones de emergencia y durante fines de semana y festividades como diciembre. Nuestra plataforma está diseñada para optimizar la búsqueda de colegas capacitados, permitiendo a los veterinarios de campo remitir rápidamente a profesionales disponibles, garantizando así una atención oportuna y eficaz. Además, facilitamos a los propietarios el contacto con veterinarios cercanos o de confianza. Soporte Equino también ofrece un sistema para elaborar historias clínicas concisas y confiables, lo que facilita la evaluación de pacientes, criaderos y propietarios. Asimismo, nuestra plataforma proporcionará insumos y artículos esenciales para los entusiastas del mundo animal, fomentando la pasión por el campo de generación en generación.</p>
                 </Container>
                 <Container>
                     <Row className="gy-4">
@@ -221,15 +213,15 @@ export default function Content() {
             </section>
             
             {/* --- SECCIÓN SERVICIOS --- */}
-            <section id="services" className="services section" data-aos="fade-right">
+            <section id="services" className="services section" data-aos="fade-right" style={{ padding: '60px 0' }}>
                 <Container className="section-title" data-aos="fade-up">
-                    <h2>Servicios</h2>
+                    <h2 className="text-white">Servicios</h2>
                 </Container>
                 <Container>
                     <Row className="gy-4 justify-content-center">
                         {services.map(({ id, icon, title, description, delay, href }) => (
                             <Col key={id} lg={4} md={6} data-aos="fade-up" data-aos-delay={delay} className="d-flex">
-                                <Card className="service-item position-relative flex-fill border-0 shadow-sm text-center">
+                                <Card className="service-item position-relative flex-fill border-0 shadow-sm text-center" style={{ backgroundColor: 'white', color: '#1D2D44' }}>
                                     <Card.Body>
                                         <div className="icon mb-3 text-warning">{icon}</div>
                                         <Card.Title as="a" href={href} className="stretched-link text-decoration-none text-dark">
@@ -245,23 +237,22 @@ export default function Content() {
             </section>
 
             {/* --- SECCIÓN DOCTORES ACTIVOS --- */}
-            <section id="doctors" className="doctors section light-background" data-aos="fade-left">
+            <section id="doctors" className="doctors section" data-aos="fade-left" style={{ padding: '60px 0' }}>
                 <Container className="section-title" data-aos="fade-up">
-                    <h2 className='text-center'>Doctores Activos</h2>
-                    <p>Tenemos un equipo que brinda apoyo 24h y especializado en equinos</p>
+                    <h2 className='text-center text-white'>Doctores Activos</h2>
+                    <p className="text-white">Tenemos un equipo que brinda apoyo 24h y especializado en equinos</p>
                     {error && <Alert variant="danger" className="mt-3">{error}</Alert>}
                 </Container>
 
                 <Container>
                     {loading ? (
-                        <div className="doctors text-center py-5">
-                            <Spinner animation="border" variant="warning" className="me-2" />
+                        <div className="text-center py-5">
+                            <Spinner animation="border" variant="light" className="me-2" />
                             Cargando doctores...
                         </div>
                     ) : (
                         <Row className="gy-4 justify-content-center">
                             {doctors.map((doctor, index) => {
-                                // Desestructurar el objeto Redes con valores por defecto
                                 const { facebook, instagram, whatsapp } = doctor.Redes || {};
                                 
                                 return (
@@ -271,12 +262,12 @@ export default function Content() {
                                         md={6}
                                         className="d-flex align-items-stretch"
                                         data-aos="fade-up"
-                                        data-aos-delay={(index % 4) * 100} // Retardo para efecto visual
+                                        data-aos-delay={(index % 4) * 100}
                                     >
                                         <div className={`card-flip-container ${flippedCardId === doctor.idVeterinario ? 'flipped' : ''}`} onClick={() => handleCardClick(doctor.idVeterinario)}>
                                             <div className="card-flipper">
                                                 {/* Cara frontal de la tarjeta */}
-                                                <div className="front-card team-member border-0 shadow-lg w-100">
+                                                <div className="front-card team-member border-0 shadow-lg w-100" style={{ backgroundColor: 'white', color: '#1D2D44' }}>
                                                     <div className="member-img position-relative text-center p-3">
                                                         {doctor.Foto ? (
                                                             <Image 
@@ -297,12 +288,11 @@ export default function Content() {
                                                 </div>
 
                                                 {/* Cara trasera de la tarjeta */}
-                                                <div className="back-card team-member bg-light border-0 shadow-lg w-100 p-4">
+                                                <div className="back-card team-member border-0 shadow-lg w-100 p-4" style={{ backgroundColor: 'white', color: '#1D2D44' }}>
                                                     <div className="d-flex flex-column align-items-center justify-content-center h-100">
                                                         <h5 className="mb-3 text-primary">Contáctalo</h5>
                                                         <p className="text-muted small mb-1">{doctor.Correo}</p>
                                                         
-                                                        {/* Redes Sociales Condicionales */}
                                                         <div className="social d-flex gap-3 mt-3">
                                                             {whatsapp && (
                                                                 <a href={`https://wa.me/${whatsapp}`} aria-label={`${doctor.Nombre} WhatsApp`} target="_blank" rel="noopener noreferrer">
@@ -319,7 +309,6 @@ export default function Content() {
                                                                     <BsInstagram size={20} className="text-danger" />
                                                                 </a>
                                                             )}
-                                                            {/* Si el campo 'Redes' trae otros enlaces, agrégalos aquí */}
                                                         </div>
                                                         <p className='text-muted small mt-3'>(Haz clic para contactar)</p>
                                                     </div>
