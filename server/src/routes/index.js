@@ -23,7 +23,7 @@ const crypto = require('crypto');
 // });
 // const upload = multer({ storage: storage });
 const {getItems, getItemById, createItem, updateItem, deleteItem} = require('../controllers/itemsController');
-const {getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary} = require('../controllers/veterinaryController')
+const {getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary, getVeterinarystatus} = require('../controllers/veterinaryController')
 const {getOwners, getOwnerById, createOwner, updateOwner, deleteOwner} = require('../controllers/ownerController');
 const {getClinicalHistory, getClinicalHistoryById, createClinicalHistory, updateClinicalHistory, deleteClinicalHistory} = require('../controllers/clinicalHystory');
 const {getPatients, getPatientById, createPatient, updatePatient, deletePatient} = require('../controllers/patientController')
@@ -205,7 +205,7 @@ route.get('/api/veterinarios', authenticateToken ,async(req, res) => {
 
 route.get('/api/veterinariosstatus', async(req, res) => {
     try{
-        const values = await getVeterinarys();
+        const values = await getVeterinarystatus();
         res.status(200).json(values);
     }catch (error) {
         console.error(error);

@@ -11,67 +11,11 @@ import { BsTwitter, BsFacebook, BsInstagram, BsLinkedin } from 'react-icons/bs';
 import {
   FaHeartbeat, FaPills, FaHospitalUser , FaDna
 } from 'react-icons/fa';
-import doctor1 from '../assets/img/doctors/doctors-1.jpg';
-import doctor2 from '../assets/img/doctors/doctors-2.jpg';
-import doctor3 from '../assets/img/doctors/doctors-3.jpg';
-import doctor4 from '../assets/img/doctors/doctors-4.jpg';
 
 
 
-const doctors = [
-  {
-    id: 1,
-    name: 'Walter White',
-    role: 'Chief Medical Officer',
-    imgSrc: doctor1,
-    social: {
-      twitter: '#',
-      facebook: '#',
-      instagram: '#',
-      linkedin: '#',
-    },
-    delay: 100,
-  },
-  {
-    id: 2,
-    name: 'Sarah Jhonson',
-    role: 'Anesthesiologist',
-    imgSrc: doctor2,
-    social: {
-      twitter: '#',
-      facebook: '#',
-      instagram: '#',
-      linkedin: '#',
-    },
-    delay: 200,
-  },
-  {
-    id: 3,
-    name: 'William Anderson',
-    role: 'Cardiology',
-    imgSrc: doctor3,
-    social: {
-      twitter: '#',
-      facebook: '#',
-      instagram: '#',
-      linkedin: '#',
-    },
-    delay: 300,
-  },
-  {
-    id: 4,
-    name: 'Amanda Jepson',
-    role: 'Neurosurgeon',
-    imgSrc: doctor4,
-    social: {
-      twitter: '#',
-      facebook: '#',
-      instagram: '#',
-      linkedin: '#',
-    },
-    delay: 400,
-  },
-];
+
+
 
 const images = [
   {
@@ -130,16 +74,38 @@ export default function Content() {
   const [index, setIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [flippedCardId, setFlippedCardId] = useState(null);
+  const [doctors, setDoctors] = useState([]);
 
   const handleCardClick = (id) => {
     setFlippedCardId(flippedCardId === id ? null : id);
   };
 
+
+
   useEffect(() => {
     const interval = !isHovered ? setInterval(() => {
       setIndex((prevIndex) => (prevIndex + 1) % images.length);
     }, 5000) : null;
-
+    const fetchDoctors = async () => {
+      try {
+        const response = await fetch('https://soporte-equino.onrender.com/api/veterinariosstatus', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        setDoctors(data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDoctors();
     return () => interval && clearInterval(interval);
   }, [isHovered]);
 

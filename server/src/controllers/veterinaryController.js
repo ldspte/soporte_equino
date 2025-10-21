@@ -86,6 +86,13 @@ const getVeterinarys = async() => {
     return result.length > 0 ? result[0] : null;
 }
 
+const getVeterinarystatus = async() => {
+    const result = await db.query(`
+        SELECT * FROM veterinario WHERE estado = 'Activo'
+    `)
+    return result.length > 0 ? result[0] : null;
+}
+
 const getVeterinaryById = async(idVeterinario) => {
     const result = await db.query(`
         SELECT * FROM veterinario WHERE idVeterinario = ?
@@ -126,7 +133,8 @@ const deleteVeterinary = async(idVeterinario) => {
 }
 
 module.exports = {
-    getVeterinarys, 
+    getVeterinarys,
+    getVeterinarystatus, 
     getVeterinaryById,
     createVeterinary,
     updateVeterinary,
