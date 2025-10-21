@@ -104,8 +104,8 @@ export default function Content() {
 
 
     return (
-        // CONTENEDOR PRINCIPAL: Fondo oscuro #1D2D44
-        <div style={{ backgroundColor: '#1D2D44', color: 'white' }}>
+        // CONTENEDOR PRINCIPAL: Fondo blanco, texto oscuro (#1D2D44)
+        <div style={{ backgroundColor: 'white', color: '#1D2D44' }}>
             <div className="carousel-container">
                 {/* --- SECCIÓN CAROUSEL --- */}
                 <Carousel 
@@ -212,10 +212,10 @@ export default function Content() {
                 </Container>
             </section>
             
-            {/* --- SECCIÓN SERVICIOS (AZUL OSCURO #1D2D44 - Heredado) --- */}
-            <section id="services" className="services section" data-aos="fade-right" style={{ padding: '60px 0' }}>
+            {/* --- SECCIÓN SERVICIOS (BLANCO) --- */}
+            <section id="services" className="services section" data-aos="fade-right" style={{ padding: '60px 0', backgroundColor: 'white' }}>
                 <Container className="section-title" data-aos="fade-up">
-                    <h2 className="text-white">Servicios</h2>
+                    <h2 className="text-dark">Servicios</h2> {/* Color de texto oscuro */}
                 </Container>
                 <Container>
                     <Row className="gy-4 justify-content-center">
@@ -223,7 +223,7 @@ export default function Content() {
                             <Col key={id} lg={4} md={6} data-aos="fade-up" data-aos-delay={delay} className="d-flex">
                                 <Card className="service-item position-relative flex-fill border-0 shadow-sm text-center" style={{ backgroundColor: 'white', color: '#1D2D44' }}>
                                     <Card.Body>
-                                        <div className="icon mb-3 text-warning">{icon}</div>
+                                        <div className="icon mb-3 text-primary">{icon}</div>
                                         <Card.Title as="a" href={href} className="stretched-link text-decoration-none text-dark">
                                             {title}
                                         </Card.Title>
@@ -236,7 +236,7 @@ export default function Content() {
                 </Container>
             </section>
 
-            {/* --- SECCIÓN DOCTORES ACTIVOS (AZUL #084C8D) --- */}
+            {/* --- SECCIÓN DOCTORES ACTIVOS (AZUL) --- */}
             <section id="doctors" className="doctors section" data-aos="fade-left" style={{ padding: '60px 0', backgroundColor: '#084C8D' }}>
                 <Container className="section-title" data-aos="fade-up">
                     <h2 className='text-center text-white'>Doctores Activos</h2>
@@ -274,7 +274,7 @@ export default function Content() {
                                                                 src={`https://soporte-equino.onrender.com/uploads/${doctor.Foto}`} 
                                                                 alt={doctor.Nombre} 
                                                                 className="rounded-circle"
-                                                                style={{ width: '100px', height: '100px', objectFit: 'cover', border: '3px solid #1D2D44' }}
+                                                                style={{ width: '100px', height: '100px', objectFit: 'cover', border: '3px solid #084C8D' }}
                                                             />
                                                         ) : (
                                                             <FaUserCircle size={100} className='text-muted' />
