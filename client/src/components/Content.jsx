@@ -22,10 +22,10 @@ const images = [
 ];
 
 const services = [
-    { id: 1, icon: <FaHeartbeat size={40} className="text-primary" />, title: 'Urgencias Medicas', description: 'Atendemos cualquier caso en todo el departamento 24h', delay: 100, href: '#', },
-    { id: 2, icon: <FaPills size={40} className="text-primary" />, title: 'Insumos Medicos', description: 'Venta de insumos medicos para veterinaria', delay: 200, href: '#', },
-    { id: 3, icon: <FaHospitalUser size={40} className="text-primary" />, title: 'Seguimiento', description: '', delay: 300, href: '#', },
-    { id: 4, icon: <FaDna size={40} className="text-primary" />, title: 'Reproducción Equina', description: '', delay: 400, href: '#', },
+    { id: 1, icon: <FaHeartbeat size={40} className="text-primary" />, title: 'Urgencias Medicas:', description: 'Respuesta rápida y experta para cólicos, heridas, partos complicados y emergencias neurológicas o cardiopulmonares.', delay: 100, href: '#', },
+    { id: 2, icon: <FaPills size={40} className="text-primary" />, title: 'Insumos Pecuarios:', description: 'Productos esenciales para garantizar el bienestar de los animales y el personal.', delay: 200, href: '#', },
+    { id: 3, icon: <FaHospitalUser size={40} className="text-primary" />, title: 'Seguimiento:', description: 'Acceso fácil y seguro a la historia clínica de tu caballo para un cuidado óptimo.', delay: 300, href: '#', },
+    { id: 4, icon: <FaDna size={40} className="text-primary" />, title: 'Reproducción:', description: 'Servicios especializados en preñez, transferencia de embriones y manejo de reproductores.', delay: 400, href: '#', },
 ];
 
 export default function Content() {
@@ -173,7 +173,8 @@ export default function Content() {
             <section id="about" className="about section" data-aos="fade-left">
                 <Container className="section-title" data-aos="fade-up">
                     <h2>Acerca De Nosotros</h2>
-                    <p>Breve descripcion de lo que hacemos...</p>
+                    <p>Soporte Equino fue fundado por un veterinario especializado en equinos, quien reconoció una carencia en la disponibilidad de veterinarios de campo, especialmente en situaciones de emergencia y durante fines de semana y festividades como diciembre. Nuestra plataforma está diseñada para optimizar la búsqueda de colegas capacitados, permitiendo a los veterinarios de campo remitir rápidamente a profesionales disponibles, garantizando así una atención oportuna y eficaz. Además, facilitamos a los propietarios el contacto con veterinarios cercanos o de confianza. Soporte Equino también ofrece un sistema para elaborar historias clínicas concisas y confiables, lo que facilita la evaluación de pacientes, criaderos y propietarios. Asimismo, nuestra plataforma proporcionará insumos y artículos esenciales para los entusiastas del mundo animal, fomentando la pasión por el campo de generación en generación.
+</p>
                 </Container>
                 <Container>
                     <Row className="gy-4">
@@ -253,7 +254,7 @@ export default function Content() {
 
                 <Container>
                     {loading ? (
-                        <div className="text-center py-5">
+                        <div className="doctors text-center py-5">
                             <Spinner animation="border" variant="warning" className="me-2" />
                             Cargando doctores...
                         </div>
@@ -282,7 +283,7 @@ export default function Content() {
                                                                 src={`https://soporte-equino.onrender.com/uploads/${doctor.Foto}`} 
                                                                 alt={doctor.Nombre} 
                                                                 className="rounded-circle"
-                                                                style={{ width: '100px', height: '100px', objectFit: 'cover', border: '3px solid #ffc107' }}
+                                                                style={{ width: '100px', height: '100px', objectFit: 'cover', border: '3px solid #1D2D44' }}
                                                             />
                                                         ) : (
                                                             <FaUserCircle size={100} className='text-muted' />
@@ -290,7 +291,7 @@ export default function Content() {
                                                     </div>
                                                     <div className="member-info text-center p-3">
                                                         <h4 className="mb-1">{`${doctor.Nombre || ''} ${doctor.Apellido || ''}`}</h4>
-                                                        <p className="text-warning small fw-bold">Veterinario Activo</p>
+                                                        <p className="text-primary small fw-bold">Veterinario Activo</p>
                                                         {renderStars(4.5)} 
                                                     </div>
                                                 </div>
@@ -298,7 +299,7 @@ export default function Content() {
                                                 {/* Cara trasera de la tarjeta */}
                                                 <div className="back-card team-member bg-light border-0 shadow-lg w-100 p-4">
                                                     <div className="d-flex flex-column align-items-center justify-content-center h-100">
-                                                        <h5 className="mb-3 text-warning">Contáctalo</h5>
+                                                        <h5 className="mb-3 text-primary">Contáctalo</h5>
                                                         <p className="text-muted small mb-1">{doctor.Correo}</p>
                                                         
                                                         {/* Redes Sociales Condicionales */}
