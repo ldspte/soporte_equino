@@ -6,7 +6,7 @@ import Content from './Content';
 import LoginModal from './LoginModal';
 import ForgotPasswordModal from './ForgotPasswordModal'; // Importa el modal de recuperación
 import 'bootstrap/dist/css/bootstrap.min.css';
-import '../Styles/navbar.css';
+import '../Styles/navBar.css';
 
 export default function NavBar() {
     const [insumos, setInsumos] = useState(null);
