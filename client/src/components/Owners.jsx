@@ -1,6 +1,95 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Button, Row, Col, InputGroup, Form, Modal, Alert } from 'react-bootstrap';
-import { FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus, FaPhone, FaIdCard } from 'react-icons/fa';
+import { Card, Table, Button, Row, Col, InputGroup, Form, Modal, Alert, Spinner } from 'react-bootstrap';
+import { FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus, FaPhone, FaIdCard, FaStar } from 'react-icons/fa';
+
+const API_URL = 'https://soporte-equino.onrender.com/api';
+
+// --- Componente de Calificación de Estrellas (Anidado) ---
+const StarRating = ({ ownerId, initialRating = 0, onRatingUpdated }) => {
+    const [rating, setRating] = useState(initialRating);
+    const [hover, setHover] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    // Actualizar la calificación local cuando initialRating cambie (ej: al recargar la tabla)
+    useEffect(() => {
+        setRating(initialRating);
+    }, [initialRating]);
+
+    const getAuthToken = useCallback(() => {
+        const token = localStorage.getItem('token');
+        return token ? `Bearer ${token}` : null;
+    }, []);
+
+    const sendRating = async (newRating) => {
+        setLoading(true);
+        setError(null);
+        
+        const token = getAuthToken();
+        if (!token) {
+            setError("No autorizado. Inicie sesión de nuevo.");
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/propietarios/${ownerId}/rate`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ rating: newRating })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Error al enviar la calificación.');
+            }
+
+            const data = await response.json();
+            
+            // Llama a la función del componente padre para actualizar la lista completa
+            if (onRatingUpdated) {
+                onRatingUpdated(data.newAverageRating);
+            }
+            
+            setRating(data.newAverageRating); // Actualizar el promedio localmente
+            
+        } catch (err) {
+            console.error('Error al calificar:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+            setTimeout(() => setError(null), 3000);
+        }
+    };
+
+    return (
+        <div className="d-flex align-items-center">
+            {loading && <Spinner animation="border" size="sm" variant="warning" className="me-2" />}
+            {[...Array(5)].map((star, index) => {
+                const ratingValue = index + 1;
+                return (
+                    <FaStar
+                        key={index}
+                        color={ratingValue <= (hover || rating) ? "#ffc107" : "#e4e5e9"}
+                        size={18}
+                        onClick={() => sendRating(ratingValue)}
+                        onMouseEnter={() => setHover(ratingValue)}
+                        onMouseLeave={() => setHover(0)}
+                        style={{ cursor: loading ? 'not-allowed' : 'pointer', transition: 'color 200ms' }}
+                        title={`Calificar con ${ratingValue} estrellas`}
+                    />
+                );
+            })}
+             {rating > 0 && <small className="ms-2 text-muted">({rating.toFixed(1)})</small>}
+             {error && <Alert variant="danger" className="ms-2 p-1 px-2 small">{error.substring(0, 50)}</Alert>}
+        </div>
+    );
+};
+// --- Fin Componente de Calificación ---
+
 
 function Owners() {
     const [owners, setOwners] = useState([]);
@@ -17,27 +106,14 @@ function Owners() {
 
     const getAuthToken = useCallback(() => {
         const token = localStorage.getItem('token');
-        // El token viene con el prefijo 'Bearer ' para el header
         return token ? `Bearer ${token}` : null; 
     }, []);
     
-    // Hook para cargar datos iniciales y asegurar que se ejecute solo si hay token
-    useEffect(() => {
-        const token = getAuthToken();
-        if (token) {
-            // Pasamos el token directamente a la función fetchOwners
-            fetchOwners(token); 
-        } else {
-            setError('No autorizado. Por favor, inicia sesión.');
-        }
-    }, [getAuthToken]);
-
-    // --- Lógica de Fetch de Datos ---
-
-    const fetchOwners = async (token) => {
+    // Función para obtener propietarios
+    const fetchOwners = useCallback(async (token) => {
         setLoading(true);
         setError(null);
-        console.log('Usando token para fetchOwners:', `Bearer ${token}`);
+        
         if (!token) {
             setError('No autorizado. Por favor, inicia sesión.');
             setLoading(false);
@@ -45,12 +121,9 @@ function Owners() {
         }
 
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios',{
+            const response = await fetch(`${API_URL}/propietarios`,{
                 method: 'GET',
-                headers: {
-                    'Authorization': token, // Usamos el token con 'Bearer ' incluido
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
             
             if (!response.ok) {
@@ -62,15 +135,26 @@ function Owners() {
             }
             
             const data = await response.json();
-            setOwners(data);
+            // Asegúrate de que el backend trae CalificacionPromedio
+            setOwners(data); 
         } catch (error) {
             setError(error.message);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    // --- Handlers de Formulario ---
+    // Hook para cargar datos iniciales
+    useEffect(() => {
+        const token = getAuthToken();
+        if (token) {
+            fetchOwners(token); 
+        } else {
+            setError('No autorizado. Por favor, inicia sesión.');
+        }
+    }, [getAuthToken, fetchOwners]);
+
+    // --- Handlers de Formulario y CRUD (sin cambios significativos) ---
     
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -85,18 +169,12 @@ function Owners() {
     const handleSubmitNewOwner = async (e) => {
         e.preventDefault();
         const token = getAuthToken();
-        if (!token) {
-            setError('No autorizado. Por favor, inicia sesión.');
-            return;
-        }
+        if (!token) { setError('No autorizado.'); return; }
         
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios', {
+            const response = await fetch(`${API_URL}/propietarios`, {
                 method: 'POST',
-                headers: { 
-                    'Authorization': token,
-                    'Content-Type': 'application/json' 
-                },
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' },
                 body: JSON.stringify(newOwner)
             });
             
@@ -116,7 +194,6 @@ function Owners() {
 
     const handleEditOwner = (owner) => {
         setCurrentOwner(owner);
-        // Usamos spread operator para crear una copia limpia
         setEditOwner({...owner}); 
         setShowEditOwnerModal(true);
     };
@@ -124,18 +201,12 @@ function Owners() {
     const handleSubmitEditOwner = async (e) => {
         e.preventDefault();
         const token = getAuthToken();
-        if (!token) {
-            setError('No autorizado. Por favor, inicia sesión.');
-            return;
-        }
+        if (!token) { setError('No autorizado.'); return; }
         
         try {
-            const response = await fetch(`https://soporte-equino.onrender.com/api/propietarios/${currentOwner.idPropietario}`, {
+            const response = await fetch(`${API_URL}/propietarios/${currentOwner.idPropietario}`, {
                 method: 'PUT',
-                headers: { 
-                    'Authorization': token,
-                    'Content-Type': 'application/json' 
-                },
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' },
                 body: JSON.stringify(editOwner)
             });
             
@@ -154,18 +225,12 @@ function Owners() {
 
     const handleDeleteOwner = async (idPropietario) => {
         const token = getAuthToken();
-        if (!token) {
-            setError('No autorizado. Por favor, inicia sesión.');
-            return;
-        }
+        if (!token) { setError('No autorizado.'); return; }
         
         try {
-            const response = await fetch(`https://soporte-equino.onrender.com/api/propietarios/${idPropietario}`, {
+            const response = await fetch(`${API_URL}/propietarios/${idPropietario}`, {
                 method: 'DELETE', 
-                headers: { 
-                    'Authorization': token,
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
             
             if (!response.ok) {
@@ -179,13 +244,20 @@ function Owners() {
             setError(error.message);
         }
     };
+    
+    // --- NUEVO HANDLER PARA ACTUALIZAR LA CALIFICACIÓN ---
+    const handleRatingUpdated = (updatedRating) => {
+        // Esta función se llama desde StarRating y fuerza una recarga de la tabla.
+        const token = getAuthToken();
+        if (token) fetchOwners(token);
+    };
 
     // --- Lógica de Filtro ---
     
     const filteredOwners = owners.filter(owner => {
         const termLower = searchTerm.toLowerCase();
         return (
-            owner.Cedula?.toString().includes(searchTerm) || // Búsqueda por Cédula (parcial)
+            owner.Cedula?.toString().includes(searchTerm) ||
             owner.Nombre?.toLowerCase().includes(termLower) || 
             owner.Apellido?.toLowerCase().includes(termLower) ||
             owner.Telefono?.includes(searchTerm) 
@@ -239,6 +311,7 @@ function Owners() {
                                         <th><FaUserCircle className='me-1'/> Nombre</th>
                                         <th>Apellido</th>
                                         <th><FaPhone className='me-1'/> Teléfono</th>
+                                        <th>Calificación</th> {/* Nueva Columna */}
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -249,6 +322,16 @@ function Owners() {
                                             <td>{owner.Nombre}</td>
                                             <td>{owner.Apellido}</td>
                                             <td>{owner.Telefono}</td>
+                                            
+                                            {/* Columna de Calificación */}
+                                            <td>
+                                                <StarRating 
+                                                    ownerId={owner.idPropietario} 
+                                                    initialRating={owner.CalificacionPromedio || 0}
+                                                    onRatingUpdated={handleRatingUpdated} // Pasamos el handler
+                                                />
+                                            </td>
+
                                             <td>
                                                 <Button variant="outline-warning" size="sm" className='me-2' onClick={() => handleEditOwner(owner)}>
                                                     <FaEdit />
@@ -266,8 +349,9 @@ function Owners() {
                 </Card.Body>
             </Card>
 
-            {/* Modal para crear nuevo propietario */}
+            {/* Modal para crear nuevo propietario (Sin cambios) */}
             <Modal show={showNewOwnerModal} onHide={() => setShowNewOwnerModal(false)} centered>
+                {/* ... Contenido del Modal de Creación ... */}
                 <Modal.Header closeButton>
                     <Modal.Title>Crear Propietario</Modal.Title>
                 </Modal.Header>
@@ -294,16 +378,16 @@ function Owners() {
                 </Modal.Body>
             </Modal>
 
-            {/* Modal para editar propietario */}
+            {/* Modal para editar propietario (Sin cambios) */}
             <Modal show={showEditOwnerModal} onHide={() => setShowEditOwnerModal(false)} centered>
-                <Modal.Header closeButton>
+                {/* ... Contenido del Modal de Edición ... */}
+                 <Modal.Header closeButton>
                     <Modal.Title>Editar Propietario</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSubmitEditOwner}>
                         <Form.Group controlId="formEditCedula" className='mb-2'>
                             <Form.Label>Cédula</Form.Label>
-                            {/* Usamos el nombre del campo como está en el estado: Cedula */}
                             <Form.Control type="number" name="Cedula" value={editOwner.Cedula} onChange={handleEditInputChange} required /> 
                         </Form.Group>
                         <Form.Group controlId="formEditNombre" className='mb-2'>

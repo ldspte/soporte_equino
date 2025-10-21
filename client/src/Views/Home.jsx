@@ -1,23 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Card, Button, ListGroup, Badge, Alert, Spinner, Modal, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, ListGroup, Badge, Alert, Spinner, Modal, Form, InputGroup } from 'react-bootstrap';
 import {
     FaUserMd, FaEnvelope, FaIdCard, FaClock, FaBookMedical, FaHorse, FaUserTie,
-    FaCheckCircle, FaTimesCircle, FaToggleOn, FaToggleOff, FaUserCircle, FaEdit, FaTimes, FaSave
+    FaCheckCircle, FaTimesCircle, FaToggleOn, FaToggleOff, FaUserCircle, FaEdit, FaSave, FaTimes
 } from 'react-icons/fa';
+import { BsFacebook, BsInstagram, BsWhatsapp } from 'react-icons/bs';
 
 // URL base de tu backend en Render
 const API_URL = 'https://soporte-equino.onrender.com/api';
 
+// --- Componente Modal de Edición de Perfil ---
+
 const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => {
-    const [formData, setFormData] = useState(profileData || {});
+    // Inicializar el estado de la data, asegurando que 'Redes' siempre sea un objeto
+    const initialFormData = {
+        ...profileData,
+        // Asegurarse de que Redes sea un objeto, incluso si viene null o string vacío
+        Redes: profileData?.Redes && typeof profileData.Redes === 'string' 
+            ? (JSON.parse(profileData.Redes) || {}) 
+            : (profileData?.Redes || {})
+    };
+
+    const [formData, setFormData] = useState(initialFormData);
     const [file, setFile] = useState(null);
     const [validated, setValidated] = useState(false);
 
     // Sincroniza los datos iniciales cuando se abre el modal
     useEffect(() => {
         if (isOpen && profileData) {
-            setFormData(profileData);
-            setFile(null); // Limpiar archivo al abrir
+            setFormData(initialFormData);
+            setFile(null); 
             setValidated(false);
         }
     }, [isOpen, profileData]);
@@ -25,6 +37,18 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // NUEVO: Handler para campos de Redes Sociales
+    const handleRedesChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            Redes: {
+                ...prev.Redes,
+                [name]: value
+            }
+        }));
     };
 
     const handleFileChange = (e) => {
@@ -39,7 +63,14 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
             setValidated(true);
             return;
         }
-        onSave(formData, file);
+        
+        // Antes de guardar, serializar el objeto Redes a un string JSON
+        const dataToSave = {
+            ...formData,
+            Redes: JSON.stringify(formData.Redes)
+        };
+
+        onSave(dataToSave, file);
     };
 
     return (
@@ -120,6 +151,46 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
                             </Form.Group>
                         </Col>
                     </Row>
+                    
+                    <h5 className="border-bottom pb-2 mb-3 mt-4">Redes Sociales</h5>
+                    <Row>
+                        <Col md={4}>
+                            <Form.Group className="mb-3" controlId="redesWhatsapp">
+                                <Form.Label><BsWhatsapp className="me-1 text-success"/> WhatsApp (Número)</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="whatsapp"
+                                    value={formData.Redes?.whatsapp || ''}
+                                    onChange={handleRedesChange}
+                                    placeholder="Ej: 573101234567"
+                                />
+                            </Form.Group>
+                        </Col>
+                         <Col md={4}>
+                            <Form.Group className="mb-3" controlId="redesFacebook">
+                                <Form.Label><BsFacebook className="me-1 text-primary"/> Facebook (URL)</Form.Label>
+                                <Form.Control
+                                    type="url"
+                                    name="facebook"
+                                    value={formData.Redes?.facebook || ''}
+                                    onChange={handleRedesChange}
+                                    placeholder="Ej: https://facebook.com/usuario"
+                                />
+                            </Form.Group>
+                        </Col>
+                         <Col md={4}>
+                            <Form.Group className="mb-3" controlId="redesInstagram">
+                                <Form.Label><BsInstagram className="me-1 text-danger"/> Instagram (URL)</Form.Label>
+                                <Form.Control
+                                    type="url"
+                                    name="instagram"
+                                    value={formData.Redes?.instagram || ''}
+                                    onChange={handleRedesChange}
+                                    placeholder="Ej: https://instagram.com/usuario"
+                                />
+                            </Form.Group>
+                        </Col>
+                    </Row>
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={onClose} disabled={loading}>
@@ -138,6 +209,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
     );
 };
 
+// --- Componente Principal Dashboard ---
 
 const VeterinarioDashboard = () => {
     // Estado del usuario logueado
@@ -146,8 +218,7 @@ const VeterinarioDashboard = () => {
 
     // NUEVOS ESTADOS DE EDICIÓN
     const [showEditModal, setShowEditModal] = useState(false);
-    const [editProfile, setEditProfile] = useState(null);
-
+    const [editProfile, setEditProfile] = useState(null); // Datos cargados para el formulario
 
     // Estados de datos
     const [historyCount, setHistoryCount] = useState(0);
@@ -165,8 +236,17 @@ const VeterinarioDashboard = () => {
             try {
                 const userData = JSON.parse(userStorage);
                 // Asumiendo que el ID del veterinario está directamente en el objeto user[0]
-                setVeterinarioID(userData.user[0].idVeterinario); 
-                setVeterinarioData(userData.user[0]);
+                setVeterinarioID(userData.user?.[0]?.idVeterinario); 
+                
+                // Asegurar que Redes se parsee si viene como string JSON
+                const rawData = userData.user?.[0];
+                if (rawData?.Redes && typeof rawData.Redes === 'string') {
+                    rawData.Redes = JSON.parse(rawData.Redes);
+                }
+
+                setVeterinarioData(rawData);
+                setEditProfile(rawData); // Inicializar datos de edición
+                
                 return localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : null;
             } catch (e) {
                 console.error("Error al parsear datos del veterinario:", e);
@@ -227,15 +307,12 @@ const VeterinarioDashboard = () => {
             setRecentHistories(userHistories.slice(0, 5)); // Mostrar 5 más recientes
         }, id);
 
-        // 2. Obtener Pacientes (filtrados por ID del veterinario logueado)
+        // 2. Obtener Pacientes 
         await fetchData('pacientes', (data) => {
-            // NOTA: Asumimos que la tabla 'pacientes' tiene un campo 'Veterinario' o un campo que referencia al dueño,
-            // y que podemos filtrar por los pacientes asignados al veterinario logueado.
-            // Por simplicidad, aquí filtramos por todos los pacientes que estén asociados a las historias del veterinario.
             setPatientCount(data.length);
         }, id); 
 
-        // 3. Obtener Propietarios (Conteo total)
+        // 3. Obtener Propietarios
         await fetchData('propietarios', (data) => {
             setOwnerCount(data.length);
         });
@@ -245,7 +322,6 @@ const VeterinarioDashboard = () => {
 
     // Hook principal para la carga de datos
     useEffect(() => {
-        // La primera llamada solo obtiene el ID, la segunda carga los datos
         getAuthToken(); 
         if (veterinarioID) {
             loadDashboardData();
@@ -259,8 +335,6 @@ const VeterinarioDashboard = () => {
 
         const newEstado = veterinarioData.Estado === 'Activo' ? 'Inactivo' : 'Activo';
 
-        // NOTA: Asumo que tienes un campo 'Estado' en tu tabla de veterinarios
-        // y que tu ruta PUT puede actualizarlo.
         try {
             const response = await fetch(`${API_URL}/veterinarios/${veterinarioData.idVeterinario}`, {
                 method: 'PUT',
@@ -275,17 +349,17 @@ const VeterinarioDashboard = () => {
 
             // Actualizar el estado local y en localStorage
             const updatedUser = { ...veterinarioData, Estado: newEstado };
-            setVeterinarioData(updatedUser);
-            // Actualizar localStorage para reflejar el cambio
             const userStorage = JSON.parse(localStorage.getItem('veterinario'));
             localStorage.setItem('veterinario', JSON.stringify({ ...userStorage, user: [updatedUser] }));
+            setVeterinarioData(updatedUser);
 
         } catch (err) {
             setError(`Error al actualizar el estado: ${err.message}`);
         }
     };
+    
+    // Handler para abrir el modal de edición
     const handleShowEditModal = () => {
-        // Asegurar que los datos del perfil actual se carguen al estado de edición antes de abrir
         setEditProfile(veterinarioData); 
         setShowEditModal(true);
     };
@@ -298,19 +372,18 @@ const VeterinarioDashboard = () => {
         setError(null);
 
         try {
-            // 1. Construir FormData (Necesario para manejar archivos/fotos)
+            // 1. Construir FormData
             const dataToSend = new FormData();
+            
+            // Adjuntar todos los campos de texto
             Object.entries(formData).forEach(([key, value]) => {
                 dataToSend.append(key, value);
             });
 
-            // 2. Adjuntar el archivo de foto si existe
+            // 2. Adjuntar el archivo de foto
             if (file) {
-                // 'Foto' debe coincidir con el campo de Multer en el backend
                 dataToSend.append('Foto', file); 
             } else if (veterinarioData.Foto) {
-                // Si no se sube una nueva foto, envía el nombre de la foto actual
-                // para que el backend sepa que no debe borrar el archivo existente.
                 dataToSend.append('Foto', veterinarioData.Foto); 
             } else {
                  dataToSend.append('Foto', '');
@@ -319,7 +392,6 @@ const VeterinarioDashboard = () => {
             // 3. Enviar PUT request a la API
             const response = await fetch(`${API_URL}/veterinarios/${veterinarioData.idVeterinario}`, {
                 method: 'PUT',
-                // IMPORTANTE: SOLO Authorization, NO Content-Type para FormData
                 headers: { 'Authorization': token }, 
                 body: dataToSend
             });
@@ -332,12 +404,17 @@ const VeterinarioDashboard = () => {
             // 4. Recargar datos del usuario para actualizar el Dashboard
             const updatedData = await response.json(); 
             
-            // Refrescar el localStorage con los nuevos datos (si tu backend devuelve el objeto completo)
+            // Asegurarse de que el campo Redes del objeto retornado sea JSON si lo devuelve como string
+            if (updatedData.Redes && typeof updatedData.Redes === 'string') {
+                updatedData.Redes = JSON.parse(updatedData.Redes);
+            }
+
+            // Refrescar el localStorage con los nuevos datos
             const userStorage = JSON.parse(localStorage.getItem('veterinario'));
             localStorage.setItem('veterinario', JSON.stringify({ ...userStorage, user: [updatedData] }));
 
             setVeterinarioData(updatedData);
-            setEditProfile(updatedData); // Actualizar los datos del modal de edición
+            setEditProfile(updatedData);
             setShowEditModal(false);
 
         } catch (err) {
@@ -352,11 +429,12 @@ const VeterinarioDashboard = () => {
     }
 
     if (loading && !veterinarioData) {
-        return <div className="text-center mt-5"><Spinner animation="border" variant="warning" /> Cargando Dashboard...</div>;
+        return <div className="text-center mt-5"><Spinner animation="border" variant="primary" /> Cargando Dashboard...</div>;
     }
     
-    // Extraer datos para la vista
-    const { Cedula, Nombre, Apellido, Correo, Foto, Estado } = veterinarioData || {};
+    // Extracción de datos y Redes Sociales
+    const { Cedula, Nombre, Apellido, Correo, Foto, Estado, Redes } = veterinarioData || {};
+    const RedesParsed = Redes || {}; // Ya debería ser un objeto gracias a getAuthToken
     const isActivo = Estado === 'Activo';
     const NombreCompleto = `${Nombre || ''} ${Apellido || ''}`.trim();
 
@@ -379,7 +457,8 @@ const VeterinarioDashboard = () => {
                                     <img 
                                         src={`https://soporte-equino.onrender.com/uploads/${Foto}`} 
                                         alt="Foto Perfil" 
-                                        style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '50%', border: '4px solid #0000' }} 
+                                        onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/120x120/007bff/ffffff?text=Sin+Foto" }}
+                                        style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '50%', border: '4px solid #0d6efd' }} 
                                     />
                                 ) : (
                                     <FaUserCircle size={120} className='text-primary' />
@@ -395,9 +474,18 @@ const VeterinarioDashboard = () => {
                             </p>
                             
                             <Button 
+                                variant="outline-primary"
+                                onClick={handleShowEditModal}
+                                className="mb-2 w-100"
+                                disabled={loading}
+                            >
+                                <FaEdit className="me-2"/> Editar Información
+                            </Button>
+
+                            <Button 
                                 variant={isActivo ? "outline-danger" : "outline-success"}
                                 onClick={handleToggleStatus}
-                                className="mt-2 w-100"
+                                className="w-100"
                                 disabled={loading}
                             >
                                 {isActivo ? (
@@ -413,35 +501,34 @@ const VeterinarioDashboard = () => {
                                 <ListGroup.Item><FaIdCard className="me-2 text-primary"/> Cédula: {Cedula}</ListGroup.Item>
                                 <ListGroup.Item><FaEnvelope className="me-2 text-primary"/> Email: {Correo}</ListGroup.Item>
                             </ListGroup>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col lg={4} className="mb-4">
-                    <Card className="shadow-sm h-100 border-primary">
-                        <Card.Body className="text-center">
-                            {/* ... (Visualización de foto, estado y datos) */}
-                            <Button 
-                                variant="outline-primary"
-                                onClick={handleShowEditModal} // Botón para abrir el modal
-                                className="mt-3 w-100"
-                                disabled={loading}
-                            >
-                                <FaEdit className="me-2"/> Editar Información
-                            </Button>
-                            
-                            <hr />
 
-                            {/* ... (Información General) */}
+                            {/* Enlaces de Redes Sociales en la Vista */}
+                             {(RedesParsed.whatsapp || RedesParsed.facebook || RedesParsed.instagram) && (
+                                <>
+                                    <h6 className="mt-3 border-top pt-2">Redes</h6>
+                                    <div className="d-flex justify-content-center gap-3">
+                                        {RedesParsed.whatsapp && (
+                                            <a href={`https://wa.me/${RedesParsed.whatsapp}`} target="_blank" rel="noopener noreferrer">
+                                                <BsWhatsapp size={24} className="text-success" />
+                                            </a>
+                                        )}
+                                        {RedesParsed.facebook && (
+                                            <a href={RedesParsed.facebook} target="_blank" rel="noopener noreferrer">
+                                                <BsFacebook size={24} className="text-primary" />
+                                            </a>
+                                        )}
+                                        {RedesParsed.instagram && (
+                                            <a href={RedesParsed.instagram} target="_blank" rel="noopener noreferrer">
+                                                <BsInstagram size={24} className="text-danger" />
+                                            </a>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+
                         </Card.Body>
                     </Card>
                 </Col>
-                <EditProfileModal
-                    isOpen={showEditModal}
-                    onClose={() => setShowEditModal(false)}
-                    profileData={editProfile}
-                    onSave={handleSubmitEditProfile}
-                    loading={loading}
-                />
 
                 {/* LADO IZQUIERDO: Resumen y Datos Filtrados */}
                 <Col lg={8}>
@@ -479,9 +566,9 @@ const VeterinarioDashboard = () => {
                     {/* Historias Clínicas Recientes */}
                     <Card className="shadow-sm border-info">
                         <Card.Header className="bg-primary text-white">
-                            <FaClock className="me-2"  /> Últimas Historias Registradas
+                            <FaClock className="me-2" /> Últimas Historias Registradas
                         </Card.Header>
-                        <ListGroup variant="primary">
+                        <ListGroup variant="flush">
                             {recentHistories.length > 0 ? (
                                 recentHistories.map(h => (
                                     <ListGroup.Item key={h.idHistoria_clinica} className="d-flex justify-content-between align-items-center">
@@ -503,6 +590,15 @@ const VeterinarioDashboard = () => {
                     </Card>
                 </Col>
             </Row>
+
+            {/* Modal de Edición de Perfil (RENDERIZADO) */}
+            <EditProfileModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                profileData={editProfile}
+                onSave={handleSubmitEditProfile}
+                loading={loading}
+            />
         </Container>
     );
 };
