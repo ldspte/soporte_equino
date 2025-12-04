@@ -148,20 +148,30 @@ route.get('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
 
 route.post('/api/insumos', authenticateToken, async (req, res) => {
     const { Nombre, Descripcion, Foto, Precio } = req.body;
+    console.log('📝 Creando insumo:', { Nombre, Descripcion, Precio, tieneFoto: !!Foto });
+
     try {
         // Convertir base64 a buffer para almacenar en LONGBLOB
         let fotoBuffer = null;
         if (Foto) {
+            console.log('🖼️ Procesando imagen base64...');
             // Extraer solo los datos base64 (sin el prefijo data:image/...)
             const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
             fotoBuffer = Buffer.from(base64Data, 'base64');
+            console.log('✅ Buffer creado, tamaño:', fotoBuffer.length, 'bytes');
         }
 
         const values = await createItem(Nombre, Descripcion, fotoBuffer, Precio);
+        console.log('✅ Insumo creado exitosamente');
         res.status(201).json(values);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al crear el insumo' });
+        console.error('❌ Error al crear insumo:', error);
+        console.error('Stack trace:', error.stack);
+        res.status(500).json({
+            error: 'Error al crear el insumo',
+            message: error.message,
+            details: error.sqlMessage || error.toString()
+        });
     }
 });
 
