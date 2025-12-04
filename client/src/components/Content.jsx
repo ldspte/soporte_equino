@@ -140,7 +140,7 @@ export default function Content() {
                 id="call-to-action"
                 className="call-to-action section"
                 data-aos="fade-right"
-                style={{ backgroundColor: '#0d3b66', color: 'white', padding: '3rem 0' }}
+                style={{ backgroundColor: '#1D2D44', color: 'white', padding: '3rem 0' }}
             >
                 <Container>
                     <Row className="justify-content-center" data-aos="zoom-in" data-aos-delay="100">
@@ -237,7 +237,7 @@ export default function Content() {
             </section>
 
             {/* --- SECCIÓN DOCTORES ACTIVOS (AZUL) --- */}
-            <section id="doctors" className="doctors section" data-aos="fade-left" style={{ padding: '60px 0', backgroundColor: '#084C8D' }}>
+            <section id="doctors" className="doctors section" data-aos="fade-left" style={{ padding: '60px 0', backgroundColor: '#1D2D44' }}>
                 <Container className="section-title" data-aos="fade-up">
                     <h2 className='text-center text-white'>Doctores Activos</h2>
                     <p className="text-white">Tenemos un equipo que brinda apoyo 24h y especializado en equinos</p>
@@ -274,7 +274,7 @@ export default function Content() {
                                                                 src={`https://soporte-equino.onrender.com/uploads/${doctor.Foto}`} 
                                                                 alt={doctor.Nombre} 
                                                                 className="rounded-circle"
-                                                                style={{ width: '100px', height: '100px', objectFit: 'cover', border: '3px solid #084C8D' }}
+                                                                style={{ width: '100px', height: '100px', objectFit: 'cover', border: '3px solid #1D2D44' }}
                                                             />
                                                         ) : (
                                                             <FaUserCircle size={100} className='text-muted' />

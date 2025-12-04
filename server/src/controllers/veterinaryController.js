@@ -1,27 +1,27 @@
-const {db} = require('../database');
+const { db } = require('../database');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 dotenv.config();
 
 const sendPasswordEmail = async (correo, password) => {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com', 
-    port: 587, 
-    secure: false, 
-    auth: {
-      user: process.env.MAIL, 
-      pass: process.env.PASSWORD 
-    }
-  });
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+            user: process.env.MAIL,
+            pass: process.env.PASSWORD
+        }
+    });
 
-  
-  const mailOptions = {
-    from: 'SOPORTE EQUINO', 
-    to: correo, 
-    subject: 'Bienvenido a Soporte Equino', 
-    text: `Hola, tu contraseña por defecto es: ${password}`, 
-    html: `
+
+    const mailOptions = {
+        from: 'SOPORTE EQUINO',
+        to: correo,
+        subject: 'Bienvenido a Soporte Equino',
+        text: `Hola, tu contraseña por defecto es: ${password}`,
+        html: `
         <html>
             <head>
                 <style>
@@ -58,83 +58,83 @@ const sendPasswordEmail = async (correo, password) => {
             </body>
         </html> 
     `
-  };
+    };
 
-  // Envía el correo
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log('Correo enviado exitosamente');
-  } catch (error) {
-    console.error('Error al enviar el correo:', error);
-  }
+    // Envía el correo
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('Correo enviado exitosamente');
+    } catch (error) {
+        console.error('Error al enviar el correo:', error);
+    }
 };
 
-function generatePassword(longitud=10) {
-  const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?';
-  let password = '';
-  for (let i = 0; i < longitud; i++) {
-      const indice = Math.floor(Math.random() * caracteres.length);
-      password += caracteres[indice];
-  }
-  return password;
+function generatePassword(longitud = 10) {
+    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?';
+    let password = '';
+    for (let i = 0; i < longitud; i++) {
+        const indice = Math.floor(Math.random() * caracteres.length);
+        password += caracteres[indice];
+    }
+    return password;
 }
 
-const getVeterinarys = async() => {
+const getVeterinarys = async () => {
     const result = await db.query(`
         SELECT * FROM veterinario
     `)
     return result.length > 0 ? result[0] : null;
 }
 
-const getVeterinarystatus = async() => {
+const getVeterinarystatus = async () => {
     const result = await db.query(`
         SELECT * FROM veterinario WHERE estado = 'Activo'
     `)
     return result.length > 0 ? result[0] : null;
 }
 
-const getVeterinaryById = async(idVeterinario) => {
+const getVeterinaryById = async (idVeterinario) => {
     const result = await db.query(`
         SELECT * FROM veterinario WHERE idVeterinario = ?
     `,
-    [idVeterinario]
+        [idVeterinario]
     )
     return result;
 };
 
-const createVeterinary = async(Cedula, Nombre, Apellido, Correo, Foto) => {
+const createVeterinary = async (Cedula, Nombre, Apellido, Correo, Descripcion, Foto) => {
     const password = generatePassword();
     const Contraseña = await bcrypt.hash(password, 10);
     const result = await db.query(`
-        INSERT INTO veterinario (Cedula, Nombre, Apellido, Correo, Contraseña, Foto) VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO veterinario (Cedula, Nombre, Apellido, Correo, Descripcion, Contraseña, Foto) VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    [Cedula, Nombre, Apellido, Correo, Contraseña, Foto]
+        [Cedula, Nombre, Apellido, Correo, Descripcion, Contraseña, Foto]
     );
     await sendPasswordEmail(Correo, password); // Enviar correo con la contraseña
     return result;
 }
 
-const updateVeterinary = async(idVeterinario, Cedula, Nombre, Apellido, Correo, Foto, Estado) => {
+const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Foto, Estado) => {
     const result = await db.query(`
-        UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Foto = ?, Estado = ? WHERE idVeterinario = ?
+        UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Descripcion = ?, Foto = ?, Estado = ? WHERE idVeterinario = ?
     `,
-    [Cedula, Nombre, Apellido, Correo, Foto, Estado, idVeterinario]
+        [Cedula, Nombre, Apellido, Correo, Descripcion, Foto, Estado, idVeterinario]
     );
     return result;
 }
 
-const deleteVeterinary = async(idVeterinario) => {
+const deleteVeterinary = async (idVeterinario) => {
     const result = await db.query(`
         DELETE FROM veterinario WHERE idVeterinario = ?
     `,
-    [idVeterinario]
+        [idVeterinario]
     );
     return result;
 }
 
 module.exports = {
     getVeterinarys,
-    getVeterinarystatus, 
+    getVeterinarystatus,
     getVeterinaryById,
     createVeterinary,
     updateVeterinary,

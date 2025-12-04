@@ -10,18 +10,17 @@ function PatientManagement() {
     const [error, setError] = useState(null);
     const [showNewPatientModal, setShowNewPatientModal] = useState(false);
     const [showEditPatientModal, setShowEditPatientModal] = useState(false);
-    const [newPatient, setNewPatient] = useState({ Nombre: '', Numero_registro:'', Numero_chip:'', Edad: '', Raza: '', Sexo: '', Foto:'', Propietario: '' });
-    const [editPatient, setEditPatient] = useState({ Nombre: '', Numero_registro:'', Numero_chip:'', Edad: '', Raza: '', Sexo: '', Foto:'', Propietario: ''});
+    const [newPatient, setNewPatient] = useState({ Nombre: '', Numero_registro: '', Numero_chip: '', Edad: '', Raza: '', Sexo: '', Foto: '', Propietario: '' });
+    const [editPatient, setEditPatient] = useState({ Nombre: '', Numero_registro: '', Numero_chip: '', Edad: '', Raza: '', Sexo: '', Foto: '', Propietario: '' });
     const [currentPatient, setCurrentPatient] = useState(null);
 
     // --- Funciones de Utilidad y Hooks ---
 
     const getAuthToken = useCallback(() => {
         const token = localStorage.getItem('token');
-        // console.log(token ? `Bearer ${token}` : "XXXX") // Descomenta si necesitas depurar el token
         return token ? `Bearer ${token}` : null;
     }, []);
-    
+
     // 1. Hook para cargar datos iniciales (pacientes y propietarios)
     useEffect(() => {
         const token = getAuthToken();
@@ -31,15 +30,15 @@ function PatientManagement() {
         } else {
             setError('No autorizado. Por favor, inicia sesión.');
         }
-    }, [getAuthToken]); // Dependencia del token para asegurar que la carga se ejecute solo si hay token
-    
+    }, [getAuthToken]);
+
     // --- Lógica de Fetch de Datos ---
 
     // 2. fetchPatients recibe el token directamente, eliminando la doble verificación
     const fetchPatients = async (token) => {
         setLoading(true);
-        setError(null); // Limpiar errores antes de la nueva petición
-        
+        setError(null);
+
         if (!token) {
             setError('No autorizado. Por favor, inicia sesión.');
             setLoading(false);
@@ -47,19 +46,19 @@ function PatientManagement() {
         }
 
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/pacientes',{
+            const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
                 method: 'GET',
                 headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
-            
+
             if (!response.ok) {
-                 if (response.status === 401) {
-                     setError('Sesión expirada. Por favor, inicia sesión de nuevo.');
-                     return; 
-                 }
-                 throw new Error(`Error ${response.status} al obtener pacientes`);
+                if (response.status === 401) {
+                    setError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    return;
+                }
+                throw new Error(`Error ${response.status} al obtener pacientes`);
             }
-            
+
             const data = await response.json();
             setPatients(data);
         } catch (error) {
@@ -73,27 +72,26 @@ function PatientManagement() {
     const fetchOwners = async (token) => {
         setLoading(true);
         setError(null);
-        
+
         if (!token) {
-            // El error principal ya se manejaría en el useEffect, pero esta es una buena práctica
             setLoading(false);
             return;
         }
 
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios',{
+            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios', {
                 method: 'GET',
                 headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
-            
+
             if (!response.ok) {
-                 if (response.status === 401) {
-                     setError('Sesión expirada. Por favor, inicia sesión de nuevo.');
-                     return;
-                 }
-                 throw new Error(`Error ${response.status} al obtener propietarios`);
+                if (response.status === 401) {
+                    setError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    return;
+                }
+                throw new Error(`Error ${response.status} al obtener propietarios`);
             }
-            
+
             const data = await response.json();
             setOwners(data);
         } catch (error) {
@@ -102,17 +100,51 @@ function PatientManagement() {
             setLoading(false);
         }
     };
-    
+
     // --- Handlers de Formulario ---
-    
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setNewPatient(prev => ({ ...prev, [name]: value }));
+
+    // Función para convertir archivo a base64
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
     };
 
-    const handleEditInputChange = (e) => {
-        const { name, value } = e.target;
-        setEditPatient(prev => ({ ...prev, [name]: value }));
+    const handleInputChange = async (e) => {
+        const { name, value, files } = e.target;
+
+        // Si es un input de tipo file, convertir a base64
+        if (name === 'Foto' && files && files[0]) {
+            try {
+                const base64 = await fileToBase64(files[0]);
+                setNewPatient(prev => ({ ...prev, [name]: base64 }));
+            } catch (error) {
+                console.error('Error al convertir imagen a base64:', error);
+                setError('Error al procesar la imagen');
+            }
+        } else {
+            setNewPatient(prev => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const handleEditInputChange = async (e) => {
+        const { name, value, files } = e.target;
+
+        // Si es un input de tipo file, convertir a base64
+        if (name === 'Foto' && files && files[0]) {
+            try {
+                const base64 = await fileToBase64(files[0]);
+                setEditPatient(prev => ({ ...prev, [name]: base64 }));
+            } catch (error) {
+                console.error('Error al convertir imagen a base64:', error);
+                setError('Error al procesar la imagen');
+            }
+        } else {
+            setEditPatient(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSubmitNewPatient = async (e) => {
@@ -122,24 +154,24 @@ function PatientManagement() {
             setError('No autorizado. Por favor, inicia sesión.');
             return;
         }
-        
+
         try {
             const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': token },
                 body: JSON.stringify(newPatient)
             });
-            
+
             if (!response.ok) {
-                 const errorText = await response.text();
-                 throw new Error(errorText || 'Error al crear paciente');
+                const errorText = await response.text();
+                throw new Error(errorText || 'Error al crear paciente');
             }
-            
+
             // Refrescar datos y cerrar modal
             fetchPatients(token);
             setShowNewPatientModal(false);
-            setNewPatient({ Nombre: '', Numero_registro: '', Numero_chip:'', Edad: '', Raza: '', Sexo: '', Foto:'', Propietario: '' });
-            setError(null); // Limpiar errores si la operación fue exitosa
+            setNewPatient({ Nombre: '', Numero_registro: '', Numero_chip: '', Edad: '', Raza: '', Sexo: '', Foto: '', Propietario: '' });
+            setError(null);
         } catch (error) {
             setError(error.message);
         }
@@ -158,19 +190,19 @@ function PatientManagement() {
             setError('No autorizado. Por favor, inicia sesión.');
             return;
         }
-        
+
         try {
             const response = await fetch(`https://soporte-equino.onrender.com/api/pacientes/${currentPatient.idPaciente}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': token },
                 body: JSON.stringify(editPatient)
             });
-            
+
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(errorText || 'Error al actualizar paciente');
             }
-            
+
             fetchPatients(token);
             setShowEditPatientModal(false);
             setError(null);
@@ -185,18 +217,18 @@ function PatientManagement() {
             setError('No autorizado. Por favor, inicia sesión.');
             return;
         }
-        
+
         try {
             const response = await fetch(`https://soporte-equino.onrender.com/api/pacientes/${idPaciente}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
-            
+
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(errorText || 'Error al eliminar paciente');
             }
-            
+
             fetchPatients(token);
             setError(null);
         } catch (error) {
@@ -206,7 +238,7 @@ function PatientManagement() {
 
     // --- Lógica de Filtro ---
 
-    const filteredPatients = patients.filter(patient => 
+    const filteredPatients = patients.filter(patient =>
         patient.Nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         patient.Numero_registro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (owners.find(owner => owner.idPropietario === patient.Propietario)?.Nombre.toLowerCase() || '').includes(searchTerm.toLowerCase())
@@ -223,7 +255,7 @@ function PatientManagement() {
                 </Button>
             </div>
             {error && <Alert variant="danger">{error}</Alert>}
-            
+
             <Card className="mb-4">
                 <Card.Body>
                     <Row>
@@ -242,7 +274,7 @@ function PatientManagement() {
                     </Row>
                 </Card.Body>
             </Card>
-            
+
             <Card>
                 <Card.Body>
                     {loading ? (
@@ -269,12 +301,12 @@ function PatientManagement() {
                                     {filteredPatients.map((patient, index) => (
                                         <tr key={patient.idPaciente}>
                                             <td>{index + 1}</td>
-                                            <td><FaHorseHead className='me-2 text-warning'/> {patient.Nombre}</td>
-                                            <td><FaIdCard className='me-2 text-info'/> {patient.Numero_registro}</td>
+                                            <td><FaHorseHead className='me-2 text-warning' /> {patient.Nombre}</td>
+                                            <td><FaIdCard className='me-2 text-info' /> {patient.Numero_registro}</td>
                                             <td>{patient.Raza}</td>
                                             <td>{patient.Sexo}</td>
                                             <td>
-                                                <FaUserCircle className='me-2 text-success'/>
+                                                <FaUserCircle className='me-2 text-success' />
                                                 {owners.find(owner => owner.idPropietario === patient.Propietario)
                                                     ? `${owners.find(owner => owner.idPropietario === patient.Propietario).Nombre} ${owners.find(owner => owner.idPropietario === patient.Propietario).Apellido}`
                                                     : 'No asignado'}
@@ -334,8 +366,12 @@ function PatientManagement() {
                         </Form.Group>
                         <Form.Group controlId="formFoto" className='mb-2'>
                             <Form.Label>Foto</Form.Label>
-                            {/* Nota: En un entorno de producción real, el campo 'file' debe manejarse con FormData, no solo con el valor del input. */}
-                            <Form.Control type="file" name="Foto" onChange={handleInputChange} />
+                            <Form.Control type="file" name="Foto" accept="image/*" onChange={handleInputChange} />
+                            {newPatient.Foto && (
+                                <div className="mt-2">
+                                    <img src={newPatient.Foto} alt="Preview" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
+                                </div>
+                            )}
                         </Form.Group>
                         <Form.Group controlId="formPropietario" className='mb-4'>
                             <Form.Label>Propietario</Form.Label>
@@ -357,7 +393,7 @@ function PatientManagement() {
                     <Modal.Title>Editar Paciente</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                     {editPatient && (
+                    {editPatient && (
                         <Form onSubmit={handleSubmitEditPatient}>
                             <Form.Group controlId="formNombre" className='mb-2'>
                                 <Form.Label>Nombre</Form.Label>
@@ -369,7 +405,7 @@ function PatientManagement() {
                             </Form.Group>
                             <Form.Group controlId="formChip" className='mb-2'>
                                 <Form.Label>Numero de Chip</Form.Label>
-                                <Form.Control type="text" name="Numero_chip" value={editPatient.Numero_chip} onChange={handleEditInputChange}/>
+                                <Form.Control type="text" name="Numero_chip" value={editPatient.Numero_chip} onChange={handleEditInputChange} />
                             </Form.Group>
                             <Form.Group controlId="formEdad" className='mb-2'>
                                 <Form.Label>Edad</Form.Label>
@@ -387,6 +423,15 @@ function PatientManagement() {
                                     <option value="F">Femenino</option>
                                 </Form.Control>
                             </Form.Group>
+                            <Form.Group controlId="formEditFoto" className='mb-2'>
+                                <Form.Label>Foto (Dejar vacío para no cambiar)</Form.Label>
+                                <Form.Control type="file" name="Foto" accept="image/*" onChange={handleEditInputChange} />
+                                {editPatient.Foto && (
+                                    <div className="mt-2">
+                                        <img src={editPatient.Foto} alt="Preview" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
+                                    </div>
+                                )}
+                            </Form.Group>
                             <Form.Group controlId="formPropietario" className='mb-4'>
                                 <Form.Label>Propietario</Form.Label>
                                 <Form.Control as="select" name="Propietario" value={editPatient.Propietario} onChange={handleEditInputChange} required>
@@ -398,7 +443,7 @@ function PatientManagement() {
                             </Form.Group>
                             <Button type="submit" variant="warning">Actualizar Paciente</Button>
                         </Form>
-                     )}
+                    )}
                 </Modal.Body>
             </Modal>
         </div>

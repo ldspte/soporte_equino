@@ -10,10 +10,9 @@ function Insumos() {
     const [showNewInsumoModal, setShowNewInsumoModal] = useState(false);
     const [showEditInsumoModal, setShowEditInsumoModal] = useState(false);
     const [currentInsumo, setCurrentInsumo] = useState(null);
-    
-    const [newInsumo, setNewInsumo] = useState({ Nombre: '', Descripcion: '', Precio: '' });
-    const [newInsumoFile, setNewInsumoFile] = useState(null);
-    const [editInsumo, setEditInsumo] = useState({ Nombre: '', Descripcion: '', Precio: '' }); // Nota: La foto actual se carga en currentInsumo
+
+    const [newInsumo, setNewInsumo] = useState({ Nombre: '', Descripcion: '', Precio: '', Foto: '' });
+    const [editInsumo, setEditInsumo] = useState({ Nombre: '', Descripcion: '', Precio: '', Foto: '' });
 
     // --- Funciones de Utilidad y Hooks ---
 
@@ -37,27 +36,26 @@ function Insumos() {
     const fetchInsumos = async (token) => {
         setLoading(true);
         setError(null);
-        
+
         if (!token) {
             setLoading(false);
             return;
         }
-        
+
         try {
             const response = await fetch('https://soporte-equino.onrender.com/api/insumos', {
                 method: 'GET',
-                // Para GET, sí podemos enviar Content-Type: application/json
-                headers: { 'Authorization': token , 'Content-Type': 'application/json'}
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
-            
+
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
                     setError('Sesión expirada o permisos insuficientes.');
-                    return; 
+                    return;
                 }
                 throw new Error(`Error ${response.status} al obtener insumos`);
             }
-            
+
             const data = await response.json();
             setInsumos(data);
         } catch (error) {
@@ -69,56 +67,77 @@ function Insumos() {
 
     // --- Handlers de Formulario ---
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setNewInsumo(prev => ({ ...prev, [name]: value }));
+    // Función para convertir archivo a base64
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
     };
 
-    const handleNewFileChange = (e) => {
-        setNewInsumoFile(e.target.files[0]); // Guardamos el objeto File
+    const handleInputChange = async (e) => {
+        const { name, value, files } = e.target;
+
+        // Si es un input de tipo file, convertir a base64
+        if (name === 'Foto' && files && files[0]) {
+            try {
+                const base64 = await fileToBase64(files[0]);
+                setNewInsumo(prev => ({ ...prev, [name]: base64 }));
+            } catch (error) {
+                console.error('Error al convertir imagen a base64:', error);
+                setError('Error al procesar la imagen');
+            }
+        } else {
+            setNewInsumo(prev => ({ ...prev, [name]: value }));
+        }
     };
 
-    const handleEditInputChange = (e) => {
-        const { name, value } = e.target;
-        setEditInsumo(prev => ({ ...prev, [name]: value }));
+    const handleEditInputChange = async (e) => {
+        const { name, value, files } = e.target;
+
+        // Si es un input de tipo file, convertir a base64
+        if (name === 'Foto' && files && files[0]) {
+            try {
+                const base64 = await fileToBase64(files[0]);
+                setEditInsumo(prev => ({ ...prev, [name]: base64 }));
+            } catch (error) {
+                console.error('Error al convertir imagen a base64:', error);
+                setError('Error al procesar la imagen');
+            }
+        } else {
+            setEditInsumo(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSubmitNewInsumo = async (e) => {
         e.preventDefault();
-        
+
         const token = getAuthToken();
         if (!token) {
             setError('No autorizado. Por favor, inicia sesión.');
             return;
         }
-        
-        const formData = new FormData();
-        formData.append('Nombre', newInsumo.Nombre);
-        formData.append('Descripcion', newInsumo.Descripcion);
-        formData.append('Precio', newInsumo.Precio);
-        
-        // El campo 'Foto' debe coincidir con el campo de Multer
-        if (newInsumoFile) {
-            formData.append('Foto', newInsumoFile);
-        }
 
         try {
             const response = await fetch('https://soporte-equino.onrender.com/api/insumos', {
                 method: 'POST',
-                // CORRECCIÓN CLAVE: Solo enviamos Authorization. El navegador configura Content-Type: multipart/form-data
-                headers: { 'Authorization': token }, 
-                body: formData
+                headers: {
+                    'Authorization': token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newInsumo)
             });
-            
+
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(errorText || 'Error al crear insumo');
             }
-            
+
             fetchInsumos(token);
             setShowNewInsumoModal(false);
-            setNewInsumo({ Nombre: '', Descripcion: '', Precio: '' });
-            setNewInsumoFile(null); // Limpiamos el archivo
+            setNewInsumo({ Nombre: '', Descripcion: '', Precio: '', Foto: '' });
             setError(null);
         } catch (error) {
             setError(error.message);
@@ -127,50 +146,34 @@ function Insumos() {
 
     const handleEditInsumo = (insumo) => {
         setCurrentInsumo(insumo);
-        // Cargamos los datos de texto. La foto (el archivo) se maneja en el input.
         setEditInsumo({ Nombre: insumo.Nombre, Descripcion: insumo.Descripcion, Precio: insumo.Precio, Foto: insumo.Foto });
-        setNewInsumoFile(null); // Limpiamos el selector de archivos por si quedó algo de antes
         setShowEditInsumoModal(true);
     };
 
     const handleSubmitEditInsumo = async (e) => {
         e.preventDefault();
-        
+
         const token = getAuthToken();
         if (!token) {
             setError('No autorizado. Por favor, inicia sesión.');
             return;
         }
 
-        const formData = new FormData();
-        formData.append('Nombre', editInsumo.Nombre);
-        formData.append('Descripcion', editInsumo.Descripcion);
-        formData.append('Precio', editInsumo.Precio);
-        
-        // Mantenemos el nombre de la foto actual para que el backend sepa cuál es si no se sube una nueva
-        formData.append('Foto', editInsumo.Foto || ''); 
-
-        // Capturamos el archivo directamente del input de edición
-        const photoInput = e.target.elements.formEditFoto.files[0];
-        
-        if (photoInput) {
-             // Si se seleccionó un nuevo archivo, Multer lo procesará
-            formData.append('Foto', photoInput); 
-        }
-
         try {
             const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${currentInsumo.idInsumos}`, {
                 method: 'PUT',
-                // CORRECCIÓN CLAVE: Solo enviamos Authorization.
-                headers: { 'Authorization': token }, 
-                body: formData
+                headers: {
+                    'Authorization': token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(editInsumo)
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(errorText || 'Error al actualizar insumo');
             }
-            
+
             fetchInsumos(token);
             setShowEditInsumoModal(false);
             setError(null);
@@ -185,18 +188,18 @@ function Insumos() {
             setError('No autorizado. Por favor, inicia sesión.');
             return;
         }
-        
+
         try {
             const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${idInsumos}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
-            
+
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(errorText || 'Error al eliminar insumo');
             }
-            
+
             fetchInsumos(token);
             setError(null);
         } catch (error) {
@@ -206,8 +209,8 @@ function Insumos() {
 
     // --- Lógica de Filtro ---
 
-    const filteredInsumos = insumos.filter(insumo => 
-        insumo.Nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const filteredInsumos = insumos.filter(insumo =>
+        insumo.Nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         insumo.Descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -222,7 +225,7 @@ function Insumos() {
                 </Button>
             </div>
             {error && <Alert variant="danger">{error}</Alert>}
-            
+
             <Card className="mb-4">
                 <Card.Body>
                     <Row>
@@ -254,10 +257,10 @@ function Insumos() {
                             <Table hover>
                                 <thead>
                                     <tr>
-                                        <th><FaTag className='me-1'/> Nombre</th>
+                                        <th><FaTag className='me-1' /> Nombre</th>
                                         <th>Descripción</th>
                                         <th>Foto</th>
-                                        <th><FaMoneyBill className='me-1'/> Precio</th>
+                                        <th><FaMoneyBill className='me-1' /> Precio</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -268,10 +271,10 @@ function Insumos() {
                                             <td>{insumo.Descripcion}</td>
                                             <td>
                                                 {insumo.Foto ? (
-                                                    <img 
-                                                        src={`https://soporte-equino.onrender.com/uploads/${insumo.Foto}`} 
-                                                        alt={insumo.Nombre} 
-                                                        style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} 
+                                                    <img
+                                                        src={insumo.Foto}
+                                                        alt={insumo.Nombre}
+                                                        style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
                                                         onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/50x50/cccccc/333333?text=N/A'; }}
                                                     />
                                                 ) : (
@@ -313,7 +316,12 @@ function Insumos() {
                         </Form.Group>
                         <Form.Group controlId="formFoto" className='mb-2'>
                             <Form.Label>Foto</Form.Label>
-                            <Form.Control type="file" name="Foto" onChange={handleNewFileChange} required />
+                            <Form.Control type="file" name="Foto" accept="image/*" onChange={handleInputChange} required />
+                            {newInsumo.Foto && (
+                                <div className="mt-2">
+                                    <img src={newInsumo.Foto} alt="Preview" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
+                                </div>
+                            )}
                         </Form.Group>
                         <Form.Group controlId="formPrecio" className='mb-4'>
                             <Form.Label>Precio</Form.Label>
@@ -344,12 +352,12 @@ function Insumos() {
                         </Form.Group>
                         <Form.Group controlId="formEditFoto" className='mb-2'>
                             <Form.Label>Foto (Dejar vacío para no cambiar)</Form.Label>
-                            {/* Usamos handleNewFileChange para capturar el nuevo archivo si lo hay */}
-                            <Form.Control type="file" name="Foto" onChange={handleNewFileChange} />
-                            {currentInsumo?.Foto && (
-                                <p className="mt-2 text-muted small">
-                                    Archivo actual: **{currentInsumo.Foto}**
-                                </p>
+                            <Form.Control type="file" name="Foto" accept="image/*" onChange={handleEditInputChange} />
+                            {editInsumo.Foto && (
+                                <div className="mt-2">
+                                    <p className="text-muted small">Foto actual:</p>
+                                    <img src={editInsumo.Foto} alt="Preview" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
+                                </div>
                             )}
                         </Form.Group>
                         <Form.Group controlId="formEditPrecio" className='mb-4'>

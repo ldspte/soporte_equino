@@ -19,9 +19,9 @@ app.use((err, req, res, next) => {
 // Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
-  // const contraseña = 'dani123';
-  // const hashpassword = bcrypt.hashSync(contraseña, 10);
-  // console.log(hashpassword);
+  const contraseña = 'fabi123';
+  const hashpassword = bcrypt.hashSync(contraseña, 10);
+  console.log(hashpassword);
 });
 
 module.exports = app;

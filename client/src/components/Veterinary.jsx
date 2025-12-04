@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Container, Row, Col, InputGroup, Form, Modal, Badge, Alert } from 'react-bootstrap';
-import { 
-  FaIdCard, FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus, 
+import {
+  FaIdCard, FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus,
   FaSave, FaCalendarPlus, FaPhone, FaMapMarkerAlt, FaEnvelope,
-  FaCarSide, FaCamera, FaUser , FaHome, FaCalendarAlt, FaClock, FaTimes,
+  FaCarSide, FaCamera, FaUser, FaHome, FaCalendarAlt, FaClock, FaTimes,
   FaCheckCircle, FaSpinner
 } from 'react-icons/fa';
 
@@ -21,7 +21,7 @@ const Veterinarios = () => {
   const [error, setError] = useState(null);
   const [veterinarios, setVeterinarios] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   // Estados para modales
   const [showEditSuccessModal, setShowEditSuccessModal] = useState(false);
   const [showSendingAlert, setShowSendingAlert] = useState(false);
@@ -38,18 +38,19 @@ const Veterinarios = () => {
   // Estados para veterinarios
   const [currentVeterinario, setCurrentVeterinario] = useState(null);
   const [veterinarioToDelete, setVeterinarioToDelete] = useState(null);
-  
+
   // Estado inicial para nuevo veterinario
   const initialVeterinarioState = {
     Cedula: '',
     Nombre: '',
     Apellido: '',
-    Correo: ''
+    Correo: '',
+    Descripcion: ''
   };
-  
+
   const [newVeterinario, setNewVeterinario] = useState(initialVeterinarioState);
   const [editVeterinario, setEditVeterinario] = useState(initialVeterinarioState);
-  
+
   // Estados de validación
   const [validated, setValidated] = useState(false);
   const [editValidated, setEditValidated] = useState(false);
@@ -68,6 +69,7 @@ const Veterinarios = () => {
       Nombre: veterinario.Nombre || '',
       Apellido: veterinario.Apellido || '',
       Correo: veterinario.Correo || '',
+      Descripcion: veterinario.Descripcion || '',
     };
   }, []);
 
@@ -75,7 +77,7 @@ const Veterinarios = () => {
   const fetchVeterinarios = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const token = getAuthToken();
       if (!token) {
@@ -83,7 +85,7 @@ const Veterinarios = () => {
         setLoading(false);
         return;
       }
-      
+
       const response = await fetch('https://soporte-equino.onrender.com/api/veterinarios', {
         method: 'GET',
         headers: {
@@ -91,7 +93,7 @@ const Veterinarios = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         if (response.status === 401 || response.status === 403) {
@@ -104,14 +106,14 @@ const Veterinarios = () => {
 
       const data = await response.json();
       const processedData = Array.isArray(data) ? data.map(normalizeVeterinarioData) : [normalizeVeterinarioData(data)];
-      
+
       if (!processedData.length) {
         setError('No se encontraron veterinarios');
       }
-      
+
       setVeterinarios(processedData);
       console.log('Veterinarios cargados:', processedData);
-      
+
     } catch (error) {
       console.error('Error fetching veterinarios:', error);
       setError(`Error al cargar los veterinarios: ${error.message}`);
@@ -126,7 +128,7 @@ const Veterinarios = () => {
     e.preventDefault();
     const form = e.currentTarget;
     const token = getAuthToken();
-    
+
     if (!token) {
       setError('No hay token de autenticación');
       return;
@@ -179,9 +181,9 @@ const Veterinarios = () => {
       setSuccessSubMessage('Contraseña enviada al correo electrónico');
       setShowSuccessModal(true);
 
-      
+
       setTimeout(() => setShowSuccessModal(false), 3000);
-      
+
       // Actualizar el estado local con el nuevo veterinario
       setVeterinarios(prevVeterinarios => [normalizeVeterinarioData(data.veterinario || data), ...prevVeterinarios]);
       setNewVeterinario(initialVeterinarioState);
@@ -265,7 +267,7 @@ const Veterinarios = () => {
       setError('Veterinario inválido seleccionado');
       return;
     }
-    
+
     setCurrentVeterinario(normalizeVeterinarioData(veterinario));
     setShowVeterinarioModal(true);
     setError(null);
@@ -277,7 +279,7 @@ const Veterinarios = () => {
       setError('Veterinario inválido para editar');
       return;
     }
-    
+
     setShowVeterinarioModal(false);
     setEditVeterinario(normalizeVeterinarioData(veterinario));
     setShowEditVeterinarioModal(true);
@@ -298,23 +300,23 @@ const Veterinarios = () => {
   const handleSubmitEditVeterinario = async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
-    
+
     if (form.checkValidity() === false) {
       e.stopPropagation();
       setEditValidated(true);
       return;
     }
-    
+
     try {
       setLoading(true);
       const { idVeterinario, ...veterinarioData } = editVeterinario;
       await updateVeterinario(idVeterinario, veterinarioData);
       await fetchVeterinarios();
-      
+
       setShowEditVeterinarioModal(false);
       setEditValidated(false);
       setError(null);
-      
+
       // Mostrar modal de éxito para edición
       setSuccessMessage('¡Veterinario actualizado exitosamente!');
       setSuccessSubMessage('Los cambios han sido guardados correctamente');
@@ -322,7 +324,7 @@ const Veterinarios = () => {
 
       // Ocultar modal después de 2 segundos
       setTimeout(() => setShowEditSuccessModal(false), 2000);
-      
+
     } catch (error) {
       setError(`Error al actualizar el veterinario: ${error.message}`);
     } finally {
@@ -333,7 +335,7 @@ const Veterinarios = () => {
   // Confirmar eliminación de veterinario
   const confirmDeleteVeterinario = async () => {
     if (!veterinarioToDelete) return;
-    
+
     try {
       setLoading(true);
       await deleteVeterinario(veterinarioToDelete.idVeterinario);
@@ -341,14 +343,14 @@ const Veterinarios = () => {
       setShowDeleteModal(false);
       setVeterinarioToDelete(null);
       setError(null);
-      
+
       // Mostrar modal de éxito para eliminación
       setSuccessMessage('¡Veterinario eliminado exitosamente!');
       setShowDeleteSuccessModal(true);
 
       // Ocultar modal después de 2 segundos
       setTimeout(() => setShowDeleteSuccessModal(false), 2000);
-      
+
     } catch (error) {
       setError(`Error al eliminar el veterinario: ${error.message}`);
     } finally {
@@ -359,7 +361,7 @@ const Veterinarios = () => {
   // Filtrar veterinarios
   const filteredVeterinarios = veterinarios.filter((veterinario) => {
     if (!veterinario?.idVeterinario) return false;
-    
+
     const searchLower = searchTerm.toLowerCase();
     return (
       (veterinario.Cedula?.toString() || '').toLowerCase().includes(searchLower) ||
@@ -373,8 +375,8 @@ const Veterinarios = () => {
     <div>
       <div className="page-header d-flex justify-content-between align-items-center mt-4 mb-4">
         <h1>Gestión de Veterinarios</h1>
-        <Button 
-          variant="warning" 
+        <Button
+          variant="warning"
           className="d-flex align-items-center"
           onClick={() => setShowNewVeterinarioModal(true)}
           disabled={loading}
@@ -388,7 +390,7 @@ const Veterinarios = () => {
           {error}
         </div>
       )}
-      
+
       {/* Filtros y búsqueda */}
       <Card className="mb-4">
         <Card.Body>
@@ -408,7 +410,7 @@ const Veterinarios = () => {
           </Row>
         </Card.Body>
       </Card>
-      
+
       {/* Listado de veterinarios */}
       <Card>
         <Card.Header className="bg-white">
@@ -419,7 +421,7 @@ const Veterinarios = () => {
             </div>
             <small className="text-muted">
               {filteredVeterinarios.length} veterinario(s) encontrado(s)
-            </small>  
+            </small>
           </div>
         </Card.Header>
         <Card.Body>
@@ -448,25 +450,25 @@ const Veterinarios = () => {
                       <td>{veterinario.Correo || 'Sin correo'}</td>
                       <td>
                         <div className="action-buttons">
-                          <Button 
-                            variant="outline-warning" 
-                            size="sm" 
+                          <Button
+                            variant="outline-warning"
+                            size="sm"
                             className="me-1"
                             onClick={() => handleShowDetails(veterinario)}
                           >
                             Ver
                           </Button>
-                          <Button 
-                            variant="outline-warning" 
-                            size="sm" 
+                          <Button
+                            variant="outline-warning"
+                            size="sm"
                             className="me-1"
                             onClick={() => handleEditVeterinario(veterinario)}
                             disabled={loading}
                           >
                             <FaEdit />
                           </Button>
-                          <Button 
-                            variant="outline-danger" 
+                          <Button
+                            variant="outline-danger"
                             size="sm"
                             onClick={() => handleDeleteVeterinario(veterinario.idVeterinario)}
                             disabled={loading}
@@ -481,7 +483,7 @@ const Veterinarios = () => {
               </Table>
             </div>
           )}
-          
+
           {!loading && filteredVeterinarios.length === 0 && (
             <div className="text-center py-4">
               <p className="text-muted">No se encontraron veterinarios con los criterios de búsqueda.</p>
@@ -489,17 +491,17 @@ const Veterinarios = () => {
           )}
         </Card.Body>
       </Card>
-      
+
       {/* Modal de detalles del veterinario */}
-      <Modal 
-        show={showVeterinarioModal} 
+      <Modal
+        show={showVeterinarioModal}
         onHide={() => setShowVeterinarioModal(false)}
         size="lg"
         centered
       >
         <Modal.Header closeButton className="border-bottom border-warning">
           <Modal.Title>
-            <FaUser  className="me-2 text-warning" />
+            <FaUser className="me-2 text-warning" />
             Detalles del Veterinario
           </Modal.Title>
         </Modal.Header>
@@ -528,18 +530,18 @@ const Veterinarios = () => {
             </div>
           )}
         </Modal.Body>
- <Modal.Footer>
+        <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowVeterinarioModal(false)}>
             <FaTimes className="me-2" />
             Cerrar
           </Button>
           <Button variant="warning" onClick={() => handleEditVeterinario(currentVeterinario)}>
-            <FaEdit className="me-2" /> 
+            <FaEdit className="me-2" />
             Editar Información
           </Button>
         </Modal.Footer>
       </Modal>
-      
+
       {/* Modal para crear nuevo veterinario */}
       <Modal
         show={showNewVeterinarioModal}
@@ -555,7 +557,7 @@ const Veterinarios = () => {
         <Form noValidate validated={validated} onSubmit={handleSubmitNewVeterinario}>
           <Modal.Header closeButton className="border-bottom border-warning">
             <Modal.Title>
-              <FaUser  className="me-2 text-warning" />
+              <FaUser className="me-2 text-warning" />
               Registrar Nuevo Veterinario
             </Modal.Title>
           </Modal.Header>
@@ -627,14 +629,43 @@ const Veterinarios = () => {
                     <Form.Control.Feedback type="invalid">
                       Ingrese un email válido
                     </Form.Control.Feedback>
+                  </Form.Group>              </Col>
+              </Row>
+              <Row className="mb-3">
+              <Row className="mb-3">
+                <Col md={12}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Descripci�n</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      name="Descripcion"
+                      value={newVeterinario.Descripcion}
+                      onChange={handleInputChange}
+                      placeholder="Ingrese una descripci�n breve del veterinario (especialidad, a�os de experiencia, etc.)"
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
+                <Col md={12}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Descripci�n</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      name="Descripcion"
+                      value={newVeterinario.Descripcion}
+                      onChange={handleInputChange}
+                      placeholder="Ingrese una descripci�n breve del veterinario (especialidad, a�os de experiencia, etc.)"
+                    />
                   </Form.Group>
                 </Col>
               </Row>
             </div>
           </Modal.Body>
           <Modal.Footer>
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               onClick={() => {
                 setShowNewVeterinarioModal(false);
                 setValidated(false);
@@ -644,8 +675,8 @@ const Veterinarios = () => {
             >
               Cancelar
             </Button>
-            <Button 
-              variant="warning" 
+            <Button
+              variant="warning"
               type="submit"
               disabled={loading || isUpdating}
             >
@@ -664,7 +695,7 @@ const Veterinarios = () => {
           </Modal.Footer>
         </Form>
       </Modal>
-      
+
       {/* Modal para editar veterinario */}
       <Modal
         show={showEditVeterinarioModal}
@@ -751,14 +782,28 @@ const Veterinarios = () => {
                     <Form.Control.Feedback type="invalid">
                       Ingrese un email válido
                     </Form.Control.Feedback>
+                  </Form.Group>              </Col>
+              </Row>
+              <Row className="mb-3">
+                <Col md={12}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Descripci�n</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      name="Descripcion"
+                      value={newVeterinario.Descripcion}
+                      onChange={handleInputChange}
+                      placeholder="Ingrese una descripci�n breve del veterinario (especialidad, a�os de experiencia, etc.)"
+                    />
                   </Form.Group>
                 </Col>
               </Row>
             </div>
           </Modal.Body>
           <Modal.Footer>
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               onClick={() => {
                 setShowEditVeterinarioModal(false);
                 setEditValidated(false);
@@ -767,8 +812,8 @@ const Veterinarios = () => {
             >
               Cancelar
             </Button>
-            <Button 
-              variant="warning" 
+            <Button
+              variant="warning"
               type="submit"
               disabled={loading}
             >
@@ -787,7 +832,7 @@ const Veterinarios = () => {
           </Modal.Footer>
         </Form>
       </Modal>
-      
+
       {/* Modal de confirmación para eliminar */}
       <Modal
         show={showDeleteModal}
@@ -804,7 +849,7 @@ const Veterinarios = () => {
           {veterinarioToDelete && (
             <div className="text-center">
               <div className="mb-3">
-                <FaUser  size={40} className="text-danger" />
+                <FaUser size={40} className="text-danger" />
               </div>
               <p className="mb-3">
                 ¿Está seguro que desea eliminar al veterinario?
@@ -825,15 +870,15 @@ const Veterinarios = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={() => setShowDeleteModal(false)}
             disabled={loading}
           >
             Cancelar
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={confirmDeleteVeterinario}
             disabled={loading}
           >
@@ -851,76 +896,76 @@ const Veterinarios = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-       {/* Alert flotante para envío de contraseña */}
-    {showSendingAlert && (
-      <div style={{
-        position: 'fixed',
-        top: '20px',
-        right: '20px',
-        zIndex: 9999,
-        minWidth: '300px'
-      }}>
-        <Alert variant="info" className="d-flex align-items-center shadow">
-          <FaSpinner className="me-2 fa-spin" />
-          <div>
-            <strong>Enviando contraseña por defecto</strong>
-            <br />
-            <small>Se está enviando al correo del Veterinario...</small>
+      {/* Alert flotante para envío de contraseña */}
+      {showSendingAlert && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 9999,
+          minWidth: '300px'
+        }}>
+          <Alert variant="info" className="d-flex align-items-center shadow">
+            <FaSpinner className="me-2 fa-spin" />
+            <div>
+              <strong>Enviando contraseña por defecto</strong>
+              <br />
+              <small>Se está enviando al correo del Veterinario...</small>
+            </div>
+          </Alert>
+        </div>
+      )}
+
+      {/* Modal de éxito para crear veterinario */}
+      <Modal
+        show={showSuccessModal}
+        centered
+        backdrop="static"
+        keyboard={false}
+      >
+        <Modal.Body className="text-center py-4">
+          <div className="mb-3">
+            <FaCheckCircle size={50} className="text-success" />
           </div>
-        </Alert>
-      </div>
-    )}
+          <h5 className="text-success mb-2">{successMessage}</h5>
+          <p className="text-muted mb-0">
+            <FaEnvelope className="me-1" />
+            {successSubMessage}
+          </p>
+        </Modal.Body>
+      </Modal>
 
-    {/* Modal de éxito para crear veterinario */}
-    <Modal
-      show={showSuccessModal}
-      centered
-      backdrop="static"
-      keyboard={false}
-    >
-      <Modal.Body className="text-center py-4">
-        <div className="mb-3">
-          <FaCheckCircle size={50} className="text-success" />
-        </div>
-        <h5 className="text-success mb-2">{successMessage}</h5>
-        <p className="text-muted mb-0">
-          <FaEnvelope className="me-1" />
-          {successSubMessage}
-        </p>
-      </Modal.Body>
-    </Modal>
+      {/* Modal de éxito para editar veterinario */}
+      <Modal
+        show={showEditSuccessModal}
+        centered
+        backdrop="static"
+        keyboard={false}
+      >
+        <Modal.Body className="text-center py-4">
+          <div className="mb-3">
+            <FaCheckCircle size={50} className="text-success" />
+          </div>
+          <h5 className="text-success mb-2">{successMessage}</h5>
+          <p className="text-muted mb-0">{successSubMessage}</p>
+        </Modal.Body>
+      </Modal>
 
-    {/* Modal de éxito para editar veterinario */}
-    <Modal
-      show={showEditSuccessModal}
-      centered
-      backdrop="static"
-      keyboard={false}
-    >
-      <Modal.Body className="text-center py-4">
-        <div className="mb-3">
-          <FaCheckCircle size={50} className="text-success" />
-        </div>
-        <h5 className="text-success mb-2">{successMessage}</h5>
-        <p className="text-muted mb-0">{successSubMessage}</p>
-      </Modal.Body>
-    </Modal>
-
-    {/* Modal de éxito para eliminar veterinario */}
-    <Modal
-      show={showDeleteSuccessModal}
-      centered
-      backdrop="static"
-      keyboard={false}
-    >
-      <Modal.Body className="text-center py-4">
-        <div className="mb-3">
-          <FaCheckCircle size={50} className="text-success" />
-        </div>
-        <h5 className="text-success mb-2">{successMessage}</h5>
-        <p className="text-muted mb-0">{successSubMessage}</p>
-      </Modal.Body>
-    </Modal>
+      {/* Modal de éxito para eliminar veterinario */}
+      <Modal
+        show={showDeleteSuccessModal}
+        centered
+        backdrop="static"
+        keyboard={false}
+      >
+        <Modal.Body className="text-center py-4">
+          <div className="mb-3">
+            <FaCheckCircle size={50} className="text-success" />
+          </div>
+          <h5 className="text-success mb-2">{successMessage}</h5>
+          <p className="text-muted mb-0">{successSubMessage}</p>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

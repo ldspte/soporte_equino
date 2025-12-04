@@ -1,7 +1,7 @@
 const express = require('express');
 const route = express.Router();
 const { body, validationResult } = require('express-validator');
-const {db} = require('../database'); // Asegúrate de tener tu pool de conexiones configurado
+const { db } = require('../database'); // Asegúrate de tener tu pool de conexiones configurado
 const SECRET_KEY = process.env.SECRET_KEY || 'lossimpsom';
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -22,11 +22,11 @@ const crypto = require('crypto');
 //     }
 // });
 // const upload = multer({ storage: storage });
-const {getItems, getItemById, createItem, updateItem, deleteItem} = require('../controllers/itemsController');
-const {getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary, getVeterinarystatus} = require('../controllers/veterinaryController')
-const {getOwners, getOwnerById, createOwner, updateOwner, deleteOwner} = require('../controllers/ownerController');
-const {getClinicalHistory, getClinicalHistoryById, createClinicalHistory, updateClinicalHistory, deleteClinicalHistory} = require('../controllers/clinicalHystory');
-const {getPatients, getPatientById, createPatient, updatePatient, deletePatient} = require('../controllers/patientController')
+const { getItems, getItemById, createItem, updateItem, deleteItem } = require('../controllers/itemsController');
+const { getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary, getVeterinarystatus } = require('../controllers/veterinaryController')
+const { getOwners, getOwnerById, createOwner, updateOwner, deleteOwner } = require('../controllers/ownerController');
+const { getClinicalHistory, getClinicalHistoryById, createClinicalHistory, updateClinicalHistory, deleteClinicalHistory } = require('../controllers/clinicalHystory');
+const { getPatients, getPatientById, createPatient, updatePatient, deletePatient } = require('../controllers/patientController')
 
 
 //RUTAS PROTEGIDAS
@@ -56,77 +56,77 @@ const authenticateToken = (req, res, next) => {
 
 // LOGIN VETERINARIOS
 route.post('/api/login', [
-  body('Correo').isString().notEmpty(),
-  body('Contraseña').isString().notEmpty()
+    body('Correo').isString().notEmpty(),
+    body('Contraseña').isString().notEmpty()
 ], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  const { Correo, Contraseña } = req.body;
-  try {
-    const [user] = await db.query('SELECT * FROM veterinario WHERE Correo = ?', [Correo]);
-    if (!user.length || !(await bcrypt.compare(Contraseña, user[0].Contraseña))) {
-      return res.status(401).send('Invalid credentials');
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
     }
-    const token = jwt.sign({ id: user[0].idVeterinario }, SECRET_KEY, { expiresIn: '1h' });
-    res.json({ token , user});
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error logging in' });
-  }
+
+    const { Correo, Contraseña } = req.body;
+    try {
+        const [user] = await db.query('SELECT * FROM veterinario WHERE Correo = ?', [Correo]);
+        if (!user.length || !(await bcrypt.compare(Contraseña, user[0].Contraseña))) {
+            return res.status(401).send('Invalid credentials');
+        }
+        const token = jwt.sign({ id: user[0].idVeterinario }, SECRET_KEY, { expiresIn: '1h' });
+        res.json({ token, user });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error logging in' });
+    }
 });
 
 //CONTRASEÑA POR DEFECTO
 
 // Configurar Gmail con tu App Password - NUEVO
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com', 
-  port: 465, 
-  secure: true, 
-  auth: {
-    user: process.env.MAIL, 
-    pass: process.env.PASSWORD 
-  }
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+        user: process.env.MAIL,
+        pass: process.env.PASSWORD
+    }
 });
 
 route.post('/api/send-password', (req, res) => {
-  const { correo, contraseña } = req.body;
+    const { correo, contraseña } = req.body;
 
-  const mailOptions = {
-      from: 'Correo del dani o de soporte equino',
-      to: correo,
-      subject: 'Bienvenido a Soporte Equino',
-      text: `Se ha creado tu cuenta en Soporte Equino y Tu contraseña es: ${contraseña}`
-  };
+    const mailOptions = {
+        from: 'Correo del dani o de soporte equino',
+        to: correo,
+        subject: 'Bienvenido a Soporte Equino',
+        text: `Se ha creado tu cuenta en Soporte Equino y Tu contraseña es: ${contraseña}`
+    };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-          return res.status(500).send(error.toString());
-      }
-      res.status(200).send('Correo enviado: ' + info.response);
-  });
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            return res.status(500).send(error.toString());
+        }
+        res.status(200).send('Correo enviado: ' + info.response);
+    });
 });
 
 
 // INSUMOS
 
 route.get('/api/insumos', authenticateToken, async (req, res) => {
-    try{
+    try {
         const values = await getItems();
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener los insumos' });
     }
 });
 
 route.get('/api/insumosview', async (req, res) => {
-    try{
+    try {
         const values = await getItems();
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener los insumos' });
     }
@@ -134,57 +134,70 @@ route.get('/api/insumosview', async (req, res) => {
 
 route.get('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
     const { idInsumos } = req.params;
-    try{
+    try {
         const values = await getItemById(idInsumos);
         if (values.length === 0) {
             return res.status(404).json({ error: 'Insumo no encontrado' });
         }
         res.status(200).json(values[0]);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener el insumo' });
     }
 });
 
-// route.post('/api/insumos', authenticateToken, upload.single('Foto'), async (req, res) => {
-//     const { Nombre, Descripcion, Precio } = req.body;
-//     const Foto = req.file ? req.file.filename : null; // Guarda solo el nombre del archivo
-//     // fs.renameSync(req.file.path, Foto);
-//     try {
-//         const values = await createItem(Nombre, Descripcion, Foto, Precio);
-//         res.status(201).json(values);
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'Error al crear el insumo' });
-//     }
-// });
+route.post('/api/insumos', authenticateToken, async (req, res) => {
+    const { Nombre, Descripcion, Foto, Precio } = req.body;
+    try {
+        // Convertir base64 a buffer para almacenar en LONGBLOB
+        let fotoBuffer = null;
+        if (Foto) {
+            // Extraer solo los datos base64 (sin el prefijo data:image/...)
+            const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
+            fotoBuffer = Buffer.from(base64Data, 'base64');
+        }
 
-// route.put('/api/insumos/:idInsumos', upload.single('Foto'), async (req, res) => {
-//     const { idInsumos } = req.params;
-//     const { Nombre, Descripcion, Precio } = req.body;
-//     const Foto = req.file ? req.originalname : null; // Guarda solo el nombre del archivo
-//     try {
-//         const values = await updateItem(idInsumos, Nombre, Descripcion, Foto, Precio);
-//         if (values.affectedRows === 0) {
-//             return res.status(404).json({ error: 'Insumo no encontrado' });
-//         }
-//         res.status(200).json(values);
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'Error al actualizar el insumo' });
-//     }
-// });
+        const values = await createItem(Nombre, Descripcion, fotoBuffer, Precio);
+        res.status(201).json(values);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al crear el insumo' });
+    }
+});
+
+route.put('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
+    const { idInsumos } = req.params;
+    const { Nombre, Descripcion, Foto, Precio } = req.body;
+    try {
+        // Convertir base64 a buffer si se proporciona una nueva foto
+        let fotoBuffer = Foto;
+        if (Foto && Foto.startsWith('data:image')) {
+            // Es una nueva imagen en base64
+            const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
+            fotoBuffer = Buffer.from(base64Data, 'base64');
+        }
+
+        const values = await updateItem(idInsumos, Nombre, Descripcion, fotoBuffer, Precio);
+        if (values.affectedRows === 0) {
+            return res.status(404).json({ error: 'Insumo no encontrado' });
+        }
+        res.status(200).json(values);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al actualizar el insumo' });
+    }
+});
 
 
 route.delete('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
     const { idInsumos } = req.params;
-    try{
+    try {
         const values = await deleteItem(idInsumos);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Insumo no encontrado' });
         }
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al eliminar el insumo' });
     }
@@ -193,21 +206,21 @@ route.delete('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
 
 // VETERINARIOS
 
-route.get('/api/veterinarios', authenticateToken ,async(req, res) => {
-    try{
+route.get('/api/veterinarios', authenticateToken, async (req, res) => {
+    try {
         const values = await getVeterinarys();
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener los Veterinarios' });
     }
 });
 
-route.get('/api/veterinariosstatus', async(req, res) => {
-    try{
+route.get('/api/veterinariosstatus', async (req, res) => {
+    try {
         const values = await getVeterinarystatus();
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener los Veterinarios' });
     }
@@ -215,25 +228,25 @@ route.get('/api/veterinariosstatus', async(req, res) => {
 
 route.get('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
     const { idVeterinario } = req.params;
-    try{
+    try {
         const values = await getVeterinaryById(idVeterinario);
         if (values.length === 0) {
             return res.status(404).json({ error: 'Veterinario no encontrado' });
         }
         res.status(200).json(values[0]);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener el Veterinario' });
     }
 });
 
 
-route.post('/api/veterinarios', authenticateToken,  async (req, res) => {
-    const { Cedula, Nombre, Apellido, Correo, Foto } = req.body;
-    try{
-        const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Foto);
+route.post('/api/veterinarios', authenticateToken, async (req, res) => {
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Foto } = req.body;
+    try {
+        const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Descripcion, Foto);
         res.status(201).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al crear el Veterinario' });
     }
@@ -241,14 +254,14 @@ route.post('/api/veterinarios', authenticateToken,  async (req, res) => {
 
 route.put('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
     const { idVeterinario } = req.params;
-    const {Cedula, Nombre, Apellido, Correo, Foto, Estado} = req.body;
-    try{
-        const values = await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Foto, Estado);
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Foto, Estado } = req.body;
+    try {
+        const values = await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Foto, Estado);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Veterinario no encontrado' });
         }
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al actualizar el Veterinario' });
     }
@@ -256,25 +269,25 @@ route.put('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res
 
 route.delete('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
     const { idVeterinario } = req.params;
-    try{
+    try {
         const values = await deleteVeterinary(idVeterinario);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Veterinario no encontrado' });
         }
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error al eliminar el Veterinario'});
+        res.status(500).json({ error: 'Error al eliminar el Veterinario' });
     }
 });
 
 //PROPIETARIOS
 
-route.get('/api/propietarios', authenticateToken, async(req, res) => {
-    try{
+route.get('/api/propietarios', authenticateToken, async (req, res) => {
+    try {
         const values = await getOwners();
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener los Propietarios' });
     }
@@ -282,24 +295,24 @@ route.get('/api/propietarios', authenticateToken, async(req, res) => {
 
 route.get('/api/propietarios/:idPropietario', authenticateToken, async (req, res) => {
     const { idPropietario } = req.params;
-    try{
+    try {
         const values = await getOwnerById(idPropietario);
         if (values.length === 0) {
             return res.status(404).json({ error: 'Veterinario no encontrado' });
         }
         res.status(200).json(values[0]);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener el Propietario' });
     }
 });
 
 route.post('/api/propietarios', authenticateToken, async (req, res) => {
-    const {Cedula, Nombre, Apellido, Telefono} = req.body;
-    try{
+    const { Cedula, Nombre, Apellido, Telefono } = req.body;
+    try {
         const values = await createOwner(Cedula, Nombre, Apellido, Telefono);
         res.status(201).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al crear el propietario' });
     }
@@ -307,14 +320,14 @@ route.post('/api/propietarios', authenticateToken, async (req, res) => {
 
 route.put('/api/propietarios/:idPropietario', authenticateToken, async (req, res) => {
     const { idPropietario } = req.params;
-    const {Cedula, Nombre, Apellido, Telefono} = req.body;
-    try{
+    const { Cedula, Nombre, Apellido, Telefono } = req.body;
+    try {
         const values = await updateOwner(idPropietario, Cedula, Nombre, Apellido, Telefono);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Propietario no encontrado' });
         }
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al actualizar el Propietario' });
     }
@@ -322,25 +335,25 @@ route.put('/api/propietarios/:idPropietario', authenticateToken, async (req, res
 
 route.delete('/api/propietarios/:idPropietario', authenticateToken, async (req, res) => {
     const { idPropietario } = req.params;
-    try{
+    try {
         const values = await deleteOwner(idPropietario);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Propietario no encontrado' });
         }
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error al eliminar el Propietario'});
+        res.status(500).json({ error: 'Error al eliminar el Propietario' });
     }
 });
 
 //HISTORIA CLINICA
 
-route.get('/api/historia_clinica', authenticateToken, async(req, res) => {
-    try{
+route.get('/api/historia_clinica', authenticateToken, async (req, res) => {
+    try {
         const values = await getClinicalHistory();
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener las Historias Clinicas' });
     }
@@ -348,24 +361,24 @@ route.get('/api/historia_clinica', authenticateToken, async(req, res) => {
 
 route.get('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async (req, res) => {
     const { idHistoria_clinica } = req.params;
-    try{
+    try {
         const values = await getClinicalHistoryById(idHistoria_clinica);
         if (values.length === 0) {
             return res.status(404).json({ error: 'Historia Clinica no encontrada' });
         }
         res.status(200).json(values[0]);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener la Historia Clinica' });
     }
 });
 
 route.post('/api/historia_clinica', authenticateToken, async (req, res) => {
-    const {Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto} = req.body;
-    try{
+    const { Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto } = req.body;
+    try {
         const values = await createClinicalHistory(Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto);
         res.status(201).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al crear la Historia Clinica' });
     }
@@ -373,14 +386,14 @@ route.post('/api/historia_clinica', authenticateToken, async (req, res) => {
 
 route.put('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async (req, res) => {
     const { idHistoria_clinica } = req.params;
-    const {Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto} = req.body;
-    try{
+    const { Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto } = req.body;
+    try {
         const values = await updateClinicalHistory(idHistoria_clinica, Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Historia Clinica no encontrada' });
         }
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al actualizar la Historia Clinica' });
     }
@@ -388,15 +401,15 @@ route.put('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async 
 
 route.delete('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async (req, res) => {
     const { idHistoria_clinica } = req.params;
-    try{
+    try {
         const values = await deleteClinicalHistory(idHistoria_clinica);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Historia Clinica no encontrada' });
         }
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error al eliminar la Historia Clinica'});
+        res.status(500).json({ error: 'Error al eliminar la Historia Clinica' });
     }
 });
 
@@ -404,11 +417,11 @@ route.delete('/api/historia_clinica/:idHistoria_clinica', authenticateToken, asy
 
 // PACIENTES
 
-route.get('/api/pacientes', authenticateToken, async(req, res) => {
-    try{
+route.get('/api/pacientes', authenticateToken, async (req, res) => {
+    try {
         const values = await getPatients();
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener los Pacientes' });
     }
@@ -416,24 +429,24 @@ route.get('/api/pacientes', authenticateToken, async(req, res) => {
 
 route.get('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
     const { idPaciente } = req.params;
-    try{
+    try {
         const values = await getPatientById(idPaciente);
         if (values.length === 0) {
             return res.status(404).json({ error: 'Paciente no encontrado' });
         }
         res.status(200).json(values[0]);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener el Paciente' });
     }
 });
 
 route.post('/api/pacientes', authenticateToken, async (req, res) => {
-    const {Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario} = req.body;
-    try{
+    const { Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario } = req.body;
+    try {
         const values = await createPatient(Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario);
         res.status(201).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al crear el Paciente' });
     }
@@ -441,30 +454,30 @@ route.post('/api/pacientes', authenticateToken, async (req, res) => {
 
 route.put('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
     const { idPaciente } = req.params;
-    const {Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario} = req.body;
-    try{
+    const { Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario } = req.body;
+    try {
         const values = await updatePatient(idPaciente, Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario);
         if (values.affectedRows === 0) {
-            return res.status(404).json({ error: 'Paciente no encontrado'});
+            return res.status(404).json({ error: 'Paciente no encontrado' });
         };
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error al actualizar el Paciente'});
+        res.status(500).json({ error: 'Error al actualizar el Paciente' });
     }
 });
 
 route.delete('/api/paciente/:idPaciente', authenticateToken, async (req, res) => {
     const { idPaciente } = req.params;
-    try{
+    try {
         const values = await deletePatient(idPaciente);
         if (values.affectedRows === 0) {
-            return res.status(404).json({ error: 'Paciente no encontrado'});
+            return res.status(404).json({ error: 'Paciente no encontrado' });
         };
         res.status(200).json(values);
-    }catch (error) {
+    } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error al eliminar el Paciente'});
+        res.status(500).json({ error: 'Error al eliminar el Paciente' });
     }
 });
 
@@ -473,11 +486,11 @@ route.delete('/api/paciente/:idPaciente', authenticateToken, async (req, res) =>
 
 // Verificar conexión con Gmail - NUEVO
 transporter.verify((error, success) => {
-  if (error) {
-    console.log('❌ Error configurando Gmail:', error);
-  } else {
-    console.log('✅ Gmail configurado correctamente');
-  }
+    if (error) {
+        console.log('❌ Error configurando Gmail:', error);
+    } else {
+        console.log('✅ Gmail configurado correctamente');
+    }
 });
 
 // Almacenar tokens temporalmente - NUEVO (en producción usar BD)
@@ -486,7 +499,7 @@ const resetTokens = new Map();
 
 // NUEVA RUTA para recuperar contraseña
 route.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
+    const { email } = req.body;
 
     try {
         // 1. Verificar si el usuario existe en la base de datos
@@ -501,19 +514,19 @@ route.post('/forgot-password', async (req, res) => {
         // 2. Generar el token y la fecha de expiración
         const resetToken = crypto.randomBytes(32).toString('hex');
         const tokenExpiry = new Date(Date.now() + 3600000); // 1 hora de validez
-        
+
         // 3. Almacenar el token y su expiración en la base de datos
         await db.query('UPDATE veterinario SET resetToken = ?, resetTokenExpiry = ? WHERE idVeterinario = ?', [resetToken, tokenExpiry, idVeterinario]);
 
         // 4. Crear el enlace para el email
         const resetLink = `https://www.soporteequino.com/reset-password/${resetToken}`; // Asegúrate de que esta URL sea la de tu frontend
 
-    // Configurar email
-    const mailOptions = {
-      from: '"Mi App Móvil" <michelleandrea217@gmail.com>',
-      to: email,
-      subject: '🔐 Restablecer contraseña - Beefleet',
-      html: `
+        // Configurar email
+        const mailOptions = {
+            from: '"Mi App Móvil" <michelleandrea217@gmail.com>',
+            to: email,
+            subject: '🔐 Restablecer contraseña - Beefleet',
+            html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
           <div style="background-color: #ffffff; padding: 30px; border-radius: 10px;">
             
@@ -552,34 +565,34 @@ route.post('/forgot-password', async (req, res) => {
           </div>
         </div>
       `
-    };
-    
-    // Enviar email
-    await transporter.sendMail(mailOptions);
-    
-    console.log('✅ Email enviado a:', email);
-    
-    res.json({ 
-      success: true, 
-      message: 'Correo de recuperación enviado exitosamente' 
-    });
-    
-  } catch (error) {
-    console.error('❌ Error enviando email:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error al enviar el correo' 
-    });
-  }
+        };
+
+        // Enviar email
+        await transporter.sendMail(mailOptions);
+
+        console.log('✅ Email enviado a:', email);
+
+        res.json({
+            success: true,
+            message: 'Correo de recuperación enviado exitosamente'
+        });
+
+    } catch (error) {
+        console.error('❌ Error enviando email:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al enviar el correo'
+        });
+    }
 });
 
 // NUEVA RUTA para manejar el enlace (cuando hacen click)
 route.get('/reset-password/:token', (req, res) => {
-  const { token } = req.params;
-  const tokenData = resetTokens.get(token);
-  
-  if (!tokenData || Date.now() > tokenData.expires || tokenData.used) {
-    return res.send(`
+    const { token } = req.params;
+    const tokenData = resetTokens.get(token);
+
+    if (!tokenData || Date.now() > tokenData.expires || tokenData.used) {
+        return res.send(`
       <html>
         <body style="font-family: Arial; text-align: center; padding: 50px;">
           <h2 style="color: #e74c3c;">❌ Enlace inválido o expirado</h2>
@@ -587,11 +600,11 @@ route.get('/reset-password/:token', (req, res) => {
         </body>
       </html>
     `);
-  }
-  console.log(tokenData);
-  
-  // Mostrar formulario para nueva contraseña
-  res.send(`
+    }
+    console.log(tokenData);
+
+    // Mostrar formulario para nueva contraseña
+    res.send(`
     <html>
       <head>
         <title>Restablecer Contraseña</title>
@@ -622,7 +635,7 @@ route.post('/reset-password/:token', async (req, res) => {
     if (password !== confirmPassword) {
         return res.status(400).json({ success: false, message: 'Las contraseñas no coinciden' });
     }
-    
+
     try {
         // 2. Buscar el token en la base de datos y verificar su validez y expiración
         const [user] = await db.query('SELECT * FROM veterinario WHERE resetToken = ? AND resetTokenExpiry > ?', [token, new Date()]);
@@ -638,14 +651,14 @@ route.post('/reset-password/:token', async (req, res) => {
 
         // 4. Actualizar la contraseña del usuario y eliminar el token de la base de datos
         const [updateResult] = await db.query(
-            'UPDATE veterinario SET Contraseña = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE idVeterinario = ?', 
+            'UPDATE veterinario SET Contraseña = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE idVeterinario = ?',
             [hashedPassword, idVeterinario]
         );
-        
+
         if (updateResult.affectedRows === 0) {
             return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
         }
-        
+
         // 5. Responder con un mensaje de éxito en formato JSON
         res.status(200).json({ success: true, message: 'Contraseña actualizada exitosamente.' });
 
