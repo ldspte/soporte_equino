@@ -131,8 +131,17 @@ function Insumos() {
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Error al crear insumo');
+                let errorDetails = '';
+                try {
+                    const errorJson = await response.json();
+                    console.error('Error del servidor:', errorJson);
+                    errorDetails = errorJson.message || errorJson.details || errorJson.error || 'Error desconocido';
+                } catch (e) {
+                    const errorText = await response.text();
+                    console.error('Error (texto):', errorText);
+                    errorDetails = errorText;
+                }
+                throw new Error(`Error ${response.status}: ${errorDetails}`);
             }
 
             fetchInsumos(token);
@@ -140,6 +149,7 @@ function Insumos() {
             setNewInsumo({ Nombre: '', Descripcion: '', Precio: '', Foto: '' });
             setError(null);
         } catch (error) {
+            console.error('Error completo:', error);
             setError(error.message);
         }
     };
