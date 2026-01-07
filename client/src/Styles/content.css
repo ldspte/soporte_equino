@@ -111,7 +111,16 @@
 }
 
 /* Las dos caras de la tarjeta */
-.front-card,
+.front-card {
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden; /* Oculta la cara cuando no está de frente */
+  border-radius: 0.375rem; /* Ajustar al border-radius de Card */
+}
+
 .back-card {
   position: absolute;
   top: 0;

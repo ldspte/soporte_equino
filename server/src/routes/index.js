@@ -252,9 +252,9 @@ route.get('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res
 
 
 route.post('/api/veterinarios', authenticateToken, async (req, res) => {
-    const { Cedula, Nombre, Apellido, Correo, Descripcion, Foto } = req.body;
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto } = req.body;
     try {
-        const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Descripcion, Foto);
+        const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto);
         res.status(201).json(values);
     } catch (error) {
         console.error(error);
@@ -264,9 +264,9 @@ route.post('/api/veterinarios', authenticateToken, async (req, res) => {
 
 route.put('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
     const { idVeterinario } = req.params;
-    const { Cedula, Nombre, Apellido, Correo, Descripcion, Foto, Estado } = req.body;
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado } = req.body;
     try {
-        const values = await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Foto, Estado);
+        const values = await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Veterinario no encontrado' });
         }

@@ -102,23 +102,23 @@ const getVeterinaryById = async (idVeterinario) => {
     return result;
 };
 
-const createVeterinary = async (Cedula, Nombre, Apellido, Correo, Descripcion, Foto) => {
+const createVeterinary = async (Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto) => {
     const password = generatePassword();
     const Contraseña = await bcrypt.hash(password, 10);
     const result = await db.query(`
-        INSERT INTO veterinario (Cedula, Nombre, Apellido, Correo, Descripcion, Contraseña, Foto) VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO veterinario (Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, Foto) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `,
-        [Cedula, Nombre, Apellido, Correo, Descripcion, Contraseña, Foto]
+        [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, Foto]
     );
     await sendPasswordEmail(Correo, password); // Enviar correo con la contraseña
     return result;
 }
 
-const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Foto, Estado) => {
+const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado) => {
     const result = await db.query(`
-        UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Descripcion = ?, Foto = ?, Estado = ? WHERE idVeterinario = ?
+        UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Descripcion = ?, Especialidad = ?, Foto = ?, Estado = ? WHERE idVeterinario = ?
     `,
-        [Cedula, Nombre, Apellido, Correo, Descripcion, Foto, Estado, idVeterinario]
+        [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, idVeterinario]
     );
     return result;
 }

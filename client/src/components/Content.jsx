@@ -54,7 +54,7 @@ export default function Content() {
                     throw new Error('Error al obtener la lista de doctores.');
                 }
                 const data = await response.json();
-                
+
                 const activeDoctors = data.filter(d => d.Estado === 'Activo').map(d => {
                     let redes = {};
                     try {
@@ -77,30 +77,11 @@ export default function Content() {
         const interval = !isHovered ? setInterval(() => {
             setIndex((prevIndex) => (prevIndex + 1) % images.length);
         }, 5000) : null;
-        
+
         fetchDoctors();
 
         return () => interval && clearInterval(interval);
     }, [isHovered]);
-
-
-    // Función auxiliar para renderizar estrellas (promedio de 4.5 para ejemplo)
-    const renderStars = (rating) => {
-        const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 !== 0;
-        const stars = [];
-
-        for (let i = 0; i < 5; i++) {
-            if (i < fullStars) {
-                stars.push(<FaStar key={i} color="#ffc107" size={14} />);
-            } else if (hasHalfStar && i === fullStars) {
-                stars.push(<FaStar key={i} color="#e4e5e9" size={14} />); 
-            } else {
-                stars.push(<FaStar key={i} color="#e4e5e9" size={14} />);
-            }
-        }
-        return <div className="d-flex justify-content-center gap-1">{stars}</div>;
-    };
 
 
     return (
@@ -108,9 +89,9 @@ export default function Content() {
         <div style={{ backgroundColor: 'white', color: '#1D2D44' }}>
             <div className="carousel-container">
                 {/* --- SECCIÓN CAROUSEL --- */}
-                <Carousel 
-                    activeIndex={index} 
-                    onSelect={setIndex} 
+                <Carousel
+                    activeIndex={index}
+                    onSelect={setIndex}
                     interval={null}
                     slide={false}
                     fade={false}
@@ -119,9 +100,9 @@ export default function Content() {
                 >
                     {images.map((image, idx) => (
                         <Carousel.Item key={idx} className="carousel-item">
-                            <div 
-                                className="carousel-image" 
-                                style={{ 
+                            <div
+                                className="carousel-image"
+                                style={{
                                     backgroundImage: `url(${image.src})`,
                                 }}
                             />
@@ -134,7 +115,7 @@ export default function Content() {
                     ))}
                 </Carousel>
             </div>
-            
+
             {/* --- SECCIÓN CALL TO ACTION --- */}
             <section
                 id="call-to-action"
@@ -211,7 +192,7 @@ export default function Content() {
                     </Row>
                 </Container>
             </section>
-            
+
             {/* --- SECCIÓN SERVICIOS (BLANCO) --- */}
             <section id="services" className="services section" data-aos="fade-right" style={{ padding: '60px 0', backgroundColor: 'white' }}>
                 <Container className="section-title" data-aos="fade-up">
@@ -244,7 +225,7 @@ export default function Content() {
                     {error && <Alert variant="danger" className="mt-3">{error}</Alert>}
                 </Container>
 
-                <Container>
+                <Container style={{ marginTop: '100px' }}>
                     {loading ? (
                         <div className="text-center py-5">
                             <Spinner animation="border" variant="light" className="me-2" />
@@ -254,7 +235,7 @@ export default function Content() {
                         <Row className="gy-4 justify-content-center">
                             {doctors.map((doctor, index) => {
                                 const { facebook, instagram, whatsapp } = doctor.Redes || {};
-                                
+
                                 return (
                                     <Col
                                         key={doctor.idVeterinario}
@@ -270,9 +251,9 @@ export default function Content() {
                                                 <div className="front-card team-member border-0 shadow-lg w-100" style={{ backgroundColor: 'white', color: '#1D2D44' }}>
                                                     <div className="member-img position-relative text-center p-3">
                                                         {doctor.Foto ? (
-                                                            <Image 
-                                                                src={`https://soporte-equino.onrender.com/uploads/${doctor.Foto}`} 
-                                                                alt={doctor.Nombre} 
+                                                            <Image
+                                                                src={`https://soporte-equino.onrender.com/uploads/${doctor.Foto}`}
+                                                                alt={doctor.Nombre}
                                                                 className="rounded-circle"
                                                                 style={{ width: '100px', height: '100px', objectFit: 'cover', border: '3px solid #1D2D44' }}
                                                             />
@@ -282,8 +263,8 @@ export default function Content() {
                                                     </div>
                                                     <div className="member-info text-center p-3">
                                                         <h4 className="mb-1">{`${doctor.Nombre || ''} ${doctor.Apellido || ''}`}</h4>
-                                                        <p className="text-primary small fw-bold">Veterinario Activo</p>
-                                                        {renderStars(4.5)} 
+                                                        <p className="text-primary small fw-bold">{doctor.Especialidad || 'Veterinario General'}</p>
+                                                        <p className="small text-muted mb-0">{doctor.Descripcion ? (doctor.Descripcion.length > 80 ? doctor.Descripcion.substring(0, 80) + '...' : doctor.Descripcion) : 'Sin descripción disponible.'}</p>
                                                     </div>
                                                 </div>
 
@@ -292,7 +273,7 @@ export default function Content() {
                                                     <div className="d-flex flex-column align-items-center justify-content-center h-100">
                                                         <h5 className="mb-3 text-primary">Contáctalo</h5>
                                                         <p className="text-muted small mb-1">{doctor.Correo}</p>
-                                                        
+
                                                         <div className="social d-flex gap-3 mt-3">
                                                             {whatsapp && (
                                                                 <a href={`https://wa.me/${whatsapp}`} aria-label={`${doctor.Nombre} WhatsApp`} target="_blank" rel="noopener noreferrer">
@@ -320,7 +301,7 @@ export default function Content() {
                             })}
                         </Row>
                     )}
-                    
+
                 </Container>
             </section>
         </div>

@@ -16,8 +16,8 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
     const initialFormData = {
         ...profileData,
         // Asegurarse de que Redes sea un objeto, incluso si viene null o string vacío
-        Redes: profileData?.Redes && typeof profileData.Redes === 'string' 
-            ? (JSON.parse(profileData.Redes) || {}) 
+        Redes: profileData?.Redes && typeof profileData.Redes === 'string'
+            ? (JSON.parse(profileData.Redes) || {})
             : (profileData?.Redes || {})
     };
 
@@ -29,7 +29,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
     useEffect(() => {
         if (isOpen && profileData) {
             setFormData(initialFormData);
-            setFile(null); 
+            setFile(null);
             setValidated(false);
         }
     }, [isOpen, profileData]);
@@ -63,7 +63,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
             setValidated(true);
             return;
         }
-        
+
         // Antes de guardar, serializar el objeto Redes a un string JSON
         const dataToSave = {
             ...formData,
@@ -76,7 +76,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
     return (
         <Modal show={isOpen} onHide={onClose} centered size="lg">
             <Modal.Header closeButton className='border-bottom border-primary'>
-                <Modal.Title><FaEdit className="me-2 text-primary"/> Editar Perfil</Modal.Title>
+                <Modal.Title><FaEdit className="me-2 text-primary" /> Editar Perfil</Modal.Title>
             </Modal.Header>
             <Form noValidate validated={validated} onSubmit={handleSubmit}>
                 <Modal.Body>
@@ -150,13 +150,38 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
                                 )}
                             </Form.Group>
                         </Col>
+                        <Col md={12}>
+                            <Form.Group className="mb-3" controlId="editEspecialidad">
+                                <Form.Label>Especialidad</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="Especialidad"
+                                    value={formData.Especialidad || ''}
+                                    onChange={handleInputChange}
+                                    placeholder="Ej: Odontología Equina"
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={12}>
+                            <Form.Group className="mb-3" controlId="editDescripcion">
+                                <Form.Label>Descripción Profesional</Form.Label>
+                                <Form.Control
+                                    as="textarea"
+                                    rows={3}
+                                    name="Descripcion"
+                                    value={formData.Descripcion || ''}
+                                    onChange={handleInputChange}
+                                    placeholder="Breve descripción de su experiencia y servicios..."
+                                />
+                            </Form.Group>
+                        </Col>
                     </Row>
-                    
+
                     <h5 className="border-bottom pb-2 mb-3 mt-4">Redes Sociales</h5>
                     <Row>
                         <Col md={4}>
                             <Form.Group className="mb-3" controlId="redesWhatsapp">
-                                <Form.Label><BsWhatsapp className="me-1 text-success"/> WhatsApp (Número)</Form.Label>
+                                <Form.Label><BsWhatsapp className="me-1 text-success" /> WhatsApp (Número)</Form.Label>
                                 <Form.Control
                                     type="text"
                                     name="whatsapp"
@@ -166,9 +191,9 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
                                 />
                             </Form.Group>
                         </Col>
-                         <Col md={4}>
+                        <Col md={4}>
                             <Form.Group className="mb-3" controlId="redesFacebook">
-                                <Form.Label><BsFacebook className="me-1 text-primary"/> Facebook (URL)</Form.Label>
+                                <Form.Label><BsFacebook className="me-1 text-primary" /> Facebook (URL)</Form.Label>
                                 <Form.Control
                                     type="url"
                                     name="facebook"
@@ -178,9 +203,9 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
                                 />
                             </Form.Group>
                         </Col>
-                         <Col md={4}>
+                        <Col md={4}>
                             <Form.Group className="mb-3" controlId="redesInstagram">
-                                <Form.Label><BsInstagram className="me-1 text-danger"/> Instagram (URL)</Form.Label>
+                                <Form.Label><BsInstagram className="me-1 text-danger" /> Instagram (URL)</Form.Label>
                                 <Form.Control
                                     type="url"
                                     name="instagram"
@@ -194,13 +219,13 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={onClose} disabled={loading}>
-                        <FaTimes className="me-2"/> Cancelar
+                        <FaTimes className="me-2" /> Cancelar
                     </Button>
                     <Button variant="primary" type="submit" disabled={loading}>
                         {loading ? (
-                            <><Spinner animation="border" size="sm" className="me-2"/> Guardando...</>
+                            <><Spinner animation="border" size="sm" className="me-2" /> Guardando...</>
                         ) : (
-                            <><FaSave className="me-2"/> Guardar Cambios</>
+                            <><FaSave className="me-2" /> Guardar Cambios</>
                         )}
                     </Button>
                 </Modal.Footer>
@@ -225,7 +250,7 @@ const VeterinarioDashboard = () => {
     const [patientCount, setPatientCount] = useState(0);
     const [ownerCount, setOwnerCount] = useState(0);
     const [recentHistories, setRecentHistories] = useState([]);
-    
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -236,8 +261,8 @@ const VeterinarioDashboard = () => {
             try {
                 const userData = JSON.parse(userStorage);
                 // Asumiendo que el ID del veterinario está directamente en el objeto user[0]
-                setVeterinarioID(userData.user?.[0]?.idVeterinario); 
-                
+                setVeterinarioID(userData.user?.[0]?.idVeterinario);
+
                 // Asegurar que Redes se parsee si viene como string JSON
                 const rawData = userData.user?.[0];
                 if (rawData?.Redes && typeof rawData.Redes === 'string') {
@@ -246,7 +271,7 @@ const VeterinarioDashboard = () => {
 
                 setVeterinarioData(rawData);
                 setEditProfile(rawData); // Inicializar datos de edición
-                
+
                 return localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : null;
             } catch (e) {
                 console.error("Error al parsear datos del veterinario:", e);
@@ -255,7 +280,7 @@ const VeterinarioDashboard = () => {
         }
         return null;
     }, []);
-    
+
     // Función genérica para hacer fetch a rutas protegidas
     const fetchData = useCallback(async (endpoint, setter, filterId = null) => {
         const token = getAuthToken();
@@ -266,7 +291,7 @@ const VeterinarioDashboard = () => {
 
         try {
             const url = filterId ? `${API_URL}/${endpoint}?veterinarioId=${filterId}` : `${API_URL}/${endpoint}`;
-            
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers: { 'Authorization': token, 'Content-Type': 'application/json' },
@@ -279,7 +304,7 @@ const VeterinarioDashboard = () => {
                 const errorText = await response.text();
                 throw new Error(errorText || 'Error al cargar datos');
             }
-            
+
             const data = await response.json();
             setter(data);
         } catch (err) {
@@ -310,7 +335,7 @@ const VeterinarioDashboard = () => {
         // 2. Obtener Pacientes 
         await fetchData('pacientes', (data) => {
             setPatientCount(data.length);
-        }, id); 
+        }, id);
 
         // 3. Obtener Propietarios
         await fetchData('propietarios', (data) => {
@@ -322,7 +347,7 @@ const VeterinarioDashboard = () => {
 
     // Hook principal para la carga de datos
     useEffect(() => {
-        getAuthToken(); 
+        getAuthToken();
         if (veterinarioID) {
             loadDashboardData();
         }
@@ -357,10 +382,10 @@ const VeterinarioDashboard = () => {
             setError(`Error al actualizar el estado: ${err.message}`);
         }
     };
-    
+
     // Handler para abrir el modal de edición
     const handleShowEditModal = () => {
-        setEditProfile(veterinarioData); 
+        setEditProfile(veterinarioData);
         setShowEditModal(true);
     };
 
@@ -374,7 +399,7 @@ const VeterinarioDashboard = () => {
         try {
             // 1. Construir FormData
             const dataToSend = new FormData();
-            
+
             // Adjuntar todos los campos de texto
             Object.entries(formData).forEach(([key, value]) => {
                 dataToSend.append(key, value);
@@ -382,17 +407,17 @@ const VeterinarioDashboard = () => {
 
             // 2. Adjuntar el archivo de foto
             if (file) {
-                dataToSend.append('Foto', file); 
+                dataToSend.append('Foto', file);
             } else if (veterinarioData.Foto) {
-                dataToSend.append('Foto', veterinarioData.Foto); 
+                dataToSend.append('Foto', veterinarioData.Foto);
             } else {
-                 dataToSend.append('Foto', '');
+                dataToSend.append('Foto', '');
             }
 
             // 3. Enviar PUT request a la API
             const response = await fetch(`${API_URL}/veterinarios/${veterinarioData.idVeterinario}`, {
                 method: 'PUT',
-                headers: { 'Authorization': token }, 
+                headers: { 'Authorization': token },
                 body: dataToSend
             });
 
@@ -402,8 +427,8 @@ const VeterinarioDashboard = () => {
             }
 
             // 4. Recargar datos del usuario para actualizar el Dashboard
-            const updatedData = await response.json(); 
-            
+            const updatedData = await response.json();
+
             // Asegurarse de que el campo Redes del objeto retornado sea JSON si lo devuelve como string
             if (updatedData.Redes && typeof updatedData.Redes === 'string') {
                 updatedData.Redes = JSON.parse(updatedData.Redes);
@@ -423,7 +448,7 @@ const VeterinarioDashboard = () => {
             setLoading(false);
         }
     };
-    
+
     if (!veterinarioData && !loading) {
         return <Alert variant="danger" className="text-center mt-5">No se pudo cargar la información del usuario logueado. Por favor, inicie sesión de nuevo.</Alert>;
     }
@@ -431,7 +456,7 @@ const VeterinarioDashboard = () => {
     if (loading && !veterinarioData) {
         return <div className="text-center mt-5"><Spinner animation="border" variant="primary" /> Cargando Dashboard...</div>;
     }
-    
+
     // Extracción de datos y Redes Sociales
     const { Cedula, Nombre, Apellido, Correo, Foto, Estado, Redes } = veterinarioData || {};
     const RedesParsed = Redes || {}; // Ya debería ser un objeto gracias a getAuthToken
@@ -441,9 +466,9 @@ const VeterinarioDashboard = () => {
     return (
         <Container className="my-5">
             <h1 className="mb-4 text-primary">
-                <FaUserMd className="me-2"/> Bienvenido Dr(a). {NombreCompleto || 'Invitado'}
+                <FaUserMd className="me-2" /> Bienvenido Dr(a). {NombreCompleto || 'Invitado'}
             </h1>
-            
+
             {error && <Alert variant="danger">{error}</Alert>}
 
             <Row>
@@ -454,35 +479,35 @@ const VeterinarioDashboard = () => {
                             {/* Foto y Nombre */}
                             <div className="mb-3">
                                 {Foto ? (
-                                    <img 
-                                        src={`https://soporte-equino.onrender.com/uploads/${Foto}`} 
-                                        alt="Foto Perfil" 
+                                    <img
+                                        src={`https://soporte-equino.onrender.com/uploads/${Foto}`}
+                                        alt="Foto Perfil"
                                         onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/120x120/007bff/ffffff?text=Sin+Foto" }}
-                                        style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '50%', border: '4px solid #0d6efd' }} 
+                                        style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '50%', border: '4px solid #0d6efd' }}
                                     />
                                 ) : (
                                     <FaUserCircle size={120} className='text-primary' />
                                 )}
                             </div>
                             <Card.Title>{NombreCompleto}</Card.Title>
-                            
+
                             {/* Estado y Botón de Alternancia */}
                             <p>
                                 Estado: <Badge bg={isActivo ? "success" : "danger"}>
                                     {isActivo ? 'ACTIVO' : 'INACTIVO'}
                                 </Badge>
                             </p>
-                            
-                            <Button 
+
+                            <Button
                                 variant="outline-primary"
                                 onClick={handleShowEditModal}
                                 className="mb-2 w-100"
                                 disabled={loading}
                             >
-                                <FaEdit className="me-2"/> Editar Información
+                                <FaEdit className="me-2" /> Editar Información
                             </Button>
 
-                            <Button 
+                            <Button
                                 variant={isActivo ? "outline-danger" : "outline-success"}
                                 onClick={handleToggleStatus}
                                 className="w-100"
@@ -493,17 +518,17 @@ const VeterinarioDashboard = () => {
                                     <> <FaToggleOn className="me-2" /> Activar </>)
                                 }
                             </Button>
-                            
+
                             <hr />
 
                             {/* Información General */}
                             <ListGroup variant="flush" className="text-start">
-                                <ListGroup.Item><FaIdCard className="me-2 text-primary"/> Cédula: {Cedula}</ListGroup.Item>
-                                <ListGroup.Item><FaEnvelope className="me-2 text-primary"/> Email: {Correo}</ListGroup.Item>
+                                <ListGroup.Item><FaIdCard className="me-2 text-primary" /> Cédula: {Cedula}</ListGroup.Item>
+                                <ListGroup.Item><FaEnvelope className="me-2 text-primary" /> Email: {Correo}</ListGroup.Item>
                             </ListGroup>
 
                             {/* Enlaces de Redes Sociales en la Vista */}
-                             {(RedesParsed.whatsapp || RedesParsed.facebook || RedesParsed.instagram) && (
+                            {(RedesParsed.whatsapp || RedesParsed.facebook || RedesParsed.instagram) && (
                                 <>
                                     <h6 className="mt-3 border-top pt-2">Redes</h6>
                                     <div className="d-flex justify-content-center gap-3">
