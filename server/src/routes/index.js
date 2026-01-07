@@ -83,8 +83,8 @@ route.post('/api/login', [
 // Configurar Gmail con tu App Password - NUEVO
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,
     auth: {
         user: process.env.MAIL,
         pass: process.env.PASSWORD
