@@ -7,7 +7,8 @@ const PORT = process.env.PORT || 3001;
 const route = require('./routes/index'); // Asegúrate de que la ruta sea correcta
 
 app.use(cors()); // Puedes configurar CORS aquí si es necesario
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/', route);
 
 // Middleware para manejo de errores

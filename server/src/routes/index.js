@@ -9,19 +9,11 @@ const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-// const multer = require('multer');
+const multer = require('multer');
 // --- Configuración de Multer ---
-// const storage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         // Define la carpeta donde se guardarán los archivos
-//         cb(null, 'uploads/'); 
-//     },
-//     filename: (req, file, cb) => {
-//         // Crea un nombre de archivo único para evitar colisiones
-//         cb(null, Date.now() + '-' + file.originalname);
-//     }
-// });
-// const upload = multer({ storage: storage });
+// --- Configuración de Multer ---
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 const { getItems, getItemById, createItem, updateItem, deleteItem } = require('../controllers/itemsController');
 const { getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary, getVeterinarystatus } = require('../controllers/veterinaryController')
 const { getOwners, getOwnerById, createOwner, updateOwner, deleteOwner } = require('../controllers/ownerController');
@@ -251,8 +243,9 @@ route.get('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res
 });
 
 
-route.post('/api/veterinarios', authenticateToken, async (req, res) => {
-    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto } = req.body;
+route.post('/api/veterinarios', authenticateToken, upload.single('Foto'), async (req, res) => {
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad } = req.body;
+    const Foto = req.file ? req.file.buffer : null;
     try {
         const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto);
         res.status(201).json(values);
@@ -262,9 +255,23 @@ route.post('/api/veterinarios', authenticateToken, async (req, res) => {
     }
 });
 
-route.put('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
+route.put('/api/veterinarios/:idVeterinario', authenticateToken, upload.single('Foto'), async (req, res) => {
     const { idVeterinario } = req.params;
-    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado } = req.body;
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Estado } = req.body;
+    let Foto = req.file ? req.file.buffer : req.body.Foto;
+
+    // Si Foto es string (no se subió archivo nuevo) y parece tener data URI, limpiar o mantener
+    // Nota: El controlador espera Buffer o String dependiendo de tu logica final. 
+    // Si la DB es BLOB, idealmente guardamos Buffer. 
+    // Si req.body.Foto viene como string de una imagen ya cargada (e.g. url), 
+    // y no queremos cambiarla, pasamos null o mantenemos el valor actual en DB si la logica updateVeterinary lo permite.
+    // Asumiremos que updateVeterinary puede manejar lo que le pasamos.
+    // Ajuste para Insumos (ejemplo):
+    if (typeof Foto === 'string' && Foto.startsWith('data:image')) {
+        const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
+        Foto = Buffer.from(base64Data, 'base64');
+    }
+
     try {
         const values = await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado);
         if (values.affectedRows === 0) {
