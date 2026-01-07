@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Container, Row, Col, InputGroup, Form, Modal, Badge, Alert } from 'react-bootstrap';
 import {
-  FaIdCard, FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus, 
+  FaIdCard, FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus,
   FaSave, FaCalendarPlus, FaPhone, FaMapMarkerAlt, FaEnvelope,
-  FaCarSide, FaCamera, FaUser , FaHome, FaCalendarAlt, FaClock, FaTimes,
+  FaCarSide, FaCamera, FaUser, FaHome, FaCalendarAlt, FaClock, FaTimes,
   FaCheckCircle, FaSpinner, FaBookMedical, FaHorse, FaClipboardList
 } from 'react-icons/fa';
 import '../Styles/history.css';
@@ -41,11 +41,11 @@ function ClinicalHistory() {
 
   useEffect(() => {
     const userStorage = localStorage.getItem('veterinario');
-    
+
     if (userStorage) {
       const data = JSON.parse(userStorage);
 
-      if (data.user){
+      if (data.user) {
         setUserData(data.user[0]);
       }
     }
@@ -90,7 +90,16 @@ function ClinicalHistory() {
     Diagnostico_integral: '',
     Tratamiento: '',
     Ayudas_diagnosticas: '',
-    Observaciones: ''
+    Observaciones: '',
+    Fecha: ''
+  };
+
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().slice(0, 16);
   };
 
   const normalizeClinicalData = useCallback((clinical) => {
@@ -132,7 +141,7 @@ function ClinicalHistory() {
   const [editClinical, setEditClinical] = useState(initialClinicalState);
 
 
-// Estados para alertas y mensajes de éxito
+  // Estados para alertas y mensajes de éxito
   const [showSendingAlert, setShowSendingAlert] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showEditSuccessModal, setShowEditSuccessModal] = useState(false);
@@ -140,113 +149,113 @@ function ClinicalHistory() {
   const [successMessage, setSuccessMessage] = useState('');
   const [successSubMessage, setSuccessSubMessage] = useState('');
 
-  
+
 
   const fetchPatients = useCallback(async (token) => {
     setLoading(true);
     setError(null);
     if (!token) return;
     try {
-        const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
-            method: 'GET',
-            headers: {
-                'Authorization': token,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('Error al obtener los pacientes');
+      const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
+        method: 'GET',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json'
         }
+      });
 
-        const data = await response.json();
-        setPatients(data);
+      if (!response.ok) {
+        throw new Error('Error al obtener los pacientes');
+      }
+
+      const data = await response.json();
+      setPatients(data);
     } catch (error) {
-        console.error('Error obteniendo pacientes: ', error);
-        setError(`Error al cargar pacientes: ${error.message}`);
+      console.error('Error obteniendo pacientes: ', error);
+      setError(`Error al cargar pacientes: ${error.message}`);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   }, []);
 
   const fetchOwners = async (token) => {
-        setLoading(true);
-        if (!token) {
-            setError('No hay token de autenticación');
-            setLoading(false);
-            return;
+    setLoading(true);
+    if (!token) {
+      setError('No hay token de autenticación');
+      setLoading(false);
+      return;
+    }
+    try {
+      const response = await fetch('https://soporte-equino.onrender.com/api/propietarios', {
+        method: 'GET',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json'
         }
-        try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios',{
-              method: 'GET',
-              headers: {
-                'Authorization': token,
-                'Content-Type': 'application/json'
-              }
-            }
+      }
 
-            );
-            if (!response.ok) throw new Error('Error al obtener propietarios');
-            const data = await response.json();
-            setOwners(data);
-        } catch (error) {
-            setError(error.message);
-        } finally {
-            setLoading(false);
+      );
+      if (!response.ok) throw new Error('Error al obtener propietarios');
+      const data = await response.json();
+      setOwners(data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  //Obtener historias clinicas
+  const fetchClinical = useCallback(async (token) => {
+    setLoading(true);
+    setError(null);
+    if (!token) {
+      setError('No hay token de autenticación');
+      setLoading(false);
+      return;
+    }
+    try {
+
+
+      const response = await fetch('https://soporte-equino.onrender.com/api/historia_clinica',
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': token,
+            'Content-Type': 'application/json'
+          }
+        });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem('token');
+          setError('Sesion expirada. Por favor, inicie sesión nuevamente');
+          return;
         }
-    };
+        throw new Error(errorText || 'Error al obtener las historias clinicas')
+      }
 
-    //Obtener historias clinicas
-    const fetchClinical = useCallback(async (token) => {
-        setLoading(true);
-        setError(null);
-        if (!token) {
-              setError('No hay token de autenticación');
-              setLoading(false);
-              return;
-        }
-        try {
-            
-            
-            const response = await fetch('https://soporte-equino.onrender.com/api/historia_clinica',
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': token,
-                    'Content-Type': 'application/json'
-                }
-            });
+      const data = await response.json();
+      console.log(data);
+      const processedData = Array.isArray(data) ? data.map(normalizeClinicalData) : [normalizeClinicalData(data)];
+      console.log('data processed: ', processedData[0])
 
-            if (!response.ok){
-                const errorText = await response.text();
-                if (response.status === 401 || response.status === 403){
-                    localStorage.removeItem('token');
-                    setError('Sesion expirada. Por favor, inicie sesión nuevamente');
-                    return;
-                }
-                throw new Error(errorText || 'Error al obtener las historias clinicas')
-            }
+      if (!processedData.length) {
+        setError('No se encontraron Historias Clinicas');
+      }
 
-            const data = await response.json();
-            console.log(data);
-            const processedData = Array.isArray(data) ? data.map(normalizeClinicalData) : [normalizeClinicalData(data)];
-            console.log('data processed: ', processedData[0])
+      setClinical(processedData);
 
-            if (!processedData.length){
-                setError('No se encontraron Historias Clinicas');
-            }
+    } catch (error) {
+      console.error('Error encontrando Historias Clinicas: ', error);
+      setError(`Error al cargar Historias Clinicas:  ${error.message}`);
+      setClinical([]);
+    } finally {
+      setLoading(false);
+    }
 
-            setClinical(processedData);
-
-        } catch (error) {
-            console.error('Error encontrando Historias Clinicas: ', error);
-            setError(`Error al cargar Historias Clinicas:  ${error.message}`);
-            setClinical([]);
-        } finally{
-            setLoading(false);
-        }
-
-    }, [normalizeClinicalData]);
+  }, [normalizeClinicalData]);
 
   // crear Historia clinica
 
@@ -255,22 +264,22 @@ function ClinicalHistory() {
     const form = e.currentTarget;
     const token = getAuthToken();
 
-    if(!token || !userData?.idVeterinario ) {
-        setError('No hay token de autenticacion, No se identifica al Veterinario Logueado');
-        return;
+    if (!token || !userData?.idVeterinario) {
+      setError('No hay token de autenticacion, No se identifica al Veterinario Logueado');
+      return;
     }
 
-    if (form.checkValidity() === false){
-        e.stopPropagation();
-        setValidated(true);
-        return;
+    if (form.checkValidity() === false) {
+      e.stopPropagation();
+      setValidated(true);
+      return;
     }
 
     try {
       setIsUpdating(true);
-      if(!newClinical.Paciente){
-          alert('Por favor llena todos los campos');
-          return;
+      if (!newClinical.Paciente) {
+        alert('Por favor llena todos los campos');
+        return;
       }
 
       //Preparar Payload
@@ -310,7 +319,7 @@ function ClinicalHistory() {
       const response = await fetch('https://soporte-equino.onrender.com/api/historia_clinica',
         {
           method: 'POST',
-          headers:{
+          headers: {
             'Authorization': token,
             'Content-Type': 'application/json',
           },
@@ -318,7 +327,7 @@ function ClinicalHistory() {
         }
       )
 
-      if(!response.ok) {
+      if (!response.ok) {
         const errorData = await response.text();
         throw new Error(`Error ${response.status}: ${errorData}`);
       }
@@ -338,7 +347,7 @@ function ClinicalHistory() {
     } catch (error) {
       console.error('Error: ', error);
       alert(`Hubo un error al crear la historia clinica: ${error.message}`);
-    } finally{
+    } finally {
       setIsUpdating(false);
     }
     fetchClinical();
@@ -347,7 +356,7 @@ function ClinicalHistory() {
 
   //Actualizar Historia Clinica
   const updateClinical = useCallback(async (idHistoria_clinica, clinicalData) => {
-    try{
+    try {
       const token = getAuthToken();
       const response = await fetch(`https://soporte-equino.onrender.com/api/historia_clinica/${idHistoria_clinica}`, {
         method: 'PUT',
@@ -358,7 +367,7 @@ function ClinicalHistory() {
         body: JSON.stringify(clinicalData)
       });
 
-      if(!response.ok){
+      if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || 'Error al actualizar Historia clinica.');
       }
@@ -370,36 +379,36 @@ function ClinicalHistory() {
   }, [getAuthToken]);
 
 
-    //Eliminar Historia Clinica
-  
-    const deleteHistory = useCallback(async (idHistoria_clinica) => {
-      try {
-        const token = getAuthToken();
-        const response = await fetch(`https://soporte-equino.onrender.com/api/historia_clinica/${idHistoria_clinica}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': token,
-            'Content-Type': 'application/json'
-          }
-        });
-  
-        if(!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || 'Error al eliminar la historia clinica');
+  //Eliminar Historia Clinica
+
+  const deleteHistory = useCallback(async (idHistoria_clinica) => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`https://soporte-equino.onrender.com/api/historia_clinica/${idHistoria_clinica}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json'
         }
-        return true;
-  
-      } catch (error) {
-        console.error('Error deleting History: ', error);
-        throw error;
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Error al eliminar la historia clinica');
       }
-    }, [getAuthToken]);
-  
-    useEffect(() => {
-      fetchClinical();
-      // fetchOwners();
-      // fetchPatients();
-    }, [fetchClinical]);
+      return true;
+
+    } catch (error) {
+      console.error('Error deleting History: ', error);
+      throw error;
+    }
+  }, [getAuthToken]);
+
+  useEffect(() => {
+    fetchClinical();
+    // fetchOwners();
+    // fetchPatients();
+  }, [fetchClinical]);
 
 
 
@@ -415,44 +424,44 @@ function ClinicalHistory() {
     setEditClinical(prev => ({ ...prev, [name]: value }));
   };
 
-   //Handler para mostrar detalles de la historia
-    const handleShowDetails = useCallback((clinical) => {
-      if (!clinical) {
-        setError('Historia Clinica Invalida');
-        return;
-      }
-  
-      setCurrentClinical(normalizeClinicalData(clinical));
-      setShowClinicalModal(true);
-      setError(null)
-    }, [normalizeClinicalData]);
+  //Handler para mostrar detalles de la historia
+  const handleShowDetails = useCallback((clinical) => {
+    if (!clinical) {
+      setError('Historia Clinica Invalida');
+      return;
+    }
+
+    setCurrentClinical(normalizeClinicalData(clinical));
+    setShowClinicalModal(true);
+    setError(null)
+  }, [normalizeClinicalData]);
 
 
-      //Handler para editar Historia
-      const handleEditClinical = useCallback((clinical) => {
-        if(!clinical) {
-          setError('Historia clinica invalida para editar');
-          return;
-        }
-    
-        setShowClinicalModal(false);
-        setEditClinical(normalizeClinicalData(clinical));
-        setShowEditClinicalModal(true);
-        setEditValidated(false);
-        setError(null);
-      }, [normalizeClinicalData]);
-    
-      //Handler para eliminar Historia Clinica
-      const handleDeleteClinical = useCallback((idHistoria_clinica) => {
-        const history = clinicals.find(c => c.idHistoria_clinica === idHistoria_clinica);
-        if(history){
-          setClinicalToDelete(history);
-          setShowDeleteModal(true);
-        }
-      }, [clinicals]);
+  //Handler para editar Historia
+  const handleEditClinical = useCallback((clinical) => {
+    if (!clinical) {
+      setError('Historia clinica invalida para editar');
+      return;
+    }
+
+    setShowClinicalModal(false);
+    setEditClinical(normalizeClinicalData(clinical));
+    setShowEditClinicalModal(true);
+    setEditValidated(false);
+    setError(null);
+  }, [normalizeClinicalData]);
+
+  //Handler para eliminar Historia Clinica
+  const handleDeleteClinical = useCallback((idHistoria_clinica) => {
+    const history = clinicals.find(c => c.idHistoria_clinica === idHistoria_clinica);
+    if (history) {
+      setClinicalToDelete(history);
+      setShowDeleteModal(true);
+    }
+  }, [clinicals]);
 
 
-        //Handler para enviar edicion de Historia Clinica
+  //Handler para enviar edicion de Historia Clinica
   const handleSubmitEditClinical = async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -464,7 +473,7 @@ function ClinicalHistory() {
     }
     try {
       setLoading(true);
-      const {idHistoria_clinica, ...clinicalData} = editClinical;
+      const { idHistoria_clinica, ...clinicalData } = editClinical;
       const payload = { ...clinicalData, Veterinario: userData.idVeterinario };
       console.log('Payload para actualizar: ', payload);
       await updateClinical(idHistoria_clinica, payload);
@@ -490,8 +499,8 @@ function ClinicalHistory() {
   }
 
   // Confirmar eliminacion de Historia Clinica
-  const confirmDeleteClinical = async() => {
-    if(!clinicalToDelete) return;
+  const confirmDeleteClinical = async () => {
+    if (!clinicalToDelete) return;
 
     try {
       setLoading(true);
@@ -516,9 +525,9 @@ function ClinicalHistory() {
 
   // Filtrar Historias Clinicas
   const filteredClinicals = clinicals.filter((clinical) => {
-    if(!clinical?.idHistoria_clinica) return false;
+    if (!clinical?.idHistoria_clinica) return false;
     const searchLower = searchTerm.toLowerCase();
-    return(
+    return (
       (clinical.Observaciones?.toLowerCase() || '').includes(searchLower) || (clinical.Paciente?.toLowerCase() || '').includes(searchLower) || (clinical.Propietario?.toLowerCase() || '').includes(searchLower)
     )
   })
@@ -531,8 +540,8 @@ function ClinicalHistory() {
     <div>
       <div className='page-header d-flex justify-content-between align-items-center mt-4 mb-4'>
         <h1>Mis Historias Clinicas</h1>
-        <Button 
-          variant="warning" 
+        <Button
+          variant="warning"
           className="d-flex align-items-center"
           onClick={() => setShowNewClinicalModal(true)}
           disabled={loading}
@@ -626,25 +635,25 @@ function ClinicalHistory() {
                       </td>
                       <td>
                         <div className="action-buttons">
-                          <Button 
-                            variant="outline-warning" 
-                            size="sm" 
+                          <Button
+                            variant="outline-warning"
+                            size="sm"
                             className="me-1"
                             onClick={() => handleShowDetails(clinical)}
                           >
                             Ver
                           </Button>
-                          <Button 
-                            variant="outline-warning" 
-                            size="sm" 
+                          <Button
+                            variant="outline-warning"
+                            size="sm"
                             className="me-1"
                             onClick={() => handleEditClinical(clinical)}
                             disabled={loading}
                           >
                             <FaEdit />
                           </Button>
-                          <Button 
-                            variant="outline-danger" 
+                          <Button
+                            variant="outline-danger"
                             size="sm"
                             onClick={() => handleDeleteClinical(clinical.idHistoria_clinica)}
                             disabled={loading}
@@ -669,7 +678,7 @@ function ClinicalHistory() {
 
       {/* Modal Detalles Historia Clinica */}
       <Modal
-        show={showClinicalModal} 
+        show={showClinicalModal}
         onHide={() => setShowClinicalModal(false)}
         size="lg"
         centered
@@ -811,8 +820,8 @@ function ClinicalHistory() {
                   <p><strong>Fecha Historia Clinica </strong></p>
                   <p className="d-flex align-items-center">
                     <FaCalendarPlus className="me-2 text-warning" />
-                    {currentClinical.Fecha ? 
-                      new Date(currentClinical.Fecha).toLocaleDateString('es-CO') : 
+                    {currentClinical.Fecha ?
+                      new Date(currentClinical.Fecha).toLocaleDateString('es-CO') :
                       'No disponible'
                     }
                   </p>
@@ -827,15 +836,15 @@ function ClinicalHistory() {
             Cerrar
           </Button>
           <Button variant="warning" onClick={() => handleEditClinical(currentClinical)}>
-            <FaEdit className="me-2" /> 
+            <FaEdit className="me-2" />
             Editar Información
           </Button>
         </Modal.Footer>
       </Modal>
-      
+
       {/* Modal Crear Historia Clinica */}
       <Modal
-        show={showNewClinicalModal} 
+        show={showNewClinicalModal}
         onHide={() => setShowNewClinicalModal(false)}
         size="lg"
         centered
@@ -870,6 +879,22 @@ function ClinicalHistory() {
                   <Form.Control.Feedback type="invalid">
                     El paciente es obligatorio
                   </Form.Control.Feedback>
+                </Form.Group>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={12}>
+                <Form.Group className="mb-3" controlId="formFecha">
+                  <Form.Label>Fecha de Historia Clínica</Form.Label>
+                  <Form.Control
+                    type="datetime-local"
+                    name="Fecha"
+                    value={formatDateForInput(newClinical.Fecha)}
+                    onChange={handleInputChange}
+                  />
+                  <Form.Text className="text-muted">
+                    Dejar en blanco para usar la fecha y hora actual.
+                  </Form.Text>
                 </Form.Group>
               </Col>
             </Row>
@@ -1268,7 +1293,7 @@ function ClinicalHistory() {
               </div>
             )}
             <Button type="submit" variant="warning">
-              <FaPlus className="me-2" /> 
+              <FaPlus className="me-2" />
               Crear Historia Clínica
             </Button>
           </Form>
@@ -1318,6 +1343,17 @@ function ClinicalHistory() {
                     <Form.Control.Feedback type="invalid">
                       El paciente es obligatorio
                     </Form.Control.Feedback>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3" controlId="formFechaEdit">
+                    <Form.Label>Fecha</Form.Label>
+                    <Form.Control
+                      type="datetime-local"
+                      name="Fecha"
+                      value={formatDateForInput(editClinical.Fecha)}
+                      onChange={handleEditInputChange}
+                    />
                   </Form.Group>
                 </Col>
               </Row>
@@ -1746,7 +1782,7 @@ function ClinicalHistory() {
           {clinicalToDelete && (
             <div className="text-center">
               <div className="mb-3">
-                <FaUser  size={40} className="text-danger" />
+                <FaUser size={40} className="text-danger" />
               </div>
               <p className="mb-3">
                 ¿Está seguro que desea eliminar Historia Clinica?
@@ -1764,15 +1800,15 @@ function ClinicalHistory() {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={() => setShowDeleteModal(false)}
             disabled={loading}
           >
             Cancelar
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={confirmDeleteClinical}
             disabled={loading}
           >
