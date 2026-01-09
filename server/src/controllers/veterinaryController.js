@@ -80,25 +80,43 @@ function generatePassword(longitud = 10) {
 }
 
 const getVeterinarys = async () => {
-    const result = await db.query(`
+    const [result] = await db.query(`
         SELECT * FROM veterinario
     `)
-    return result.length > 0 ? result[0] : null;
+    const veterinariosConFoto = result.map(veterinario => {
+        if (veterinario.Foto && Buffer.isBuffer(veterinario.Foto)) {
+            const base64String = veterinario.Foto.toString('base64');
+            veterinario.Foto = `data:image/jpeg;base64,${base64String}`;
+        }
+        return veterinario;
+    });
+    return veterinariosConFoto;
 }
 
 const getVeterinarystatus = async () => {
-    const result = await db.query(`
+    const [result] = await db.query(`
         SELECT * FROM veterinario WHERE estado = 'Activo'
     `)
-    return result.length > 0 ? result[0] : null;
+    const veterinariosConFoto = result.map(veterinario => {
+        if (veterinario.Foto && Buffer.isBuffer(veterinario.Foto)) {
+            const base64String = veterinario.Foto.toString('base64');
+            veterinario.Foto = `data:image/jpeg;base64,${base64String}`;
+        }
+        return veterinario;
+    });
+    return veterinariosConFoto;
 }
 
 const getVeterinaryById = async (idVeterinario) => {
-    const result = await db.query(`
+    const [result] = await db.query(`
         SELECT * FROM veterinario WHERE idVeterinario = ?
     `,
         [idVeterinario]
     )
+    if (result.length > 0 && result[0].Foto && Buffer.isBuffer(result[0].Foto)) {
+        const base64String = result[0].Foto.toString('base64');
+        result[0].Foto = `data:image/jpeg;base64,${base64String}`;
+    }
     return result;
 };
 

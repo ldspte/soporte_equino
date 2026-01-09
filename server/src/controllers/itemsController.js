@@ -2,11 +2,11 @@ const { db } = require('../database');
 const { fs } = require('fs')
 
 const getItems = async () => {
-    const result = await db.query(`
+    const [result] = await db.query(`
         SELECT * FROM insumos
     `)
     const insumosConFoto = result.map(insumo => {
-        if (insumo.Foto) {
+        if (insumo.Foto && Buffer.isBuffer(insumo.Foto)) {
             // Convierte el buffer binario a una cadena Base64
             const base64String = insumo.Foto.toString('base64');
             // Crea una "URL de datos"
@@ -19,7 +19,7 @@ const getItems = async () => {
         return insumo;
     });
 
-    return insumosConFoto[0];
+    return insumosConFoto;
 }
 
 const getItemById = async (idInsumos) => {
