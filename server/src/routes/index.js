@@ -9,11 +9,11 @@ const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const multer = require('multer');
-// --- Configuración de Multer ---
-// --- Configuración de Multer ---
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+// const multer = require('multer');
+// // --- Configuración de Multer ---
+// // --- Configuración de Multer ---
+// const storage = multer.memoryStorage();
+// const upload = multer({ storage: storage });
 const { getItems, getItemById, createItem, updateItem, deleteItem } = require('../controllers/itemsController');
 const { getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary, getVeterinarystatus } = require('../controllers/veterinaryController')
 const { getOwners, getOwnerById, createOwner, updateOwner, deleteOwner } = require('../controllers/ownerController');
@@ -243,11 +243,19 @@ route.get('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res
 });
 
 
-route.post('/api/veterinarios', authenticateToken, upload.single('Foto'), async (req, res) => {
-    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad } = req.body;
-    const Foto = req.file ? req.file.buffer : null;
+route.post('/api/veterinarios', authenticateToken, /* upload.single('Foto'), */ async (req, res) => {
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto } = req.body;
+
+    // Convertir base64 a buffer
+    let fotoBuffer = null;
+    if (Foto) {
+        // Extraer solo los datos base64 (sin el prefijo data:image/...)
+        const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
+        fotoBuffer = Buffer.from(base64Data, 'base64');
+    }
+
     try {
-        const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto);
+        const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, fotoBuffer);
         res.status(201).json(values);
     } catch (error) {
         console.error(error);
@@ -255,25 +263,25 @@ route.post('/api/veterinarios', authenticateToken, upload.single('Foto'), async 
     }
 });
 
-route.put('/api/veterinarios/:idVeterinario', authenticateToken, upload.single('Foto'), async (req, res) => {
+route.put('/api/veterinarios/:idVeterinario', authenticateToken, /* upload.single('Foto'), */ async (req, res) => {
     const { idVeterinario } = req.params;
-    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Estado } = req.body;
-    let Foto = req.file ? req.file.buffer : req.body.Foto;
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Estado, Foto } = req.body;
+
+    let fotoBuffer = Foto;
 
     // Si Foto es string (no se subió archivo nuevo) y parece tener data URI, limpiar o mantener
-    // Nota: El controlador espera Buffer o String dependiendo de tu logica final. 
-    // Si la DB es BLOB, idealmente guardamos Buffer. 
-    // Si req.body.Foto viene como string de una imagen ya cargada (e.g. url), 
-    // y no queremos cambiarla, pasamos null o mantenemos el valor actual en DB si la logica updateVeterinary lo permite.
-    // Asumiremos que updateVeterinary puede manejar lo que le pasamos.
-    // Ajuste para Insumos (ejemplo):
     if (typeof Foto === 'string' && Foto.startsWith('data:image')) {
         const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
-        Foto = Buffer.from(base64Data, 'base64');
+        fotoBuffer = Buffer.from(base64Data, 'base64');
     }
+    // Si viene vacio o undefined, podria ser que no cambiaron la foto, o quieren borrarla.
+    // Dependiendo de tu logica anterior. Si req.body.Foto no viene, asumimos que no cambia.
+    // Pero si "updateVeterinary" reemplaza todo, necesitamos la foto vieja.
+    // El frontend deberia mandar la foto vieja si no cambia, o tu controlador manejar undefined.
+    // Asumiremos que si fotoBuffer es undefined/null, el controlador o DB deciden.
 
     try {
-        const values = await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado);
+        const values = await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, fotoBuffer, Estado);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Veterinario no encontrado' });
         }

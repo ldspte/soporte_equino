@@ -397,28 +397,40 @@ const VeterinarioDashboard = () => {
         setError(null);
 
         try {
-            // 1. Construir FormData
-            const dataToSend = new FormData();
+            // Helper para convertir archivo a Base64
+            const convertToBase64 = (file) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                });
+            };
 
-            // Adjuntar todos los campos de texto
-            Object.entries(formData).forEach(([key, value]) => {
-                dataToSend.append(key, value);
-            });
+            // Preparar el payload JSON
+            const dataToSend = { ...formData };
 
-            // 2. Adjuntar el archivo de foto
+            // Si hay archivo, convertir y asignar
             if (file) {
-                dataToSend.append('Foto', file);
+                dataToSend.Foto = await convertToBase64(file);
             } else if (veterinarioData.Foto) {
-                dataToSend.append('Foto', veterinarioData.Foto);
+                // Mantener la foto existente si no se sube una nueva
+                // Nota: Dependiendo del backend, podrías querer enviar el string existente o no enviar el campo Foto si no cambia.
+                // Aquí asumiremos que si no hay cambio, mandamos undefined o lo que ya estaba.
+                // dataToSend.Foto = veterinarioData.Foto; // Opcional, ver lógica backend
             } else {
-                dataToSend.append('Foto', '');
+                // Si quieres "borrar" la foto explícitamente, enviar null o string vacío
+                // dataToSend.Foto = "";
             }
 
-            // 3. Enviar PUT request a la API
+            // 3. Enviar PUT request a la API (JSON)
             const response = await fetch(`${API_URL}/veterinarios/${veterinarioData.idVeterinario}`, {
                 method: 'PUT',
-                headers: { 'Authorization': token },
-                body: dataToSend
+                headers: {
+                    'Authorization': token,
+                    'Content-Type': 'application/json' // Importante: JSON
+                },
+                body: JSON.stringify(dataToSend)
             });
 
             if (!response.ok) {
