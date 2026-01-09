@@ -250,7 +250,7 @@ function PatientManagement() {
         <div>
             <div className='page-header d-flex justify-content-between align-items-center mt-4 mb-4'>
                 <h1>Mis Pacientes</h1>
-                <Button variant="warning" onClick={() => setShowNewPatientModal(true)}>
+                <Button variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }} onClick={() => setShowNewPatientModal(true)}>
                     <FaPlus className="me-2" /> Nuevo Paciente
                 </Button>
             </div>
@@ -261,7 +261,7 @@ function PatientManagement() {
                     <Row>
                         <Col md={6}>
                             <InputGroup>
-                                <InputGroup.Text className="bg-warning text-white">
+                                <InputGroup.Text className="text-white" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}>
                                     <FaSearch />
                                 </InputGroup.Text>
                                 <Form.Control
@@ -279,7 +279,7 @@ function PatientManagement() {
                 <Card.Body>
                     {loading ? (
                         <div className="text-center py-4">
-                            <div className="spinner-border text-warning" role="status">
+                            <div className="spinner-border" style={{ color: '#0d3b66' }} role="status">
                                 <span className="visually-hidden">Cargando...</span>
                             </div>
                         </div>
@@ -301,7 +301,7 @@ function PatientManagement() {
                                     {filteredPatients.map((patient, index) => (
                                         <tr key={patient.idPaciente}>
                                             <td>{index + 1}</td>
-                                            <td><FaHorseHead className='me-2 text-warning' /> {patient.Nombre}</td>
+                                            <td><FaHorseHead className='me-2' style={{ color: '#0d3b66' }} /> {patient.Nombre}</td>
                                             <td><FaIdCard className='me-2 text-info' /> {patient.Numero_registro}</td>
                                             <td>{patient.Raza}</td>
                                             <td>{patient.Sexo}</td>
@@ -312,7 +312,7 @@ function PatientManagement() {
                                                     : 'No asignado'}
                                             </td>
                                             <td>
-                                                <Button variant="outline-warning" size="sm" className='me-2' onClick={() => handleEditPatient(patient)}>
+                                                <Button variant="outline-primary" size="sm" className='me-2' style={{ color: '#0d3b66', borderColor: '#0d3b66' }} onClick={() => handleEditPatient(patient)}>
                                                     <FaEdit />
                                                 </Button>
                                                 <Button variant="outline-danger" size="sm" onClick={() => handleDeletePatient(patient.idPaciente)}>
@@ -382,7 +382,7 @@ function PatientManagement() {
                                 ))}
                             </Form.Control>
                         </Form.Group>
-                        <Button type="submit" variant="warning">Crear Paciente</Button>
+                        <Button type="submit" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}>Crear Paciente</Button>
                     </Form>
                 </Modal.Body>
             </Modal>
@@ -441,7 +441,7 @@ function PatientManagement() {
                                     ))}
                                 </Form.Control>
                             </Form.Group>
-                            <Button type="submit" variant="warning">Actualizar Paciente</Button>
+                            <Button type="submit" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}>Actualizar Paciente</Button>
                         </Form>
                     )}
                 </Modal.Body>

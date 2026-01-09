@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Row, Col, InputGroup, Form, Modal, Alert } from 'react-bootstrap';
 import { FaSearch, FaEdit, FaTrashAlt, FaPlus, FaTag, FaMoneyBill, FaImage } from 'react-icons/fa';
+import API_URL from '../config';
 
 function Insumos() {
     const [insumos, setInsumos] = useState([]);
@@ -43,7 +44,7 @@ function Insumos() {
         }
 
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/insumos', {
+            const response = await fetch(`${API_URL}/insumos`, {
                 method: 'GET',
                 headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
@@ -57,7 +58,13 @@ function Insumos() {
             }
 
             const data = await response.json();
-            setInsumos(data);
+            console.log('Insumos fetched:', data);
+            if (Array.isArray(data)) {
+                setInsumos(data);
+            } else {
+                console.error('Data is not an array:', data);
+                setError('Formato de datos incorrecto');
+            }
         } catch (error) {
             setError(error.message);
         } finally {
@@ -121,7 +128,7 @@ function Insumos() {
         }
 
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/insumos', {
+            const response = await fetch(`${API_URL}/insumos`, {
                 method: 'POST',
                 headers: {
                     'Authorization': token,
@@ -170,7 +177,7 @@ function Insumos() {
         }
 
         try {
-            const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${currentInsumo.idInsumos}`, {
+            const response = await fetch(`${API_URL}/insumos/${currentInsumo.idInsumos}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': token,
@@ -200,7 +207,7 @@ function Insumos() {
         }
 
         try {
-            const response = await fetch(`https://soporte-equino.onrender.com/api/insumos/${idInsumos}`, {
+            const response = await fetch(`${API_URL}/insumos/${idInsumos}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
@@ -230,7 +237,7 @@ function Insumos() {
         <div>
             <div className='page-header d-flex justify-content-between align-items-center mt-4 mb-4'>
                 <h1>Mis Insumos</h1>
-                <Button variant="warning" onClick={() => setShowNewInsumoModal(true)}>
+                <Button variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }} onClick={() => setShowNewInsumoModal(true)}>
                     <FaPlus className="me-2" /> Nuevo Insumo
                 </Button>
             </div>
@@ -241,7 +248,7 @@ function Insumos() {
                     <Row>
                         <Col md={6}>
                             <InputGroup>
-                                <InputGroup.Text className='bg-warning text-white'>
+                                <InputGroup.Text className='text-white' style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}>
                                     <FaSearch />
                                 </InputGroup.Text>
                                 <Form.Control
@@ -258,7 +265,7 @@ function Insumos() {
                 <Card.Body>
                     {loading ? (
                         <div className="text-center py-4">
-                            <div className="spinner-border text-warning" role="status">
+                            <div className="spinner-border" style={{ color: '#0d3b66' }} role="status">
                                 <span className="visually-hidden">Cargando...</span>
                             </div>
                         </div>
@@ -293,7 +300,7 @@ function Insumos() {
                                             </td>
                                             <td>${insumo.Precio}</td>
                                             <td>
-                                                <Button variant="outline-warning" size="sm" className='me-2' onClick={() => handleEditInsumo(insumo)}>
+                                                <Button variant="outline-primary" size="sm" className='me-2' style={{ color: '#0d3b66', borderColor: '#0d3b66' }} onClick={() => handleEditInsumo(insumo)}>
                                                     <FaEdit />
                                                 </Button>
                                                 <Button variant="outline-danger" size="sm" onClick={() => handleDeleteInsumo(insumo.idInsumos)}>
@@ -326,7 +333,7 @@ function Insumos() {
                         </Form.Group>
                         <Form.Group controlId="formFoto" className='mb-2'>
                             <Form.Label>Foto</Form.Label>
-                            <Form.Control type="file" name="Foto" accept="image/*" onChange={handleInputChange} required />
+                            <Form.Control type="file" name="Foto" accept="image/*" onChange={handleInputChange} />
                             {newInsumo.Foto && (
                                 <div className="mt-2">
                                     <img src={newInsumo.Foto} alt="Preview" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
@@ -340,7 +347,7 @@ function Insumos() {
                                 <Form.Control type="number" name="Precio" value={newInsumo.Precio} onChange={handleInputChange} required />
                             </InputGroup>
                         </Form.Group>
-                        <Button type="submit" variant="warning">Crear Insumo</Button>
+                        <Button type="submit" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}>Crear Insumo</Button>
                     </Form>
                 </Modal.Body>
             </Modal>
@@ -377,7 +384,7 @@ function Insumos() {
                                 <Form.Control type="number" name="Precio" value={editInsumo.Precio} onChange={handleEditInputChange} required />
                             </InputGroup>
                         </Form.Group>
-                        <Button type="submit" variant="warning">Actualizar Insumo</Button>
+                        <Button type="submit" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}>Actualizar Insumo</Button>
                     </Form>
                 </Modal.Body>
             </Modal>

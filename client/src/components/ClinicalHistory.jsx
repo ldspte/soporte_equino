@@ -541,7 +541,8 @@ function ClinicalHistory() {
       <div className='page-header d-flex justify-content-between align-items-center mt-4 mb-4'>
         <h1>Mis Historias Clinicas</h1>
         <Button
-          variant="warning"
+          variant="primary"
+          style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}
           className="d-flex align-items-center"
           onClick={() => setShowNewClinicalModal(true)}
           disabled={loading}
@@ -560,7 +561,7 @@ function ClinicalHistory() {
           <Row>
             <Col md={6} lg={8}>
               <InputGroup>
-                <InputGroup.Text id="basic-addon1" className="bg-warning text-white">
+                <InputGroup.Text id="basic-addon1" className="text-white" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}>
                   <FaSearch />
                 </InputGroup.Text>
                 <Form.Control
@@ -579,7 +580,7 @@ function ClinicalHistory() {
         <Card.Body>
           {loading ? (
             <div className="text-center py-4">
-              <div className="spinner-border text-warning" role="status">
+              <div className="spinner-border" style={{ color: '#0d3b66' }} role="status">
                 <span className="visually-hidden">Cargando...</span>
               </div>
             </div>
@@ -608,7 +609,7 @@ function ClinicalHistory() {
                       </td>
                       <td>
                         <div className='d-flex align-items-center'>
-                          <FaUser Circle className='me-2 text-warning' />
+                          <FaUser Circle className='me-2' style={{ color: '#0d3b66' }} />
                           {(() => {
                             const patient = patients.find(patient => patient.idPaciente === clinical.Paciente);
                             if (patient) {
@@ -623,20 +624,21 @@ function ClinicalHistory() {
                       </td>
                       <td>
                         <div className='d-flex align-items-center'>
-                          <FaClipboardList className='me-2 text-warning' />
+                          <FaClipboardList className='me-2' style={{ color: '#0d3b66' }} />
                           {clinical.Observaciones}
                         </div>
                       </td>
                       <td>
                         <div className='d-flex align-items-center'>
-                          <FaCalendarAlt className='me-2 text-warning' />
+                          <FaCalendarAlt className='me-2' style={{ color: '#0d3b66' }} />
                           {clinical.Fecha ? new Date(clinical.Fecha).toLocaleDateString('es-CO') : 'No disponible'}
                         </div>
                       </td>
                       <td>
                         <div className="action-buttons">
                           <Button
-                            variant="outline-warning"
+                            variant="outline-primary"
+                            style={{ color: '#0d3b66', borderColor: '#0d3b66' }}
                             size="sm"
                             className="me-1"
                             onClick={() => handleShowDetails(clinical)}
@@ -644,7 +646,8 @@ function ClinicalHistory() {
                             Ver
                           </Button>
                           <Button
-                            variant="outline-warning"
+                            variant="outline-primary"
+                            style={{ color: '#0d3b66', borderColor: '#0d3b66' }}
                             size="sm"
                             className="me-1"
                             onClick={() => handleEditClinical(clinical)}
@@ -698,14 +701,14 @@ function ClinicalHistory() {
                   <Col sm={6}>
                     <p className='mb-1'><strong>Propietario</strong></p>
                     <p className='d-flex align-items-center'>
-                      <FaUser Circle className="me-2 text-warning" />
+                      <FaUser Circle className="me-2" style={{ color: '#0d3b66' }} />
                       {currentClinical.Propietario}
                     </p>
                   </Col>
                   <Col sm={6}>
                     <p className='mb-1'><strong>Paciente</strong></p>
                     <p className='d-flex align-items-center'>
-                      <FaHorse className="me-2 text-warning" />
+                      <FaHorse className="me-2" style={{ color: '#0d3b66' }} />
                       {patients.find(patient => patient.idPaciente === currentClinical.Paciente)
                         ? `${patients.find(patient => patient.idPaciente === currentClinical.Paciente).Nombre}` : 'No asignado'
                       }
@@ -819,7 +822,7 @@ function ClinicalHistory() {
                 <Col sm={6}>
                   <p><strong>Fecha Historia Clinica </strong></p>
                   <p className="d-flex align-items-center">
-                    <FaCalendarPlus className="me-2 text-warning" />
+                    <FaCalendarPlus className="me-2" style={{ color: '#0d3b66' }} />
                     {currentClinical.Fecha ?
                       new Date(currentClinical.Fecha).toLocaleDateString('es-CO') :
                       'No disponible'
@@ -835,7 +838,7 @@ function ClinicalHistory() {
             <FaTimes className="me-2" />
             Cerrar
           </Button>
-          <Button variant="warning" onClick={() => handleEditClinical(currentClinical)}>
+          <Button variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }} onClick={() => setShowClinicalModal(false)}>
             <FaEdit className="me-2" />
             Editar Información
           </Button>
@@ -1553,7 +1556,7 @@ function ClinicalHistory() {
                   </Form.Group>
                 </Col>
               </Row>
-              <Button type="button" variant="warning" onClick={() => setShowAdditionalFields(!showAdditionalFields)}>
+              <Button type="button" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }} onClick={() => setShowAdditionalFields(!showAdditionalFields)}>
                 {showAdditionalFields ? 'Ocultar Campos Adicionales' : 'Mostrar Campos Adicionales'}
               </Button>
               {showAdditionalFields && (
@@ -1751,7 +1754,7 @@ function ClinicalHistory() {
                   </Row>
                 </div>
               )}
-              <Button type="submit" variant="warning">
+              <Button type="submit" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}>
                 <FaSave className="me-2" />
                 Actualizar Historia Clínica
               </Button>

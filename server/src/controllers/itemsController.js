@@ -19,7 +19,7 @@ const getItems = async () => {
         return insumo;
     });
 
-    return insumosConFoto;
+    return insumosConFoto[0];
 }
 
 const getItemById = async (idInsumos) => {

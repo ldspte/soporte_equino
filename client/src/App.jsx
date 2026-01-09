@@ -16,34 +16,36 @@ import OtherHistorys from './components/OtherHistory.jsx';
 import ResetPasswordPage from './components/ResetPasswordPage.jsx';
 import { AuthProvider } from './components/AuthProvider.jsx'; // Importa el proveedor
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import DisclaimerBanner from './components/DisclaimerBanner.jsx';
 
 const App = () => {
   useEffect(() => {
-  AOS.init({
-    duration: 1000, // Duración de la animación en milisegundos
-    once: true, // Si la animación debe ocurrir solo una vez
-  });
-}, []);
+    AOS.init({
+      duration: 1000, // Duración de la animación en milisegundos
+      once: true, // Si la animación debe ocurrir solo una vez
+    });
+  }, []);
   return (
     <div>
       <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-            
-            {/* Rutas que requieren el navbar */}
-            <Route element={<ProtectedRoute />}>
-              <Route element={<AuthenticatedLayout />}>
-                <Route path="/home" element={<Home />} />
-                <Route path="/historias-clinicas" element={<ClinicalHistory />} />
-                <Route path="/propietarios" element={<Owners />} />
-                <Route path="/pacientes" element={<PatientManagement/>} />
-                <Route path="/insumos" element={<Insumos/>} />
-                <Route path="/veterinarios" element={<Veterinarios />} />
-                <Route path="/otras-historias" element={<OtherHistorys />} />
-              </Route>
+        <DisclaimerBanner />
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+
+          {/* Rutas que requieren el navbar */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AuthenticatedLayout />}>
+              <Route path="/home" element={<Home />} />
+              <Route path="/historias-clinicas" element={<ClinicalHistory />} />
+              <Route path="/propietarios" element={<Owners />} />
+              <Route path="/pacientes" element={<PatientManagement />} />
+              <Route path="/insumos" element={<Insumos />} />
+              <Route path="/veterinarios" element={<Veterinarios />} />
+              <Route path="/otras-historias" element={<OtherHistorys />} />
             </Route>
-          </Routes>
+          </Route>
+        </Routes>
       </AuthProvider>
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Form, Button, Card, Row, Col, Alert, Table } from 'react-bootstrap';
-import { FaSearch, FaHorse, FaUser , FaUserCircle, FaClipboardList, FaCalendarAlt } from 'react-icons/fa';
+import { FaSearch, FaHorse, FaUser, FaUserCircle, FaClipboardList, FaCalendarAlt } from 'react-icons/fa';
 
 function OtherHistorys() {
   const [registro, setRegistro] = useState('');
@@ -117,7 +117,7 @@ function OtherHistorys() {
                 </Form.Group>
               </Col>
             </Row>
-            <Button variant="warning" type="submit" disabled={loading}>
+            <Button variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }} type="submit" disabled={loading}>
               <FaSearch className="me-2" />
               {loading ? 'Buscando...' : 'Buscar'}
             </Button>
@@ -150,19 +150,19 @@ function OtherHistorys() {
                     <tr key={clinical.idHistoria_clinica || clinical.id}>
                       <td>{clinical.Registro || clinical.idHistoria_clinica || 'N/A'}</td>
                       <td>
-                        <FaHorse className="me-2 text-warning" />
+                        <FaHorse className="me-2" style={{ color: '#0d3b66' }} />
                         {clinical.Paciente || 'No asignado'}
                       </td>
                       <td>
-                        <FaUser Circle className="me-2 text-warning" />
+                        <FaUser Circle className="me-2" style={{ color: '#0d3b66' }} />
                         {clinical.Propietario || 'No asignado'}
                       </td>
                       <td>
-                        <FaClipboardList className="me-2 text-warning" />
+                        <FaClipboardList className="me-2" style={{ color: '#0d3b66' }} />
                         {clinical.Observaciones || 'Sin observaciones'}
                       </td>
                       <td>
-                        <FaCalendarAlt className="me-2 text-warning" />
+                        <FaCalendarAlt className="me-2" style={{ color: '#0d3b66' }} />
                         {clinical.Fecha ? new Date(clinical.Fecha).toLocaleDateString('es-CO') : 'No disponible'}
                       </td>
                     </tr>
