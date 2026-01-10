@@ -146,13 +146,37 @@ const VeterinarioDashboard = () => {
     const [patientCount, setPatientCount] = useState(0);
     const [ownerCount, setOwnerCount] = useState(0);
     const [recentHistories, setRecentHistories] = useState([]);
+    const [patients, setPatients] = useState([]);
+    const [owners, setOwners] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // 2. Auth Helper
+    // 2. Helpers
     const getAuthHeader = useCallback(() => {
         const token = localStorage.getItem('token');
         return token ? `Bearer ${token}` : null;
+    }, []);
+
+    const formatUser = useCallback((user) => {
+        if (!user) return null;
+        let finalFoto = user.Foto;
+
+        // Manejar el caso de Buffer object (sesiones persistentes o retornos crudos)
+        if (finalFoto && typeof finalFoto === 'object' && finalFoto.type === 'Buffer' && Array.isArray(finalFoto.data)) {
+            try {
+                const uint8Array = new Uint8Array(finalFoto.data);
+                let binary = '';
+                for (let i = 0; i < uint8Array.length; i++) {
+                    binary += String.fromCharCode(uint8Array[i]);
+                }
+                finalFoto = `data:image/jpeg;base64,${window.btoa(binary)}`;
+            } catch (e) {
+                console.error("Error converting photo Buffer:", e);
+            }
+        }
+
+        const redes = typeof user.Redes === 'string' ? JSON.parse(user.Redes || '{}') : (user.Redes || {});
+        return { ...user, Foto: finalFoto, Redes: redes };
     }, []);
 
     // 3. Inicialización
@@ -165,16 +189,16 @@ const VeterinarioDashboard = () => {
                 const userData = JSON.parse(userStorage);
                 const rawUser = userData.user?.[0];
                 if (rawUser) {
-                    const redes = typeof rawUser.Redes === 'string' ? JSON.parse(rawUser.Redes || '{}') : (rawUser.Redes || {});
-                    setVeterinarioData({ ...rawUser, Redes: redes });
-                    setVeterinarioID(rawUser.idVeterinario);
+                    const formatted = formatUser(rawUser);
+                    setVeterinarioData(formatted);
+                    setVeterinarioID(formatted.idVeterinario);
                 }
             } catch (e) {
                 console.error("Error initializing dashboard session:", e);
             }
         };
         initDashboard();
-    }, []);
+    }, [formatUser]);
 
     // 4. Carga de Datos
     const loadDashboardData = useCallback(async () => {
@@ -193,16 +217,19 @@ const VeterinarioDashboard = () => {
 
             if (respHist.ok) {
                 const data = await respHist.json();
+                console.log("Raw Clinical History Data:", data[0]); // Debug
                 const filtered = data.filter(h => h.Veterinario === veterinarioID);
                 setHistoryCount(filtered.length);
                 setRecentHistories(filtered.slice(0, 5));
             }
             if (respPat.ok) {
                 const data = await respPat.json();
+                setPatients(data);
                 setPatientCount(data.length);
             }
             if (respOwn.ok) {
                 const data = await respOwn.json();
+                setOwners(data);
                 setOwnerCount(data.length);
             }
         } catch (err) {
@@ -234,8 +261,7 @@ const VeterinarioDashboard = () => {
 
             if (response.ok) {
                 const updatedObj = await response.json();
-                const redes = typeof updatedObj.Redes === 'string' ? JSON.parse(updatedObj.Redes || '{}') : (updatedObj.Redes || {});
-                const finalUser = { ...updatedObj, Redes: redes };
+                const finalUser = formatUser(updatedObj);
 
                 // Actualizar local y storage
                 const userStorage = JSON.parse(localStorage.getItem('veterinario'));
@@ -272,8 +298,7 @@ const VeterinarioDashboard = () => {
             if (!response.ok) throw new Error("Update failed");
 
             const updatedObj = await response.json();
-            const redes = typeof updatedObj.Redes === 'string' ? JSON.parse(updatedObj.Redes || '{}') : (updatedObj.Redes || {});
-            const finalUser = { ...updatedObj, Redes: redes };
+            const finalUser = formatUser(updatedObj);
 
             // Update local state and persistence
             const userStorage = JSON.parse(localStorage.getItem('veterinario'));
@@ -332,7 +357,11 @@ const VeterinarioDashboard = () => {
 
                             {Redes && (
                                 <div className="d-flex justify-content-center gap-3 border-top pt-3">
-                                    {Redes.whatsapp && <a href={`https://wa.me/${Redes.whatsapp}`} target="_blank" rel="noreferrer"><BsWhatsapp size={22} className="text-success" /></a>}
+                                    {Redes.whatsapp && (
+                                        <a href={`https://wa.me/${Redes.whatsapp.toString().replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
+                                            <BsWhatsapp size={22} className="text-success" />
+                                        </a>
+                                    )}
                                     {Redes.facebook && <a href={Redes.facebook} target="_blank" rel="noreferrer"><BsFacebook size={22} className="text-primary" /></a>}
                                     {Redes.instagram && <a href={Redes.instagram} target="_blank" rel="noreferrer"><BsInstagram size={22} className="text-danger" /></a>}
                                 </div>
@@ -372,15 +401,32 @@ const VeterinarioDashboard = () => {
                         </Card.Header>
                         <ListGroup variant="flush">
                             {recentHistories.length > 0 ? (
-                                recentHistories.map(h => (
-                                    <ListGroup.Item key={h.idHistoria_clinica} className="p-4 d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 className="fw-bold mb-1">{h.Paciente || 'Sin nombre'}</h6>
-                                            <p className="mb-0 text-muted small">{h.Observaciones?.substring(0, 70)}...</p>
-                                        </div>
-                                        <Badge bg="primary" style={{ fontSize: '0.8rem' }}>{new Date(h.Fecha).toLocaleDateString()}</Badge>
-                                    </ListGroup.Item>
-                                ))
+                                recentHistories.map(h => {
+                                    // Fallback manual si el JOIN falló
+                                    const patientFallback = !h.NombrePaciente ? patients.find(p => p.idPaciente === h.Paciente) : null;
+                                    const patientName = h.NombrePaciente || (patientFallback ? patientFallback.Nombre : `Paciente #${h.Paciente}`);
+
+                                    const ownerId = h.Propietario || (patientFallback ? patientFallback.Propietario : null);
+                                    const ownerFallback = !h.NombrePropietario && ownerId ? owners.find(o => o.idPropietario === ownerId) : null;
+                                    const ownerName = h.NombrePropietario
+                                        ? `${h.NombrePropietario} ${h.ApellidoPropietario || ''}`
+                                        : (ownerFallback ? `${ownerFallback.Nombre} ${ownerFallback.Apellido || ''}` : `Prop. #${ownerId || '?'}`);
+
+                                    return (
+                                        <ListGroup.Item key={h.idHistoria_clinica} className="p-4 d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 className="fw-bold mb-1">
+                                                    <span className="text-primary">{patientName}</span>
+                                                    <span className="text-muted small ms-2">
+                                                        ({ownerName})
+                                                    </span>
+                                                </h6>
+                                                <p className="mb-0 text-muted small">{h.Observaciones?.substring(0, 70)}...</p>
+                                            </div>
+                                            <Badge bg="primary" style={{ fontSize: '0.8rem' }}>{new Date(h.Fecha).toLocaleDateString()}</Badge>
+                                        </ListGroup.Item>
+                                    );
+                                })
                             ) : (
                                 <div className="p-5 text-center text-muted">Aún no has registrado ninguna historia.</div>
                             )}

@@ -3,9 +3,19 @@ const { db } = require('../database');
 
 const getClinicalHistory = async () => {
     const [result] = await db.query(`
-        SELECT * FROM historia_clinica
+        SELECT 
+            h.*, 
+            p.Nombre as NombrePaciente, 
+            p.idPaciente as PacienteID,
+            pr.Nombre as NombrePropietario, 
+            pr.Apellido as ApellidoPropietario
+        FROM historia_clinica h
+        LEFT JOIN paciente p ON h.Paciente = p.idPaciente
+        LEFT JOIN propietario pr ON p.Propietario = pr.idPropietario
     `)
     const historiasConFoto = result.map(historia => {
+        // Log para debug interno del servidor (se verá en Render logs/consola)
+        console.log(`History ID: ${historia.idHistoria_clinica}, PacienteID: ${historia.Paciente}, JOIN Nombre: ${historia.NombrePaciente}`);
         if (historia.Foto && Buffer.isBuffer(historia.Foto)) {
             const base64String = historia.Foto.toString('base64');
             historia.Foto = `data:image/jpeg;base64,${base64String}`;
@@ -17,7 +27,11 @@ const getClinicalHistory = async () => {
 
 const getClinicalHistoryById = async (idHistoria_clinica) => {
     const [result] = await db.query(`
-        SELECT * FROM historia_clinica WHERE idHistoria_clinica = ?
+        SELECT h.*, p.Nombre as NombrePaciente, pr.Nombre as NombrePropietario, pr.Apellido as ApellidoPropietario 
+        FROM historia_clinica h
+        LEFT JOIN paciente p ON h.Paciente = p.idPaciente
+        LEFT JOIN propietario pr ON p.Propietario = pr.idPropietario
+        WHERE h.idHistoria_clinica = ?
     `,
         [idHistoria_clinica]
     )

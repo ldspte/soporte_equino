@@ -58,12 +58,20 @@ route.post('/api/login', [
 
     const { Correo, Contraseña } = req.body;
     try {
-        const [user] = await db.query('SELECT * FROM veterinario WHERE Correo = ?', [Correo]);
-        if (!user.length || !(await bcrypt.compare(Contraseña, user[0].Contraseña))) {
+        const [users] = await db.query('SELECT * FROM veterinario WHERE Correo = ?', [Correo]);
+        if (!users.length || !(await bcrypt.compare(Contraseña, users[0].Contraseña))) {
             return res.status(401).send('Invalid credentials');
         }
-        const token = jwt.sign({ id: user[0].idVeterinario }, SECRET_KEY, { expiresIn: '1h' });
-        res.json({ token, user });
+
+        const user = users[0];
+        // Convertir Foto Buffer a base64 para que el frontend la vea
+        if (user.Foto && Buffer.isBuffer(user.Foto)) {
+            const base64String = user.Foto.toString('base64');
+            user.Foto = `data:image/jpeg;base64,${base64String}`;
+        }
+
+        const token = jwt.sign({ id: user.idVeterinario }, SECRET_KEY, { expiresIn: '1h' });
+        res.json({ token, user: [user] });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error logging in' });
@@ -99,6 +107,38 @@ route.post('/api/send-password', (req, res) => {
         }
         res.status(200).send('Correo enviado: ' + info.response);
     });
+});
+
+// NUEVA RUTA: CONTACTO LANDING
+route.post('/api/contact', async (req, res) => {
+    const { nombre, correo, telefono, tipo, mensaje } = req.body;
+
+    if (!nombre || !correo || !mensaje) {
+        return res.status(400).json({ error: 'Faltan campos obligatorios (nombre, correo, mensaje)' });
+    }
+
+    const mailOptions = {
+        from: `Contact Form <${process.env.MAIL}>`,
+        to: 'dpaskate@gmail.com',
+        subject: `Nuevo mensaje de contacto: ${tipo}`,
+        html: `
+            <h3>Nuevo mensaje desde el sitio web de Soporte Equino</h3>
+            <p><strong>Nombre:</strong> ${nombre}</p>
+            <p><strong>Correo:</strong> ${correo}</p>
+            <p><strong>Teléfono:</strong> ${telefono || 'No proporcionado'}</p>
+            <p><strong>Interés:</strong> ${tipo}</p>
+            <p><strong>Mensaje:</strong></p>
+            <p>${mensaje}</p>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        res.status(200).json({ message: 'Correo enviado con éxito' });
+    } catch (error) {
+        console.error('Error al enviar correo de contacto:', error);
+        res.status(500).json({ error: 'Error al enviar el correo' });
+    }
 });
 
 
@@ -351,6 +391,23 @@ route.delete('/api/propietarios/:idPropietario', authenticateToken, async (req, 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al eliminar el Propietario' });
+    }
+});
+
+route.post('/api/propietarios/:idPropietario/rate', authenticateToken, async (req, res) => {
+    const { idPropietario } = req.params;
+    const { rating } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ error: 'La calificación debe estar entre 1 y 5' });
+    }
+
+    try {
+        const result = await rateOwner(idPropietario, rating);
+        res.status(200).json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al calificar al propietario' });
     }
 });
 

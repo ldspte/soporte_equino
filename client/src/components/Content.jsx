@@ -57,10 +57,28 @@ export default function Content() {
 
                 const activeDoctors = data.filter(d => d.Estado === 'Activo').map(d => {
                     let redes = {};
-                    try {
-                        redes = d.Redes ? JSON.parse(d.Redes) : {};
-                    } catch (e) {
-                        console.warn("Error parseando JSON de Redes:", d.Redes);
+                    if (d.Redes) {
+                        if (typeof d.Redes === 'object') {
+                            redes = d.Redes;
+                        } else if (typeof d.Redes === 'string') {
+                            try {
+                                // Intentar parsear como JSON estándar
+                                redes = JSON.parse(d.Redes);
+                            } catch (e) {
+                                // Si falla, intentar una limpieza manual para casos de strings mal formateados
+                                // (ej: llaves sin comillas o comillas simples)
+                                try {
+                                    const cleaned = d.Redes
+                                        .replace(/([{,])\s*([a-zA-Z0-9_]+)\s*:/g, '$1"$2":') // Llaves
+                                        .replace(/:\s*([^,"{}]+)/g, ':"$1"') // Valores (si no son objetos/arrays)
+                                        .replace(/'/g, '"'); // Comillas simples
+                                    redes = JSON.parse(cleaned);
+                                } catch (e2) {
+                                    console.warn("Error crítico parseando Redes para doctor:", d.idVeterinario, d.Redes);
+                                    redes = {};
+                                }
+                            }
+                        }
                     }
                     return { ...d, Redes: redes };
                 });
@@ -264,34 +282,40 @@ export default function Content() {
                                                     <div className="member-info text-center p-3">
                                                         <h4 className="mb-1">{`${doctor.Nombre || ''} ${doctor.Apellido || ''}`}</h4>
                                                         <p className="text-primary small fw-bold">{doctor.Especialidad || 'Veterinario General'}</p>
-                                                        <p className="small text-muted mb-0">{doctor.Descripcion ? (doctor.Descripcion.length > 80 ? doctor.Descripcion.substring(0, 80) + '...' : doctor.Descripcion) : 'Sin descripción disponible.'}</p>
+                                                        <p className="small text-muted mb-2">{doctor.Descripcion ? (doctor.Descripcion.length > 80 ? doctor.Descripcion.substring(0, 80) + '...' : doctor.Descripcion) : 'Sin descripción disponible.'}</p>
+
+                                                        {/* Redes sociales en el FRENTE */}
+                                                        <div className="social d-flex justify-content-center gap-3 mt-2">
+                                                            {whatsapp && (
+                                                                <a href={`https://wa.me/${whatsapp.toString().replace(/\D/g, '')}`} aria-label="WhatsApp" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                                                                    <BsWhatsapp size={18} className="text-success" />
+                                                                </a>
+                                                            )}
+                                                            {facebook && (
+                                                                <a href={facebook} aria-label="Facebook" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                                                                    <BsFacebook size={18} className="text-primary" />
+                                                                </a>
+                                                            )}
+                                                            {instagram && (
+                                                                <a href={instagram} aria-label="Instagram" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                                                                    <BsInstagram size={18} className="text-danger" />
+                                                                </a>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
 
                                                 {/* Cara trasera de la tarjeta (BLANCA) */}
                                                 <div className="back-card team-member border-0 shadow-lg w-100 p-4" style={{ backgroundColor: 'white', color: '#1D2D44' }}>
                                                     <div className="d-flex flex-column align-items-center justify-content-center h-100">
-                                                        <h5 className="mb-3 text-primary">Contáctalo</h5>
-                                                        <p className="text-muted small mb-1">{doctor.Correo}</p>
+                                                        <h5 className="mb-3 text-primary">Información de Contacto</h5>
+                                                        <p className="mb-0"><strong>Email:</strong></p>
+                                                        <p className="text-muted small mb-3">{doctor.Correo}</p>
 
-                                                        <div className="social d-flex gap-3 mt-3">
-                                                            {whatsapp && (
-                                                                <a href={`https://wa.me/${whatsapp}`} aria-label={`${doctor.Nombre} WhatsApp`} target="_blank" rel="noopener noreferrer">
-                                                                    <BsWhatsapp size={20} className="text-success" />
-                                                                </a>
-                                                            )}
-                                                            {facebook && (
-                                                                <a href={facebook} aria-label={`${doctor.Nombre} Facebook`} target="_blank" rel="noopener noreferrer">
-                                                                    <BsFacebook size={20} className="text-primary" />
-                                                                </a>
-                                                            )}
-                                                            {instagram && (
-                                                                <a href={instagram} aria-label={`${doctor.Nombre} Instagram`} target="_blank" rel="noopener noreferrer">
-                                                                    <BsInstagram size={20} className="text-danger" />
-                                                                </a>
-                                                            )}
-                                                        </div>
-                                                        <p className='text-muted small mt-3'>(Haz clic para contactar)</p>
+                                                        <p className="mb-0"><strong>WhatsApp:</strong></p>
+                                                        <p className="text-muted small mb-3">{whatsapp || 'No disponible'}</p>
+
+                                                        <p className='text-muted small mt-2'>(Toca para volver)</p>
                                                     </div>
                                                 </div>
                                             </div>

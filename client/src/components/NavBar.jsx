@@ -5,6 +5,7 @@ import Insumos from './Insumos';
 import Content from './Content';
 import LoginModal from './LoginModal';
 import ForgotPasswordModal from './ForgotPasswordModal';
+import ContactModal from './ContactModal';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../Styles/navBar.css';
 
@@ -12,6 +13,7 @@ export default function NavBar() {
     const [showInsumos, setShowInsumos] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+    const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
     const handleInsumosClick = (e) => {
         e.preventDefault();
@@ -26,6 +28,11 @@ export default function NavBar() {
     const handleOpenForgotModal = () => {
         setIsLoginModalOpen(false); // Cierra el modal de login
         setIsForgotModalOpen(true); // Abre el modal de recuperación
+    };
+
+    const handleOpenContactModal = (e) => {
+        if (e) e.preventDefault();
+        setIsContactModalOpen(true);
     };
 
     return (
@@ -46,7 +53,7 @@ export default function NavBar() {
                             <Nav.Link href="#services" onClick={handleInicioClick}>Servicios</Nav.Link>
                             <Nav.Link href="#" onClick={handleInsumosClick}>Insumos</Nav.Link>
                             <Nav.Link href="#doctors" onClick={handleInicioClick}>Doctores</Nav.Link>
-                            <Nav.Link href="#contact" onClick={handleInicioClick}>Contactanos</Nav.Link>
+                            <Nav.Link href="#" onClick={handleOpenContactModal}>Contactanos</Nav.Link>
                         </Nav>
                         <Button variant="primary" className='button1' onClick={() => setIsLoginModalOpen(true)}>Inicia Sesión</Button>
                     </Navbar.Collapse>
@@ -72,6 +79,11 @@ export default function NavBar() {
             <ForgotPasswordModal
                 isOpen={isForgotModalOpen}
                 onClose={() => setIsForgotModalOpen(false)}
+            />
+
+            <ContactModal
+                isOpen={isContactModalOpen}
+                onClose={() => setIsContactModalOpen(false)}
             />
         </div>
     );

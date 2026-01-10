@@ -701,17 +701,23 @@ function ClinicalHistory() {
                   <Col sm={6}>
                     <p className='mb-1'><strong>Propietario</strong></p>
                     <p className='d-flex align-items-center'>
-                      <FaUser Circle className="me-2" style={{ color: '#0d3b66' }} />
-                      {currentClinical.Propietario}
+                      <FaUserCircle className="me-2" style={{ color: '#0d3b66' }} />
+                      {(() => {
+                        const patient = patients.find(p => p.idPaciente === currentClinical.Paciente);
+                        const ownerId = patient ? patient.Propietario : currentClinical.Propietario;
+                        const owner = owners.find(o => o.idPropietario === ownerId);
+                        return owner ? `${owner.Nombre} ${owner.Apellido || ''}` : `Prop. #${ownerId || '?'}`;
+                      })()}
                     </p>
                   </Col>
                   <Col sm={6}>
                     <p className='mb-1'><strong>Paciente</strong></p>
                     <p className='d-flex align-items-center'>
                       <FaHorse className="me-2" style={{ color: '#0d3b66' }} />
-                      {patients.find(patient => patient.idPaciente === currentClinical.Paciente)
-                        ? `${patients.find(patient => patient.idPaciente === currentClinical.Paciente).Nombre}` : 'No asignado'
-                      }
+                      {(() => {
+                        const patient = patients.find(p => p.idPaciente === currentClinical.Paciente);
+                        return patient ? `${patient.Nombre} (${patient.Numero_registro || 'S/N'})` : 'No asignado';
+                      })()}
                     </p>
                   </Col>
                 </Row>
@@ -873,11 +879,16 @@ function ClinicalHistory() {
                     required
                   >
                     <option value="">Seleccione un paciente</option>
-                    {patients.map((patient) => (
-                      <option key={patient.idPaciente} value={patient.idPaciente}>
-                        {patient.Nombre} {patient.Numero_registro}
-                      </option>
-                    ))}
+                    {patients.map((patient) => {
+                      const owner = owners.find(o => o.idPropietario === patient.Propietario);
+                      const ownerName = owner ? `(${owner.Nombre} ${owner.Apellido || ''})` : '(Dueño desconocido)';
+                      const regNum = patient.Numero_registro ? ` [Reg: ${patient.Numero_registro}]` : '';
+                      return (
+                        <option key={patient.idPaciente} value={patient.idPaciente}>
+                          {patient.Nombre}{regNum} - {ownerName}
+                        </option>
+                      );
+                    })}
                   </Form.Control>
                   <Form.Control.Feedback type="invalid">
                     El paciente es obligatorio
@@ -1337,11 +1348,16 @@ function ClinicalHistory() {
                       onChange={handleEditInputChange}
                       required >
                       <option value="">Seleccione un paciente</option>
-                      {patients.map((patient) => (
-                        <option key={patient.idPaciente} value={patient.idPaciente}>
-                          {patient.Nombre}
-                        </option>
-                      ))}
+                      {patients.map((patient) => {
+                        const owner = owners.find(o => o.idPropietario === patient.Propietario);
+                        const ownerName = owner ? `(${owner.Nombre} ${owner.Apellido || ''})` : '(Dueño desconocido)';
+                        const regNum = patient.Numero_registro ? ` [Reg: ${patient.Numero_registro}]` : '';
+                        return (
+                          <option key={patient.idPaciente} value={patient.idPaciente}>
+                            {patient.Nombre}{regNum} - {ownerName}
+                          </option>
+                        );
+                      })}
                     </Form.Control>
                     <Form.Control.Feedback type="invalid">
                       El paciente es obligatorio
@@ -1792,9 +1808,20 @@ function ClinicalHistory() {
               </p>
               <div className="alert alert-light">
                 <strong>
-                  {clinicalToDelete.Paciente} {clinicalToDelete.Fecha}
+                  {(() => {
+                    const patient = patients.find(p => p.idPaciente === clinicalToDelete.Paciente);
+                    return patient ? patient.Nombre : `Paciente #${clinicalToDelete.Paciente}`;
+                  })()}
+                  {clinicalToDelete.Fecha ? ` - ${new Date(clinicalToDelete.Fecha).toLocaleDateString()}` : ''}
                 </strong>
                 <br />
+                <small className="text-muted">
+                  {(() => {
+                    const patient = patients.find(p => p.idPaciente === clinicalToDelete.Paciente);
+                    const owner = patient ? owners.find(o => o.idPropietario === patient.Propietario) : null;
+                    return owner ? `Propietario: ${owner.Nombre} ${owner.Apellido || ''}` : '';
+                  })()}
+                </small>
               </div>
               <p className="text-danger small">
                 <strong>Esta acción no se puede deshacer.</strong>
