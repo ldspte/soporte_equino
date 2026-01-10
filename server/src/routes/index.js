@@ -243,19 +243,11 @@ route.get('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res
 });
 
 
-route.post('/api/veterinarios', authenticateToken, /* upload.single('Foto'), */ async (req, res) => {
-    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto } = req.body;
-
-    // Convertir base64 a buffer
-    let fotoBuffer = null;
-    if (Foto) {
-        // Extraer solo los datos base64 (sin el prefijo data:image/...)
-        const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
-        fotoBuffer = Buffer.from(base64Data, 'base64');
-    }
+route.post('/api/veterinarios', authenticateToken, async (req, res) => {
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Redes } = req.body;
 
     try {
-        const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, fotoBuffer);
+        const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Redes);
         res.status(201).json(values);
     } catch (error) {
         console.error(error);
@@ -263,29 +255,19 @@ route.post('/api/veterinarios', authenticateToken, /* upload.single('Foto'), */ 
     }
 });
 
-route.put('/api/veterinarios/:idVeterinario', authenticateToken, /* upload.single('Foto'), */ async (req, res) => {
+route.put('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
     const { idVeterinario } = req.params;
-    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Estado, Foto } = req.body;
-
-    let fotoBuffer = Foto;
-
-    // Si Foto es string (no se subió archivo nuevo) y parece tener data URI, limpiar o mantener
-    if (typeof Foto === 'string' && Foto.startsWith('data:image')) {
-        const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
-        fotoBuffer = Buffer.from(base64Data, 'base64');
-    }
-    // Si viene vacio o undefined, podria ser que no cambiaron la foto, o quieren borrarla.
-    // Dependiendo de tu logica anterior. Si req.body.Foto no viene, asumimos que no cambia.
-    // Pero si "updateVeterinary" reemplaza todo, necesitamos la foto vieja.
-    // El frontend deberia mandar la foto vieja si no cambia, o tu controlador manejar undefined.
-    // Asumiremos que si fotoBuffer es undefined/null, el controlador o DB deciden.
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Estado, Foto, Redes } = req.body;
 
     try {
-        const values = await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, fotoBuffer, Estado);
-        if (values.affectedRows === 0) {
-            return res.status(404).json({ error: 'Veterinario no encontrado' });
+        await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, Redes);
+
+        // Retornar el objeto actualizado para que el frontend no se "laguee" o rompa
+        const updated = await getVeterinaryById(idVeterinario);
+        if (updated.length === 0) {
+            return res.status(404).json({ error: 'Veterinario no encontrado después de actualizar' });
         }
-        res.status(200).json(values);
+        res.status(200).json(updated[0]);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al actualizar el Veterinario' });

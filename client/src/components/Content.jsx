@@ -252,7 +252,7 @@ export default function Content() {
                                                     <div className="member-img position-relative text-center p-3">
                                                         {doctor.Foto ? (
                                                             <Image
-                                                                src={`https://soporte-equino.onrender.com/uploads/${doctor.Foto}`}
+                                                                src={doctor.Foto}
                                                                 alt={doctor.Nombre}
                                                                 className="rounded-circle"
                                                                 style={{ width: '100px', height: '100px', objectFit: 'cover', border: '3px solid #1D2D44' }}

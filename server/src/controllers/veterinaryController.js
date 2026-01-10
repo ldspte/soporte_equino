@@ -120,23 +120,38 @@ const getVeterinaryById = async (idVeterinario) => {
     return result;
 };
 
-const createVeterinary = async (Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto) => {
+const createVeterinary = async (Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Redes) => {
     const password = generatePassword();
     const Contraseña = await bcrypt.hash(password, 10);
+
+    // Asegurar que Foto sea Buffer si viene como base64 o similar
+    let fotoBuffer = Foto;
+    if (typeof Foto === 'string' && Foto.startsWith('data:image')) {
+        const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
+        fotoBuffer = Buffer.from(base64Data, 'base64');
+    }
+
     const result = await db.query(`
-        INSERT INTO veterinario (Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, Foto) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO veterinario (Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, Foto, Redes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
-        [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, Foto]
+        [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, fotoBuffer, Redes]
     );
     await sendPasswordEmail(Correo, password); // Enviar correo con la contraseña
     return result;
 }
 
-const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado) => {
+const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, Redes) => {
+    // Asegurar que Foto sea Buffer si viene como base64
+    let fotoBuffer = Foto;
+    if (typeof Foto === 'string' && Foto.startsWith('data:image')) {
+        const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
+        fotoBuffer = Buffer.from(base64Data, 'base64');
+    }
+
     const result = await db.query(`
-        UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Descripcion = ?, Especialidad = ?, Foto = ?, Estado = ? WHERE idVeterinario = ?
+        UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Descripcion = ?, Especialidad = ?, Foto = ?, Estado = ?, Redes = ? WHERE idVeterinario = ?
     `,
-        [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, idVeterinario]
+        [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, fotoBuffer, Estado, Redes, idVeterinario]
     );
     return result;
 }
