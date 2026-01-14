@@ -9,8 +9,8 @@ const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { OAuth2Client } = require('google-auth-library');
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// const { OAuth2Client } = require('google-auth-library');
+// const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // const multer = require('multer');
 // // --- Configuración de Multer ---
 // // --- Configuración de Multer ---
@@ -80,7 +80,8 @@ route.post('/api/login', [
     }
 });
 
-// LOGIN CON GOOGLE
+/* 
+// LOGIN CON GOOGLE - COMENTADO TEMPORALMENTE POR PROBLEMAS DE LIBRERÍA EN RENDER
 route.post('/api/google-login', async (req, res) => {
     const { credential } = req.body;
     try {
@@ -95,13 +96,13 @@ route.post('/api/google-login', async (req, res) => {
         // 2. Buscar al veterinario por correo
         const [users] = await db.query('SELECT * FROM veterinario WHERE Correo = ?', [email]);
         if (!users.length) {
-            return res.status(401).json({
-                message: 'No se encontró un veterinario registrado con este correo de Google.'
+            return res.status(401).json({ 
+                message: 'No se encontró un veterinario registrado con este correo de Google.' 
             });
         }
 
         const user = users[0];
-
+        
         // Convertir Foto Buffer a base64
         if (user.Foto && Buffer.isBuffer(user.Foto)) {
             const base64String = user.Foto.toString('base64');
@@ -116,6 +117,7 @@ route.post('/api/google-login', async (req, res) => {
         res.status(500).json({ message: 'Error al autenticar con Google' });
     }
 });
+*/
 
 //CONTRASEÑA POR DEFECTO
 
