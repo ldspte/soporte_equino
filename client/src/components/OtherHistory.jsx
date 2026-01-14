@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Form, Button, Card, Row, Col, Alert, Table } from 'react-bootstrap';
 import { FaSearch, FaHorse, FaUser, FaUserCircle, FaClipboardList, FaCalendarAlt } from 'react-icons/fa';
+import API_URL from '../config';
 
 function OtherHistorys() {
   const [registro, setRegistro] = useState('');
@@ -41,7 +42,7 @@ function OtherHistorys() {
       if (paciente.trim()) params.append('paciente', paciente.trim());
       if (propietario.trim()) params.append('propietario', propietario.trim());
 
-      const response = await fetch(`https://soporte-equino.onrender.com/api/historia_clinica/buscar?${params.toString()}`, {
+      const response = await fetch(`${API_URL}/historia_clinica/buscar?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': token,
@@ -151,11 +152,11 @@ function OtherHistorys() {
                       <td>{clinical.Registro || clinical.idHistoria_clinica || 'N/A'}</td>
                       <td>
                         <FaHorse className="me-2" style={{ color: '#0d3b66' }} />
-                        {clinical.Paciente || 'No asignado'}
+                        {clinical.NombrePaciente || clinical.Paciente || 'No asignado'}
                       </td>
                       <td>
-                        <FaUser Circle className="me-2" style={{ color: '#0d3b66' }} />
-                        {clinical.Propietario || 'No asignado'}
+                        <FaUserCircle className="me-2" style={{ color: '#0d3b66' }} />
+                        {clinical.NombrePropietario ? `${clinical.NombrePropietario} ${clinical.ApellidoPropietario || ''}` : (clinical.Propietario || 'No asignado')}
                       </td>
                       <td>
                         <FaClipboardList className="me-2" style={{ color: '#0d3b66' }} />

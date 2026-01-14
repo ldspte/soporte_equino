@@ -5,9 +5,7 @@ import {
     FaToggleOn, FaToggleOff, FaUserCircle, FaEdit, FaSave, FaTimes
 } from 'react-icons/fa';
 import { BsFacebook, BsInstagram, BsWhatsapp } from 'react-icons/bs';
-
-// URL base de tu backend en Render
-const API_URL = 'https://soporte-equino.onrender.com/api';
+import API_URL from '../config';
 
 // --- Componente Modal de Edición de Perfil ---
 
@@ -25,7 +23,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
             if (profileData.Redes) {
                 redesObj = typeof profileData.Redes === 'string' ? JSON.parse(profileData.Redes) : profileData.Redes;
             }
-            setFormData({ ...profileData, Redes: redesObj });
+            setFormData({ ...profileData, Redes: redesObj, Contraseña: '', confirmContraseña: '' });
             setFile(null);
             setValidated(false);
         }
@@ -51,17 +49,30 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
     const handleSubmit = (e) => {
         e.preventDefault();
         const form = e.currentTarget;
+
         if (form.checkValidity() === false) {
             e.stopPropagation();
             setValidated(true);
             return;
         }
 
+        // Validación de coincidencia de contraseñas
+        if (formData.Contraseña && formData.Contraseña !== formData.confirmContraseña) {
+            alert("Las contraseñas no coinciden.");
+            return;
+        }
+
         // Serializar Redes a string para el backend
+        const { confirmContraseña, ...restOfData } = formData;
         const dataToSave = {
-            ...formData,
+            ...restOfData,
             Redes: JSON.stringify(formData.Redes || {})
         };
+
+        // Si la contraseña está vacía, la eliminamos para no sobreescribir con un string vacío
+        if (!dataToSave.Contraseña) {
+            delete dataToSave.Contraseña;
+        }
 
         onSave(dataToSave, file);
     };
@@ -74,7 +85,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
             <Form noValidate validated={validated} onSubmit={handleSubmit}>
                 <Modal.Body>
                     <Alert variant="info" className="py-2 small">
-                        Nota: Para cambiar tu contraseña usa el proceso de recuperación en el inicio.
+                        Nota: Complete los campos de contraseña solo si desea cambiar su clave actual.
                     </Alert>
                     <h5 className="border-bottom pb-2 mb-3">Información Personal</h5>
                     <Row>
@@ -105,6 +116,31 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
                         <Col md={12} className="mb-3">
                             <Form.Label className='small fw-bold'>Descripción</Form.Label>
                             <Form.Control as="textarea" rows={2} name="Descripcion" value={formData.Descripcion || ''} onChange={handleInputChange} />
+                        </Col>
+                        <Col md={6} className="mb-3">
+                            <Form.Label className='small fw-bold'>Nueva Contraseña</Form.Label>
+                            <Form.Control
+                                type="password"
+                                name="Contraseña"
+                                value={formData.Contraseña || ''}
+                                onChange={handleInputChange}
+                                placeholder="Dejar en blanco para no cambiar"
+                                minLength={6}
+                            />
+                        </Col>
+                        <Col md={6} className="mb-3">
+                            <Form.Label className='small fw-bold'>Confirmar Nueva Contraseña</Form.Label>
+                            <Form.Control
+                                type="password"
+                                name="confirmContraseña"
+                                value={formData.confirmContraseña || ''}
+                                onChange={handleInputChange}
+                                placeholder="Repita la nueva contraseña"
+                                isInvalid={formData.Contraseña && formData.Contraseña !== formData.confirmContraseña}
+                            />
+                            <Form.Control.Feedback type="invalid">
+                                Las contraseñas no coinciden.
+                            </Form.Control.Feedback>
                         </Col>
                     </Row>
 

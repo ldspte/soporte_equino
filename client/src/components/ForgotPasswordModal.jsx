@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
-import { FaPaperPlane } from 'react-icons/fa'; // Importa el ícono de avión de papel
+import { FaPaperPlane } from 'react-icons/fa';
+import API_URL from '../config';
 
 const ForgotPasswordModal = ({ isOpen, onClose }) => {
     const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         setSuccess('');
 
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/forgot-password', {
+            const response = await fetch(`${API_URL}/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),
@@ -47,7 +48,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
             <Modal.Body>
                 {success && <Alert variant="success">{success}</Alert>}
                 {error && <Alert variant="danger">{error}</Alert>}
-                
+
                 <p>Ingresa tu correo electrónico para enviarte un enlace de recuperación.</p>
                 <Form onSubmit={handleSubmit}>
                     <Form.Group controlId="forgotPasswordEmail" className="mb-3">
@@ -60,10 +61,10 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                         />
                     </Form.Group>
                     <div className="d-grid gap-2">
-                        <Button 
-                            variant="warning" 
-                            type="submit" 
-                            disabled={loading} 
+                        <Button
+                            variant="warning"
+                            type="submit"
+                            disabled={loading}
                             className="mt-2"
                         >
                             {loading ? (

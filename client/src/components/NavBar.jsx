@@ -21,7 +21,12 @@ export default function NavBar() {
     }
 
     const handleInicioClick = (e) => {
-        if (e) e.preventDefault();
+        // Solo prevenimos el comportamiento por defecto si NO hay un hash en el href
+        // o si estamos volviendo a la vista de Inicio desde Insumos.
+        if (e && e.currentTarget.getAttribute('href') === "#") {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
         setShowInsumos(false);
     }
 
@@ -47,7 +52,7 @@ export default function NavBar() {
                     </Navbar.Brand>
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
                     <Navbar.Collapse id="basic-navbar-nav">
-                        <Nav className="ml-auto me-auto"> {/* Usamos me-auto para alinear a la izquierda */}
+                        <Nav className="ms-auto me-auto"> {/* Usamos ms-auto para alinear a la derecha en BS5, aunque el comentario decía izquierda */}
                             <Nav.Link href="#" onClick={handleInicioClick}>Inicio</Nav.Link>
                             <Nav.Link href="#about" onClick={handleInicioClick}>Acerca de Nosotros</Nav.Link>
                             <Nav.Link href="#services" onClick={handleInicioClick}>Servicios</Nav.Link>

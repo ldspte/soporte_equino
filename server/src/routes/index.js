@@ -9,6 +9,8 @@ const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // const multer = require('multer');
 // // --- Configuración de Multer ---
 // // --- Configuración de Multer ---
@@ -16,7 +18,7 @@ const crypto = require('crypto');
 // const upload = multer({ storage: storage });
 const { getItems, getItemById, createItem, updateItem, deleteItem } = require('../controllers/itemsController');
 const { getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary, getVeterinarystatus } = require('../controllers/veterinaryController')
-const { getOwners, getOwnerById, createOwner, updateOwner, deleteOwner } = require('../controllers/ownerController');
+const { getOwners, getOwnerById, createOwner, updateOwner, deleteOwner, rateOwner } = require('../controllers/ownerController');
 const { getClinicalHistory, getClinicalHistoryById, createClinicalHistory, updateClinicalHistory, deleteClinicalHistory } = require('../controllers/clinicalHystory');
 const { getPatients, getPatientById, createPatient, updatePatient, deletePatient } = require('../controllers/patientController')
 
@@ -75,6 +77,43 @@ route.post('/api/login', [
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error logging in' });
+    }
+});
+
+// LOGIN CON GOOGLE
+route.post('/api/google-login', async (req, res) => {
+    const { credential } = req.body;
+    try {
+        // 1. Verificar el token de Google
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const email = payload['email'];
+
+        // 2. Buscar al veterinario por correo
+        const [users] = await db.query('SELECT * FROM veterinario WHERE Correo = ?', [email]);
+        if (!users.length) {
+            return res.status(401).json({
+                message: 'No se encontró un veterinario registrado con este correo de Google.'
+            });
+        }
+
+        const user = users[0];
+
+        // Convertir Foto Buffer a base64
+        if (user.Foto && Buffer.isBuffer(user.Foto)) {
+            const base64String = user.Foto.toString('base64');
+            user.Foto = `data:image/jpeg;base64,${base64String}`;
+        }
+
+        // 3. Generar nuestro propio JWT
+        const token = jwt.sign({ id: user.idVeterinario }, SECRET_KEY, { expiresIn: '1h' });
+        res.json({ token, user: [user] });
+    } catch (error) {
+        console.error('Error en Google Login:', error);
+        res.status(500).json({ message: 'Error al autenticar con Google' });
     }
 });
 
@@ -297,10 +336,10 @@ route.post('/api/veterinarios', authenticateToken, async (req, res) => {
 
 route.put('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
     const { idVeterinario } = req.params;
-    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Estado, Foto, Redes } = req.body;
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Estado, Foto, Redes, Contraseña } = req.body;
 
     try {
-        await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, Redes);
+        await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, Redes, Contraseña);
 
         // Retornar el objeto actualizado para que el frontend no se "laguee" o rompa
         const updated = await getVeterinaryById(idVeterinario);
@@ -414,12 +453,59 @@ route.post('/api/propietarios/:idPropietario/rate', authenticateToken, async (re
 //HISTORIA CLINICA
 
 route.get('/api/historia_clinica', authenticateToken, async (req, res) => {
+    const { veterinarioId } = req.query;
     try {
-        const values = await getClinicalHistory();
+        let values = await getClinicalHistory();
+        if (veterinarioId) {
+            values = values.filter(h => h.Veterinario === parseInt(veterinarioId));
+        }
         res.status(200).json(values);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener las Historias Clinicas' });
+    }
+});
+
+route.get('/api/historia_clinica/buscar', authenticateToken, async (req, res) => {
+    const { registro, paciente, propietario } = req.query;
+    try {
+        let sql = `
+            SELECT h.*, p.Nombre as NombrePaciente, pr.Nombre as NombrePropietario, pr.Apellido as ApellidoPropietario 
+            FROM historia_clinica h
+            LEFT JOIN paciente p ON h.Paciente = p.idPaciente
+            LEFT JOIN propietario pr ON p.Propietario = pr.idPropietario
+            WHERE 1=1
+        `;
+        const params = [];
+
+        if (registro) {
+            sql += " AND (p.Numero_registro LIKE ? OR h.idHistoria_clinica LIKE ?)";
+            params.push(`%${registro}%`, `%${registro}%`);
+        }
+        if (paciente) {
+            sql += " AND p.Nombre LIKE ?";
+            params.push(`%${paciente}%`);
+        }
+        if (propietario) {
+            sql += " AND (pr.Nombre LIKE ? OR pr.Apellido LIKE ?)";
+            params.push(`%${propietario}%`, `%${propietario}%`);
+        }
+
+        const [results] = await db.query(sql, params);
+
+        // Convertir fotos si existen
+        const formattedResults = results.map(historia => {
+            if (historia.Foto && Buffer.isBuffer(historia.Foto)) {
+                const base64String = historia.Foto.toString('base64');
+                historia.Foto = `data:image/jpeg;base64,${base64String}`;
+            }
+            return historia;
+        });
+
+        res.status(200).json(formattedResults);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al buscar historias clínicas' });
     }
 });
 
@@ -482,8 +568,13 @@ route.delete('/api/historia_clinica/:idHistoria_clinica', authenticateToken, asy
 // PACIENTES
 
 route.get('/api/pacientes', authenticateToken, async (req, res) => {
+    const { veterinarioId } = req.query;
     try {
-        const values = await getPatients();
+        let values = await getPatients();
+        // Nota: Si el paciente no tiene un campo Veterinario directo, 
+        // podrías necesitar filtrar por el veterinario que creó sus historias clínicas
+        // o dejar que el frontend maneje el filtrado como lo hace ahora.
+        // Por ahora lo dejamos así para no romper la lógica actual.
         res.status(200).json(values);
     } catch (error) {
         console.error(error);
@@ -531,7 +622,7 @@ route.put('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
     }
 });
 
-route.delete('/api/paciente/:idPaciente', authenticateToken, async (req, res) => {
+route.delete('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
     const { idPaciente } = req.params;
     try {
         const values = await deletePatient(idPaciente);
@@ -562,7 +653,7 @@ const resetTokens = new Map();
 
 
 // NUEVA RUTA para recuperar contraseña
-route.post('/forgot-password', async (req, res) => {
+route.post('/api/forgot-password', async (req, res) => {
     const { email } = req.body;
 
     try {
@@ -583,19 +674,19 @@ route.post('/forgot-password', async (req, res) => {
         await db.query('UPDATE veterinario SET resetToken = ?, resetTokenExpiry = ? WHERE idVeterinario = ?', [resetToken, tokenExpiry, idVeterinario]);
 
         // 4. Crear el enlace para el email
-        const resetLink = `https://www.soporteequino.com/reset-password/${resetToken}`; // Asegúrate de que esta URL sea la de tu frontend
+        const resetLink = `https://soporte-equino.onrender.com/reset-password/${resetToken}`; // Asegúrate de que esta URL sea la de tu frontend
 
         // Configurar email
         const mailOptions = {
-            from: '"Mi App Móvil" <michelleandrea217@gmail.com>',
+            from: `"Soporte Equino" <${process.env.MAIL}>`,
             to: email,
-            subject: '🔐 Restablecer contraseña - Beefleet',
+            subject: '🔐 Restablecer contraseña - Soporte Equino',
             html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
           <div style="background-color: #ffffff; padding: 30px; border-radius: 10px;">
             
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #FB8500; margin: 0; font-size: 28px;">🔐 Restablecer Contraseña</h1>
+              <h1 style="color: #0d3b66; margin: 0; font-size: 28px;">🔐 Restablecer Contraseña</h1>
             </div>
             
             <p style="color: #333; font-size: 16px; line-height: 1.6;">
@@ -605,7 +696,7 @@ route.post('/forgot-password', async (req, res) => {
             
             <div style="text-align: center; margin: 30px 0;">
               <a href="${resetLink}" 
-                 style="background-color: #FB8500; color: white; padding: 15px 30px; 
+                 style="background-color: #0d3b66; color: white; padding: 15px 30px; 
                         text-decoration: none; border-radius: 25px; font-weight: bold; 
                         font-size: 16px; display: inline-block;">
                 ✨ Restablecer mi contraseña
@@ -650,48 +741,10 @@ route.post('/forgot-password', async (req, res) => {
     }
 });
 
-// NUEVA RUTA para manejar el enlace (cuando hacen click)
-route.get('/reset-password/:token', (req, res) => {
-    const { token } = req.params;
-    const tokenData = resetTokens.get(token);
-
-    if (!tokenData || Date.now() > tokenData.expires || tokenData.used) {
-        return res.send(`
-      <html>
-        <body style="font-family: Arial; text-align: center; padding: 50px;">
-          <h2 style="color: #e74c3c;">❌ Enlace inválido o expirado</h2>
-          <p>Este enlace no es válido, ya fue usado o expiró.</p>
-        </body>
-      </html>
-    `);
-    }
-    console.log(tokenData);
-
-    // Mostrar formulario para nueva contraseña
-    res.send(`
-    <html>
-      <head>
-        <title>Restablecer Contraseña</title>
-        <style>
-          body { font-family: Arial; max-width: 400px; margin: 50px auto; padding: 20px; }
-          input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
-          button { background-color: #FB8500; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
-        </style>
-      </head>
-      <body>
-        <h2 style="color: #FB8500; text-align: center;">🔐 Nueva Contraseña</h2>
-        <form action="/reset-password/${token}" method="POST">
-          <input type="password" name="password" placeholder="Nueva contraseña" required minlength="6">
-          <input type="password" name="confirmPassword" placeholder="Confirmar contraseña" required minlength="6">
-          <button type="submit">Actualizar contraseña</button>
-        </form>
-      </body>
-    </html>
-  `);
-});
+// El frontend maneja la visualización de la página de reset a través de React Router.
 
 // NUEVA RUTA para procesar la nueva contraseña
-route.post('/reset-password/:token', async (req, res) => {
+route.post('/api/reset-password/:token', async (req, res) => {
     const { token } = req.params;
     const { password, confirmPassword } = req.body;
 

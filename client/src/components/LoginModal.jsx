@@ -4,6 +4,8 @@ import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ForgotPasswordModal from './ForgotPasswordModal';
 import { useAuth } from './AuthProvider'
+import API_URL from '../config';
+import { GoogleLogin } from '@react-oauth/google';
 
 const LoginModal = ({ isOpen, onClose, onOpenForgot }) => {
     if (!isOpen) return null;
@@ -22,7 +24,7 @@ const LoginModal = ({ isOpen, onClose, onOpenForgot }) => {
         setError('');
         setSuccess(false);
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/login', {
+            const response = await fetch(`${API_URL}/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -51,6 +53,39 @@ const LoginModal = ({ isOpen, onClose, onOpenForgot }) => {
             setLoading(false);
         }
     }
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setLoading(true);
+        setError('');
+        try {
+            const response = await fetch(`${API_URL}/google-login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    credential: credentialResponse.credential
+                }),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setSuccess(true);
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('veterinario', JSON.stringify(data));
+                login(data.token);
+                setTimeout(() => {
+                    navigate('/home');
+                }, 1000);
+            } else {
+                setError(data.message || 'Error al autenticar con Google');
+            }
+        } catch (err) {
+            setError('Error de conexión al autenticar con Google');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
     const handleOpenForgotModal = () => {
         onOpenForgot(); // Llama a la función del componente padre (NavBar)
     };
@@ -90,6 +125,19 @@ const LoginModal = ({ isOpen, onClose, onOpenForgot }) => {
                             Cerrar
                         </Button>
                     </Form>
+
+                    <div className="mt-4 border-top pt-3 text-center">
+                        <p className="text-muted small">O continúa con</p>
+                        <div className="d-flex justify-content-center">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={() => {
+                                    setError('Error al iniciar sesión con Google');
+                                }}
+                            />
+                        </div>
+                    </div>
+
                     <div className="text-center mt-3">
                         <Button variant="link" onClick={handleOpenForgotModal}>
                             ¿Olvidaste tu contraseña?

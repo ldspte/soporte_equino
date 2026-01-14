@@ -17,7 +17,7 @@ const sendPasswordEmail = async (correo, password) => {
 
 
     const mailOptions = {
-        from: 'SOPORTE EQUINO',
+        from: `"SOPORTE EQUINO" <${process.env.MAIL}>`,
         to: correo,
         subject: 'Bienvenido a Soporte Equino',
         text: `Hola, tu contraseña por defecto es: ${password}`,
@@ -26,7 +26,7 @@ const sendPasswordEmail = async (correo, password) => {
             <head>
                 <style>
                     body {
-                        font-family Arial, sans-serif;
+                        font-family: Arial, sans-serif;
                     }
                     .header {
                         background-color: #f1f1f1;
@@ -62,10 +62,15 @@ const sendPasswordEmail = async (correo, password) => {
 
     // Envía el correo
     try {
-        await transporter.sendMail(mailOptions);
-        console.log('Correo enviado exitosamente');
+        const info = await transporter.sendMail(mailOptions);
+        console.log('✅ Correo enviado exitosamente:', info.messageId);
     } catch (error) {
-        console.error('Error al enviar el correo:', error);
+        console.error('❌ Error detallado al enviar correo:', {
+            code: error.code,
+            command: error.command,
+            response: error.response,
+            message: error.message
+        });
     }
 };
 
@@ -140,7 +145,7 @@ const createVeterinary = async (Cedula, Nombre, Apellido, Correo, Descripcion, E
     return result;
 }
 
-const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, Redes) => {
+const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, Redes, Contraseña) => {
     // Asegurar que Foto sea Buffer si viene como base64
     let fotoBuffer = Foto;
     if (typeof Foto === 'string' && Foto.startsWith('data:image')) {
@@ -148,11 +153,19 @@ const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo,
         fotoBuffer = Buffer.from(base64Data, 'base64');
     }
 
-    const result = await db.query(`
-        UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Descripcion = ?, Especialidad = ?, Foto = ?, Estado = ?, Redes = ? WHERE idVeterinario = ?
-    `,
-        [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, fotoBuffer, Estado, Redes, idVeterinario]
-    );
+    let sql = `UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Descripcion = ?, Especialidad = ?, Foto = ?, Estado = ?, Redes = ?`;
+    const params = [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, fotoBuffer, Estado, Redes];
+
+    if (Contraseña) {
+        const hashedPassword = await bcrypt.hash(Contraseña, 10);
+        sql += `, Contraseña = ?`;
+        params.push(hashedPassword);
+    }
+
+    sql += ` WHERE idVeterinario = ?`;
+    params.push(idVeterinario);
+
+    const [result] = await db.query(sql, params);
     return result;
 }
 

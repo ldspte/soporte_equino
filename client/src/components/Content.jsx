@@ -11,9 +11,7 @@ import { BsTwitter, BsFacebook, BsInstagram, BsLinkedin, BsWhatsapp } from 'reac
 import {
     FaHeartbeat, FaPills, FaHospitalUser, FaDna, FaUserMd, FaStar, FaUserCircle
 } from 'react-icons/fa';
-
-// URL base de tu backend en Render
-const API_URL = 'https://soporte-equino.onrender.com/api';
+import API_URL from '../config';
 
 const images = [
     { src: Image1, title: "Soporte Equino", description: "Soporte médico veterinario al instante." },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Spinner, Alert, Badge } from 'react-bootstrap';
 import { FaWhatsapp, FaTag, FaInfoCircle, FaMoneyBillWave } from 'react-icons/fa';
+import API_URL from '../config';
 import '../Styles/insumos.css';
 
 export default function Insumos() {
@@ -12,7 +13,7 @@ export default function Insumos() {
         const fetchInsumos = async () => {
             setLoading(true);
             try {
-                const response = await fetch('https://soporte-equino.onrender.com/api/insumosview');
+                const response = await fetch(`${API_URL}/insumosview`);
                 if (!response.ok) throw new Error('Error al cargar los insumos');
                 const data = await response.json();
                 setInsumos(Array.isArray(data) ? data : []);

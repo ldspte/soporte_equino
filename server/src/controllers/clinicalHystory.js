@@ -42,7 +42,7 @@ const getClinicalHistoryById = async (idHistoria_clinica) => {
     return result;
 };
 
-const createClinicalHistory = async (Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha) => {
+const createClinicalHistory = async (Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha) => {
     // Convertir base64 a buffer si es necesario
     let fotoBuffer = Foto;
     if (typeof Foto === 'string' && Foto.startsWith('data:image')) {
@@ -51,14 +51,14 @@ const createClinicalHistory = async (Veterinario, Paciente, Vacunas, Enfermedade
     }
 
     const result = await db.query(`
-        INSERT INTO historia_clinica (Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO historia_clinica (Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
-        [Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, fotoBuffer, Fecha]
+        [Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, fotoBuffer, Fecha]
     );
     return result;
 }
 
-const updateClinicalHistory = async (idHistoria_clinica, Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha) => {
+const updateClinicalHistory = async (idHistoria_clinica, Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha) => {
     // Convertir base64 a buffer si es necesario
     let fotoBuffer = Foto;
     if (typeof Foto === 'string' && Foto.startsWith('data:image')) {
@@ -67,9 +67,9 @@ const updateClinicalHistory = async (idHistoria_clinica, Veterinario, Paciente, 
     }
 
     const result = await db.query(`
-        UPDATE historia_clinica SET Veterinario = ?, Paciente = ?, Vacunas = ?, Anamnesis = ?, Evaluacion_distancia = ?, Desparasitacion = ?, Pliegue_cutaneo = ?, Frecuencia_respiratoria = ?, Motilidad_gastrointestinal = ? , Enfermedades = ?, Temperatura = ?, Pulso = ?, Frecuencia_cardiaca = ?, Llenado_capilar = ?, Mucosas = ?, Aspecto = ?, Locomotor = ?, Respiratorio = ?, Circulatorio = ?, Digestivo = ?, Genitourinario = ?, Sis_nervioso = ?, Oidos = ?, Ojos = ?, Glangios_linfaticos = ?, Piel = ?, Diagnostico_integral = ?, Tratamiento = ?, Observaciones = ?, Ayudas_diagnosticas = ?, Foto = ?, Fecha = ? WHERE idHistoria_clinica = ?
+        UPDATE historia_clinica SET Veterinario = ?, Paciente = ?, Vacunas = ?, Anamnesis = ?, Evaluacion_distancia = ?, Desparasitacion = ?, Pliegue_cutaneo = ?, Frecuencia_respiratoria = ?, Motilidad_gastrointestinal = ? , Enfermedades = ?, Temperatura = ?, Pulso = ?, Frecuencia_cardiaca = ?, Llenado_capilar = ?, Mucosas = ?, Pulso_digital = ?, Aspecto = ?, Locomotor = ?, Respiratorio = ?, Circulatorio = ?, Digestivo = ?, Genitourinario = ?, Sis_nervioso = ?, Oidos = ?, Ojos = ?, Glangios_linfaticos = ?, Piel = ?, Diagnostico_integral = ?, Tratamiento = ?, Observaciones = ?, Ayudas_diagnosticas = ?, Foto = ?, Fecha = ? WHERE idHistoria_clinica = ?
     `,
-        [Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, fotoBuffer, Fecha, idHistoria_clinica]
+        [Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, fotoBuffer, Fecha, idHistoria_clinica]
     );
     return result;
 }

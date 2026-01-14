@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Card, Form, Button, Alert, Row, Col } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { FaLock } from 'react-icons/fa';
+import API_URL from '../config';
 
 const ResetPasswordPage = () => {
     // 1. Extraer el token de la URL
@@ -31,7 +32,7 @@ const ResetPasswordPage = () => {
 
         try {
             // 4. Enviar la nueva contraseña y el token al backend
-            const response = await fetch(`https://soporte-equino.onrender.com/reset-password/${token}`, {
+            const response = await fetch(`${API_URL}/reset-password/${token}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password, confirmPassword }),
@@ -66,7 +67,7 @@ const ResetPasswordPage = () => {
                     </div>
                     {success && <Alert variant="success">{success}</Alert>}
                     {error && <Alert variant="danger">{error}</Alert>}
-                    
+
                     <Form onSubmit={handleSubmit}>
                         <Form.Group className="mb-3">
                             <Form.Label>Nueva Contraseña</Form.Label>
@@ -91,9 +92,9 @@ const ResetPasswordPage = () => {
                             />
                         </Form.Group>
                         <div className="d-grid">
-                            <Button 
-                                variant="warning" 
-                                type="submit" 
+                            <Button
+                                variant="warning"
+                                type="submit"
                                 disabled={loading}
                             >
                                 {loading ? (

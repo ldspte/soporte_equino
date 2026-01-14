@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Alert, Spinner, Row, Col } from 'react-bootstrap';
 import { FaPaperPlane } from 'react-icons/fa';
-
-const API_URL = 'https://soporte-equino.onrender.com/api';
+import API_URL from '../config';
 
 const ContactModal = ({ isOpen, onClose }) => {
     const [formData, setFormData] = useState({
