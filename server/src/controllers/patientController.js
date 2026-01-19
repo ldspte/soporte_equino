@@ -39,40 +39,63 @@ const getPatientById = async (idPaciente) => {
 };
 
 const createPatient = async (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) => {
-    // Convertir base64 a buffer si es necesario
-    let fotoBuffer = null;
-    if (Foto && Foto.startsWith('data:image')) {
-        const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
-        fotoBuffer = Buffer.from(base64Data, 'base64');
-    }
+    try {
+        console.log('📝 Creando paciente:', { Nombre, Numero_registro, tieneFoto: !!Foto });
 
-    const result = await db.query(`
-        INSERT INTO paciente (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-        [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, fotoBuffer, Propietario]
-    );
-    return result;
+        // Convertir base64 a buffer si es necesario
+        let fotoBuffer = null;
+        if (Foto && typeof Foto === 'string' && Foto.startsWith('data:image')) {
+            console.log('🖼️ Procesando imagen para nuevo paciente...');
+            const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
+            fotoBuffer = Buffer.from(base64Data, 'base64');
+            console.log('✅ Buffer de imagen creado:', fotoBuffer.length, 'bytes');
+        }
+
+        const [result] = await db.query(`
+            INSERT INTO paciente (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+            [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, fotoBuffer, Propietario]
+        );
+        console.log('✅ Paciente creado exitosamente, id:', result.insertId);
+        return result;
+    } catch (error) {
+        console.error('❌ Error en createPatient:', error);
+        throw error;
+    }
 }
 
 const updatePatient = async (idPaciente, Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) => {
-    // Convertir base64 a buffer si se proporciona una nueva foto
-    let fotoBuffer = Foto;
-    if (Foto && Foto.startsWith('data:image')) {
-        const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
-        fotoBuffer = Buffer.from(base64Data, 'base64');
-    }
+    try {
+        console.log('🔄 Actualizando paciente ID:', idPaciente, { Nombre, tieneFoto: !!Foto });
 
-    const result = await db.query(`
-        UPDATE paciente SET Nombre = ?, Numero_registro = ?, Numero_chip = ?, Raza = ?, Edad = ?, Sexo = ?, Foto = ?, Propietario = ? WHERE idPaciente = ?
-    `,
-        [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, fotoBuffer, Propietario, idPaciente]
-    );
-    return result;
+        // Convertir base64 a buffer si se proporciona una nueva foto o se mantiene la actual
+        let fotoBuffer = null;
+        if (Foto && typeof Foto === 'string' && Foto.startsWith('data:image')) {
+            console.log('🖼️ Procesando imagen para actualización...');
+            const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
+            fotoBuffer = Buffer.from(base64Data, 'base64');
+            console.log('✅ Buffer de imagen creado:', fotoBuffer.length, 'bytes');
+        } else {
+            // Si Foto es null o no es un data URL, mantenemos lo que venga (podría ser null)
+            fotoBuffer = Foto;
+        }
+
+        const [result] = await db.query(`
+            UPDATE paciente SET Nombre = ?, Numero_registro = ?, Numero_chip = ?, Raza = ?, Edad = ?, Sexo = ?, Foto = ?, Propietario = ? WHERE idPaciente = ?
+        `,
+            [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, fotoBuffer, Propietario, idPaciente]
+        );
+        console.log('✅ Paciente actualizado exitosamente, affectedRows:', result.affectedRows);
+        return result;
+    } catch (error) {
+        console.error('❌ Error en updatePatient:', error);
+        throw error;
+    }
 }
 
 
 const deletePatient = async (idPaciente) => {
-    const result = await db.query(`
+    const [result] = await db.query(`
         DELETE FROM paciente WHERE idPaciente = ?
     `,
         [idPaciente]

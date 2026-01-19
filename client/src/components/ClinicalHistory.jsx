@@ -4,8 +4,9 @@ import {
   FaIdCard, FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus,
   FaSave, FaCalendarPlus, FaPhone, FaMapMarkerAlt, FaEnvelope,
   FaCarSide, FaCamera, FaUser, FaHome, FaCalendarAlt, FaClock, FaTimes,
-  FaCheckCircle, FaSpinner, FaBookMedical, FaHorse, FaClipboardList
+  FaCheckCircle, FaSpinner, FaBookMedical, FaHorse, FaClipboardList, FaImage
 } from 'react-icons/fa';
+import API_URL from '../config';
 import '../Styles/history.css';
 
 function ClinicalHistory() {
@@ -68,9 +69,11 @@ function ClinicalHistory() {
     Enfermedades: '',
     Vacunas: '',
     Desparasitacion: '',
+    Evaluacion_distancia: '',
     Mucosas: '',
     Llenado_capilar: '',
     Pliegue_cutaneo: '',
+    Pulso_digital: '',
     Frecuencia_cardiaca: '',
     Frecuencia_respiratoria: '',
     Motilidad_gastrointestinal: '',
@@ -91,6 +94,7 @@ function ClinicalHistory() {
     Tratamiento: '',
     Ayudas_diagnosticas: '',
     Observaciones: '',
+    Foto: '',
     Fecha: ''
   };
 
@@ -104,15 +108,18 @@ function ClinicalHistory() {
 
   const normalizeClinicalData = useCallback((clinical) => {
     return {
+      ...clinical,
       Veterinario: clinical.Veterinario || '',
       Paciente: clinical.Paciente || '',
       Anamnesis: clinical.Anamnesis || '',
       Enfermedades: clinical.Enfermedades || '',
       Vacunas: clinical.Vacunas || '',
       Desparasitacion: clinical.Desparasitacion || '',
+      Evaluacion_distancia: clinical.Evaluacion_distancia || '',
       Mucosas: clinical.Mucosas || '',
       Llenado_capilar: clinical.Llenado_capilar || '',
       Pliegue_cutaneo: clinical.Pliegue_cutaneo || '',
+      Pulso_digital: clinical.Pulso_digital || '',
       Frecuencia_cardiaca: clinical.Frecuencia_cardiaca || '',
       Frecuencia_respiratoria: clinical.Frecuencia_respiratoria || '',
       Motilidad_gastrointestinal: clinical.Motilidad_gastrointestinal || '',
@@ -133,7 +140,9 @@ function ClinicalHistory() {
       Tratamiento: clinical.Tratamiento || '',
       Ayudas_diagnosticas: clinical.Ayudas_diagnosticas || '',
       Observaciones: clinical.Observaciones || '',
+      Foto: clinical.Foto || '',
       Fecha: clinical.Fecha || '',
+      idHistoria_clinica: clinical.idHistoria_clinica || null
     };
   }, []);
 
@@ -151,12 +160,16 @@ function ClinicalHistory() {
 
 
 
-  const fetchPatients = useCallback(async (token) => {
+  const fetchPatients = useCallback(async (tokenArg) => {
     setLoading(true);
     setError(null);
-    if (!token) return;
+    const token = tokenArg || getAuthToken();
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     try {
-      const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
+      const response = await fetch(`${API_URL}/pacientes`, {
         method: 'GET',
         headers: {
           'Authorization': token,
@@ -178,37 +191,41 @@ function ClinicalHistory() {
     }
   }, []);
 
-  const fetchOwners = async (token) => {
+  const fetchOwners = useCallback(async (tokenArg) => {
     setLoading(true);
+    const token = tokenArg || getAuthToken();
     if (!token) {
       setError('No hay token de autenticación');
       setLoading(false);
       return;
     }
     try {
-      const response = await fetch('https://soporte-equino.onrender.com/api/propietarios', {
+      const response = await fetch(`${API_URL}/propietarios`, {
         method: 'GET',
         headers: {
           'Authorization': token,
           'Content-Type': 'application/json'
         }
+      });
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Error ${response.status}: ${errorData}`);
       }
-
-      );
-      if (!response.ok) throw new Error('Error al obtener propietarios');
       const data = await response.json();
       setOwners(data);
     } catch (error) {
+      console.error('Error obteniendo propietarios: ', error);
       setError(error.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAuthToken]);
 
   //Obtener historias clinicas
-  const fetchClinical = useCallback(async (token) => {
+  const fetchClinical = useCallback(async (tokenArg) => {
     setLoading(true);
     setError(null);
+    const token = tokenArg || getAuthToken();
     if (!token) {
       setError('No hay token de autenticación');
       setLoading(false);
@@ -217,7 +234,7 @@ function ClinicalHistory() {
     try {
 
 
-      const response = await fetch('https://soporte-equino.onrender.com/api/historia_clinica',
+      const response = await fetch(`${API_URL}/historia_clinica`,
         {
           method: 'GET',
           headers: {
@@ -233,7 +250,12 @@ function ClinicalHistory() {
           setError('Sesion expirada. Por favor, inicie sesión nuevamente');
           return;
         }
-        throw new Error(errorText || 'Error al obtener las historias clinicas')
+        if (response.status === 404) {
+          setClinical([]);
+          setError('No se encontraron Historias Clinicas'); // Set error for 404 specifically
+          return;
+        }
+        throw new Error(`Error ${response.status}: ${errorText || 'Error al obtener las historias clinicas'}`);
       }
 
       const data = await response.json();
@@ -286,37 +308,10 @@ function ClinicalHistory() {
       const payload = {
         ...newClinical,
         Veterinario: userData.idVeterinario,
-        Paciente: newClinical.Paciente,
-        Anamnesis: newClinical.Anamnesis,
-        Enfermedades: newClinical.Enfermedades,
-        Vacunas: newClinical.Vacunas,
-        Desparasitacion: newClinical.Desparasitacion,
-        Mucosas: newClinical.Mucosas,
-        Llenado_capilar: newClinical.Llenado_capilar,
-        Pliegue_cutaneo: newClinical.Pliegue_cutaneo,
-        Frecuencia_cardiaca: newClinical.Frecuencia_cardiaca,
-        Frecuencia_respiratoria: newClinical.Frecuencia_respiratoria,
-        Motilidad_gastrointestinal: newClinical.Motilidad_gastrointestinal,
-        Temperatura: newClinical.Temperatura,
-        Pulso: newClinical.Pulso,
-        Aspecto: newClinical.Aspecto,
-        Locomotor: newClinical.Locomotor,
-        Respiratorio: newClinical.Respiratorio,
-        Circulatorio: newClinical.Circulatorio,
-        Digestivo: newClinical.Digestivo,
-        Genitourinario: newClinical.Genitourinario,
-        Sis_nervioso: newClinical.Sis_nervioso,
-        Oidos: newClinical.Oidos,
-        Ojos: newClinical.Ojos,
-        Glangios_linfaticos: newClinical.Glangios_linfaticos,
-        Piel: newClinical.Piel,
-        Diagnostico_integral: newClinical.Diagnostico_integral,
-        Tratamiento: newClinical.Tratamiento,
-        Ayudas_diagnosticas: newClinical.Ayudas_diagnosticas,
-        Observaciones: newClinical.Observaciones
+        Fecha: newClinical.Fecha || new Date().toISOString()
       };
 
-      const response = await fetch('https://soporte-equino.onrender.com/api/historia_clinica',
+      const response = await fetch(`${API_URL}/historia_clinica`,
         {
           method: 'POST',
           headers: {
@@ -358,7 +353,7 @@ function ClinicalHistory() {
   const updateClinical = useCallback(async (idHistoria_clinica, clinicalData) => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`https://soporte-equino.onrender.com/api/historia_clinica/${idHistoria_clinica}`, {
+      const response = await fetch(`${API_URL}/historia_clinica/${idHistoria_clinica}`, {
         method: 'PUT',
         headers: {
           'Authorization': token,
@@ -384,7 +379,7 @@ function ClinicalHistory() {
   const deleteHistory = useCallback(async (idHistoria_clinica) => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`https://soporte-equino.onrender.com/api/historia_clinica/${idHistoria_clinica}`, {
+      const response = await fetch(`${API_URL}/historia_clinica/${idHistoria_clinica}`, {
         method: 'DELETE',
         headers: {
           'Authorization': token,
@@ -413,15 +408,43 @@ function ClinicalHistory() {
 
 
 
-  // Funciones para manejar la creación y edición de historias clínicas
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewClinical(prev => ({ ...prev, [name]: value }));
+  // --- Funciones de Utilidad ---
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
   };
 
-  const handleEditInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditClinical(prev => ({ ...prev, [name]: value }));
+  // Funciones para manejar la creación y edición de historias clínicas
+  const handleInputChange = async (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'Foto' && files && files[0]) {
+      try {
+        const base64 = await fileToBase64(files[0]);
+        setNewClinical(prev => ({ ...prev, [name]: base64 }));
+      } catch (error) {
+        console.error('Error al convertir imagen:', error);
+      }
+    } else {
+      setNewClinical(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleEditInputChange = async (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'Foto' && files && files[0]) {
+      try {
+        const base64 = await fileToBase64(files[0]);
+        setEditClinical(prev => ({ ...prev, [name]: base64 }));
+      } catch (error) {
+        console.error('Error al convertir imagen:', error);
+      }
+    } else {
+      setEditClinical(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   //Handler para mostrar detalles de la historia
@@ -474,7 +497,10 @@ function ClinicalHistory() {
     try {
       setLoading(true);
       const { idHistoria_clinica, ...clinicalData } = editClinical;
-      const payload = { ...clinicalData, Veterinario: userData.idVeterinario };
+      const payload = {
+        ...clinicalData,
+        Veterinario: userData.idVeterinario
+      };
       console.log('Payload para actualizar: ', payload);
       await updateClinical(idHistoria_clinica, payload);
       await fetchClinical();
@@ -527,10 +553,21 @@ function ClinicalHistory() {
   const filteredClinicals = clinicals.filter((clinical) => {
     if (!clinical?.idHistoria_clinica) return false;
     const searchLower = searchTerm.toLowerCase();
+
+    // Buscar nombres en los estados de pacientes y propietarios
+    const patient = patients.find(p => p.idPaciente === clinical.Paciente);
+    const patientName = patient ? patient.Nombre.toLowerCase() : '';
+
+    const owner = patient ? owners.find(o => o.idPropietario === patient.Propietario) : null;
+    const ownerName = owner ? `${owner.Nombre} ${owner.Apellido || ''}`.toLowerCase() : '';
+
     return (
-      (clinical.Observaciones?.toLowerCase() || '').includes(searchLower) || (clinical.Paciente?.toLowerCase() || '').includes(searchLower) || (clinical.Propietario?.toLowerCase() || '').includes(searchLower)
-    )
-  })
+      (clinical.Observaciones?.toLowerCase() || '').includes(searchLower) ||
+      patientName.includes(searchLower) ||
+      ownerName.includes(searchLower) ||
+      (clinical.Diagnostico_integral?.toLowerCase() || '').includes(searchLower)
+    );
+  });
   console.log('historias filtradas: ', filteredClinicals)
 
 
@@ -589,6 +626,7 @@ function ClinicalHistory() {
               <Table hover className='historias-table'>
                 <thead>
                   <tr>
+                    <th>Foto</th>
                     <th>Paciente</th>
                     <th>Propietario</th>
                     <th>Observaciones</th>
@@ -599,6 +637,36 @@ function ClinicalHistory() {
                 <tbody>
                   {clinicals.map((clinical) => (
                     <tr key={clinical.idHistoria_clinica}>
+                      <td className="text-center">
+                        {clinical.Foto ? (
+                          <img
+                            src={clinical.Foto}
+                            alt="Horse"
+                            style={{
+                              width: '45px',
+                              height: '45px',
+                              objectFit: 'cover',
+                              borderRadius: '8px',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: '45px',
+                              height: '45px',
+                              backgroundColor: '#f8f9fa',
+                              borderRadius: '8px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              border: '1px solid #dee2e6'
+                            }}
+                          >
+                            <FaHorse color="#adb5bd" size={20} />
+                          </div>
+                        )}
+                      </td>
                       <td>
                         <div className='d-flex align-items-center'>
                           <FaHorse className='me-2' />
@@ -723,6 +791,20 @@ function ClinicalHistory() {
                 </Row>
               </Col>
 
+              <Col sm={12} className="text-center mb-3">
+                {currentClinical.Foto ? (
+                  <img
+                    src={currentClinical.Foto}
+                    alt="Historia Clínica"
+                    style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}
+                  />
+                ) : (
+                  <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '8px', border: '2px dashed #dee2e6' }}>
+                    <FaImage size={50} color="#adb5bd" />
+                    <p className="mt-2 mb-0 text-muted">Sin foto adjunta</p>
+                  </div>
+                )}
+              </Col>
               <h5>Examen Fisico</h5>
               <Row className='mb-4'>
                 <Col sm={6}>
@@ -764,6 +846,14 @@ function ClinicalHistory() {
                 <Col sm={6}>
                   <p><strong>Motilidad gastrointestinal:</strong></p>
                   <p>{currentClinical.Motilidad_gastrointestinal}</p>
+                </Col>
+                <Col sm={6}>
+                  <p><strong>Evaluación a distancia:</strong></p>
+                  <p>{currentClinical.Evaluacion_distancia}</p>
+                </Col>
+                <Col sm={6}>
+                  <p><strong>Pulso digital:</strong></p>
+                  <p>{currentClinical.Pulso_digital}</p>
                 </Col>
                 <Col sm={6}>
                   <p><strong>Aspecto general:</strong></p>
@@ -1108,7 +1198,55 @@ function ClinicalHistory() {
                 </Form.Group>
               </Col>
             </Row>
-            <Button type="button" variant="warning" onClick={() => setShowAdditionalFields(!showAdditionalFields)}>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3" controlId="formEvaluacionDistancia">
+                  <Form.Label>Evaluación a distancia *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="Evaluacion_distancia"
+                    value={newClinical.Evaluacion_distancia}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Evaluación a distancia"
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    La evaluación a distancia es obligatoria
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3" controlId="formPulsoDigital">
+                  <Form.Label>Pulso digital *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="Pulso_digital"
+                    value={newClinical.Pulso_digital}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Pulso digital"
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    El pulso digital es obligatorio
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </Col>
+            </Row>
+            <Form.Group className="mb-3" controlId="formFoto">
+              <Form.Label>Foto</Form.Label>
+              <Form.Control
+                type="file"
+                name="Foto"
+                accept="image/*"
+                onChange={handleInputChange}
+              />
+              {newClinical.Foto && (
+                <div className="mt-2 text-center">
+                  <img src={newClinical.Foto} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
+                </div>
+              )}
+            </Form.Group>
+            <Button type="button" variant="warning" onClick={() => setShowAdditionalFields(!showAdditionalFields)} className='mb-3'>
               {showAdditionalFields ? 'Ocultar Campos Adicionales' : 'Mostrar Campos Adicionales'}
             </Button>
             {showAdditionalFields && (
@@ -1572,7 +1710,55 @@ function ClinicalHistory() {
                   </Form.Group>
                 </Col>
               </Row>
-              <Button type="button" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }} onClick={() => setShowAdditionalFields(!showAdditionalFields)}>
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3" controlId="formEvaluacionDistanciaEdit">
+                    <Form.Label>Evaluación a distancia *</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="Evaluacion_distancia"
+                      value={editClinical.Evaluacion_distancia}
+                      onChange={handleEditInputChange}
+                      required
+                      placeholder="Evaluación a distancia"
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      La evaluación a distancia es obligatoria
+                    </Form.Control.Feedback>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3" controlId="formPulsoDigitalEdit">
+                    <Form.Label>Pulso digital *</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="Pulso_digital"
+                      value={editClinical.Pulso_digital}
+                      onChange={handleEditInputChange}
+                      required
+                      placeholder="Pulso digital"
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      El pulso digital es obligatorio
+                    </Form.Control.Feedback>
+                  </Form.Group>
+                </Col>
+              </Row>
+              <Form.Group className="mb-3" controlId="formFotoEdit">
+                <Form.Label>Foto</Form.Label>
+                <Form.Control
+                  type="file"
+                  name="Foto"
+                  accept="image/*"
+                  onChange={handleEditInputChange}
+                />
+                {editClinical.Foto && (
+                  <div className="mt-2 text-center">
+                    <img src={editClinical.Foto} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
+                  </div>
+                )}
+              </Form.Group>
+              <Button type="button" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }} onClick={() => setShowAdditionalFields(!showAdditionalFields)} className='mb-3'>
                 {showAdditionalFields ? 'Ocultar Campos Adicionales' : 'Mostrar Campos Adicionales'}
               </Button>
               {showAdditionalFields && (
@@ -1856,7 +2042,7 @@ function ClinicalHistory() {
           </Button>
         </Modal.Footer>
       </Modal>
-    </div>
+    </div >
   );
 }
 

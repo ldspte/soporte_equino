@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Row, Col, InputGroup, Form, Modal, Alert } from 'react-bootstrap';
 import { FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus, FaHorseHead, FaIdCard } from 'react-icons/fa';
+import API_URL from '../config';
 
 function PatientManagement() {
     const [patients, setPatients] = useState([]);
@@ -46,7 +47,7 @@ function PatientManagement() {
         }
 
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
+            const response = await fetch(`${API_URL}/pacientes`, {
                 method: 'GET',
                 headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
@@ -79,7 +80,7 @@ function PatientManagement() {
         }
 
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/propietarios', {
+            const response = await fetch(`${API_URL}/propietarios`, {
                 method: 'GET',
                 headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
@@ -156,15 +157,22 @@ function PatientManagement() {
         }
 
         try {
-            const response = await fetch('https://soporte-equino.onrender.com/api/pacientes', {
+            const response = await fetch(`${API_URL}/pacientes`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': token },
                 body: JSON.stringify(newPatient)
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Error al crear paciente');
+                let errorMessage = 'Error al crear paciente';
+                try {
+                    const errorJson = await response.json();
+                    errorMessage = errorJson.message || errorJson.error || errorMessage;
+                } catch (e) {
+                    const errorText = await response.text();
+                    errorMessage = errorText || errorMessage;
+                }
+                throw new Error(errorMessage);
             }
 
             // Refrescar datos y cerrar modal
@@ -192,15 +200,22 @@ function PatientManagement() {
         }
 
         try {
-            const response = await fetch(`https://soporte-equino.onrender.com/api/pacientes/${currentPatient.idPaciente}`, {
+            const response = await fetch(`${API_URL}/pacientes/${currentPatient.idPaciente}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': token },
                 body: JSON.stringify(editPatient)
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Error al actualizar paciente');
+                let errorMessage = 'Error al actualizar paciente';
+                try {
+                    const errorJson = await response.json();
+                    errorMessage = errorJson.message || errorJson.error || errorMessage;
+                } catch (e) {
+                    const errorText = await response.text();
+                    errorMessage = errorText || errorMessage;
+                }
+                throw new Error(errorMessage);
             }
 
             fetchPatients(token);
@@ -219,7 +234,7 @@ function PatientManagement() {
         }
 
         try {
-            const response = await fetch(`https://soporte-equino.onrender.com/api/pacientes/${idPaciente}`, {
+            const response = await fetch(`${API_URL}/pacientes/${idPaciente}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': token, 'Content-Type': 'application/json' }
             });
@@ -289,6 +304,7 @@ function PatientManagement() {
                                 <thead>
                                     <tr>
                                         <th>#</th>
+                                        <th>Foto</th>
                                         <th>Nombre</th>
                                         <th>Registro</th>
                                         <th>Raza</th>
@@ -301,10 +317,22 @@ function PatientManagement() {
                                     {filteredPatients.map((patient, index) => (
                                         <tr key={patient.idPaciente}>
                                             <td>{index + 1}</td>
-                                            <td><FaHorseHead className='me-2' style={{ color: '#0d3b66' }} /> {patient.Nombre}</td>
+                                            <td>
+                                                {patient.Foto ? (
+                                                    <img
+                                                        src={patient.Foto}
+                                                        alt={patient.Nombre}
+                                                        style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
+                                                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/50x50/cccccc/333333?text=Eq'; }}
+                                                    />
+                                                ) : (
+                                                    <FaHorseHead size={30} className='text-muted' />
+                                                )}
+                                            </td>
+                                            <td> {patient.Nombre}</td>
                                             <td><FaIdCard className='me-2 text-info' /> {patient.Numero_registro}</td>
                                             <td>{patient.Raza}</td>
-                                            <td>{patient.Sexo}</td>
+                                            <td>{patient.Sexo === 'M' ? 'Macho' : patient.Sexo === 'F' ? 'Hembra' : patient.Sexo}</td>
                                             <td>
                                                 <FaUserCircle className='me-2 text-success' />
                                                 {owners.find(owner => owner.idPropietario === patient.Propietario)
@@ -360,8 +388,8 @@ function PatientManagement() {
                             <Form.Label>Sexo</Form.Label>
                             <Form.Control as="select" name="Sexo" value={newPatient.Sexo} onChange={handleInputChange} required>
                                 <option value="">Seleccione</option>
-                                <option value="M">Masculino</option>
-                                <option value="F">Femenino</option>
+                                <option value="M">Macho</option>
+                                <option value="F">Hembra</option>
                             </Form.Control>
                         </Form.Group>
                         <Form.Group controlId="formFoto" className='mb-2'>
@@ -419,8 +447,8 @@ function PatientManagement() {
                                 <Form.Label>Sexo</Form.Label>
                                 <Form.Control as="select" name="Sexo" value={editPatient.Sexo} onChange={handleEditInputChange} required>
                                     <option value="">Seleccione</option>
-                                    <option value="M">Masculino</option>
-                                    <option value="F">Femenino</option>
+                                    <option value="M">Macho</option>
+                                    <option value="F">Hembra</option>
                                 </Form.Control>
                             </Form.Group>
                             <Form.Group controlId="formEditFoto" className='mb-2'>

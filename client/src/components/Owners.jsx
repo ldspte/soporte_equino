@@ -6,14 +6,14 @@ const API_URL = 'https://soporte-equino.onrender.com/api';
 
 // --- Componente de Calificación de Estrellas (Anidado) ---
 const StarRating = ({ ownerId, initialRating = 0, onRatingUpdated }) => {
-    const [rating, setRating] = useState(initialRating);
+    const [rating, setRating] = useState(Number(initialRating));
     const [hover, setHover] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     // Actualizar la calificación local cuando initialRating cambie (ej: al recargar la tabla)
     useEffect(() => {
-        setRating(initialRating);
+        setRating(Number(initialRating));
     }, [initialRating]);
 
     const getAuthToken = useCallback(() => {
@@ -54,7 +54,7 @@ const StarRating = ({ ownerId, initialRating = 0, onRatingUpdated }) => {
                 onRatingUpdated(data.newAverageRating);
             }
 
-            setRating(data.newAverageRating); // Actualizar el promedio localmente
+            setRating(Number(data.newAverageRating)); // Actualizar el promedio localmente
 
         } catch (err) {
             console.error('Error al calificar:', err);
@@ -83,7 +83,7 @@ const StarRating = ({ ownerId, initialRating = 0, onRatingUpdated }) => {
                     />
                 );
             })}
-            {rating > 0 && <small className="ms-2 text-muted">({rating.toFixed(1)})</small>}
+            {Number(rating) > 0 && <small className="ms-2 text-muted">({Number(rating).toFixed(1)})</small>}
             {error && <Alert variant="danger" className="ms-2 p-1 px-2 small">{error.substring(0, 50)}</Alert>}
         </div>
     );

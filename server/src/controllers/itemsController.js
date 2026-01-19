@@ -32,7 +32,7 @@ const getItemById = async (idInsumos) => {
 }
 
 const createItem = async (Nombre, Descripcion, Foto, Precio) => {
-    const result = await db.query(`
+    const [result] = await db.query(`
         INSERT INTO insumos (Nombre, Descripcion, Foto, Precio) VALUES (?, ?, ?, ?)
     `,
         [Nombre, Descripcion, Foto, Precio]
@@ -41,7 +41,7 @@ const createItem = async (Nombre, Descripcion, Foto, Precio) => {
 }
 
 const updateItem = async (idInsumos, Nombre, Descripcion, Foto, Precio) => {
-    const result = await db.query(`
+    const [result] = await db.query(`
         UPDATE insumos SET Nombre = ?, Descripcion = ?, Foto = ?, Precio = ? WHERE idInsumos = ?
     `,
         [Nombre, Descripcion, Foto, Precio, idInsumos]
@@ -50,7 +50,7 @@ const updateItem = async (idInsumos, Nombre, Descripcion, Foto, Precio) => {
 }
 
 const deleteItem = async (idInsumos) => {
-    const result = await db.query(`
+    const [result] = await db.query(`
         DELETE FROM insumos WHERE idInsumos = ?
     `,
         [idInsumos]
