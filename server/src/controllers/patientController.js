@@ -1,10 +1,22 @@
 const { db } = require('../database')
 
 
-const getPatients = async () => {
-    const [rows] = await db.query(`
-        SELECT * FROM paciente
-    `)
+const getPatients = async (veterinarioId = null) => {
+    let query = 'SELECT * FROM paciente';
+    const params = [];
+
+    const cleanVetId = parseInt(veterinarioId);
+    if (!isNaN(cleanVetId)) {
+        query = `
+            SELECT DISTINCT p.* 
+            FROM paciente p
+            JOIN historia_clinica h ON p.idPaciente = h.Paciente
+            WHERE h.Veterinario = ?
+        `;
+        params.push(cleanVetId);
+    }
+
+    const [rows] = await db.query(query, params);
 
     // Convertir fotos LONGBLOB a base64 (igual que en insumos)
     const patientsWithPhoto = rows.map(patient => {

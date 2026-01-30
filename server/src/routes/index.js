@@ -19,7 +19,7 @@ const crypto = require('crypto');
 const { getItems, getItemById, createItem, updateItem, deleteItem } = require('../controllers/itemsController');
 const { getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary, getVeterinarystatus } = require('../controllers/veterinaryController')
 const { getOwners, getOwnerById, createOwner, updateOwner, deleteOwner, rateOwner } = require('../controllers/ownerController');
-const { getClinicalHistory, getClinicalHistoryById, createClinicalHistory, updateClinicalHistory, deleteClinicalHistory } = require('../controllers/clinicalHystory');
+const { getClinicalHistory, getClinicalHistoryById, createClinicalHistory, updateClinicalHistory, deleteClinicalHistory, getDashboardStats } = require('../controllers/clinicalHystory');
 const { getPatients, getPatientById, createPatient, updatePatient, deletePatient } = require('../controllers/patientController')
 
 
@@ -377,7 +377,7 @@ route.get('/api/propietarios', authenticateToken, async (req, res) => {
         res.status(200).json(values);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error al obtener los Propietarios' });
+        res.status(500).json({ error: 'Error al obtener los Propietarios', message: error.message });
     }
 });
 
@@ -562,6 +562,20 @@ route.delete('/api/historia_clinica/:idHistoria_clinica', authenticateToken, asy
     }
 });
 
+route.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
+    const { veterinarioId } = req.query;
+    if (!veterinarioId) {
+        return res.status(400).json({ error: 'Falta veterinarioId' });
+    }
+    try {
+        const stats = await getDashboardStats(veterinarioId);
+        res.status(200).json(stats);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al obtener estadísticas del dashboard', message: error.message });
+    }
+});
+
 
 
 // PACIENTES
@@ -569,11 +583,7 @@ route.delete('/api/historia_clinica/:idHistoria_clinica', authenticateToken, asy
 route.get('/api/pacientes', authenticateToken, async (req, res) => {
     const { veterinarioId } = req.query;
     try {
-        let values = await getPatients();
-        // Nota: Si el paciente no tiene un campo Veterinario directo, 
-        // podrías necesitar filtrar por el veterinario que creó sus historias clínicas
-        // o dejar que el frontend maneje el filtrado como lo hace ahora.
-        // Por ahora lo dejamos así para no romper la lógica actual.
+        const values = await getPatients(veterinarioId);
         res.status(200).json(values);
     } catch (error) {
         console.error(error);

@@ -240,37 +240,40 @@ const VeterinarioDashboard = () => {
     const loadDashboardData = useCallback(async () => {
         if (!veterinarioID) return;
         setLoading(true);
+        setError(null);
         const token = getAuthHeader();
 
         try {
             const fetchOpts = { headers: { 'Authorization': token, 'Content-Type': 'application/json' } };
 
-            const [respHist, respPat, respOwn] = await Promise.all([
-                fetch(`${API_URL}/historia_clinica?veterinarioId=${veterinarioID}`, fetchOpts),
+            const [respStats, respPat, respOwn] = await Promise.all([
+                fetch(`${API_URL}/dashboard/stats?veterinarioId=${veterinarioID}`, fetchOpts),
                 fetch(`${API_URL}/pacientes?veterinarioId=${veterinarioID}`, fetchOpts),
                 fetch(`${API_URL}/propietarios`, fetchOpts)
             ]);
 
-            if (respHist.ok) {
-                const data = await respHist.json();
-                console.log("Raw Clinical History Data:", data[0]); // Debug
-                const filtered = data.filter(h => h.Veterinario === veterinarioID);
-                setHistoryCount(filtered.length);
-                setRecentHistories(filtered.slice(0, 5));
+            if (!respStats.ok || !respPat.ok || !respOwn.ok) {
+                const errData = await respStats.json().catch(() => ({}));
+                throw new Error(errData.message || `Error en servidor: ${respStats.status}`);
             }
-            if (respPat.ok) {
-                const data = await respPat.json();
-                setPatients(data);
-                setPatientCount(data.length);
-            }
-            if (respOwn.ok) {
-                const data = await respOwn.json();
-                setOwners(data);
-                setOwnerCount(data.length);
-            }
+
+            const [dataStats, dataPatients, dataOwners] = await Promise.all([
+                respStats.json(),
+                respPat.json(),
+                respOwn.json()
+            ]);
+
+            // Actualizar estados con la data recibida
+            setHistoryCount(dataStats.historyCount);
+            setRecentHistories(dataStats.recentHistories);
+            setPatients(dataPatients);
+            setPatientCount(dataStats.patientCount); // Usamos el conteo del stats que es exacto para el vet
+            setOwners(dataOwners);
+            setOwnerCount(dataStats.ownerCount); // Usamos el conteo del stats
+
         } catch (err) {
             console.error("Error loading dashboard metrics:", err);
-            setError("Error al conectar con el servidor.");
+            setError(`Error al cargar la información: ${err.message}`);
         } finally {
             setLoading(false);
         }

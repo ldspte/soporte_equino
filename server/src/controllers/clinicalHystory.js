@@ -125,10 +125,47 @@ const deleteClinicalHistory = async (idHistoria_clinica) => {
     return result;
 }
 
+const getDashboardStats = async (veterinarioId) => {
+    const cleanVetId = parseInt(veterinarioId);
+    if (isNaN(cleanVetId)) {
+        throw new Error('ID de Veterinario inválido');
+    }
+
+    // 1. Conteo de historias del veterinario
+    const [histCount] = await db.query('SELECT COUNT(*) as total FROM historia_clinica WHERE Veterinario = ?', [cleanVetId]);
+
+    // 2. Conteo de pacientes únicos atendidos por este veterinario
+    const [patCount] = await db.query(`
+        SELECT COUNT(DISTINCT Paciente) as total 
+        FROM historia_clinica 
+        WHERE Veterinario = ?
+    `, [cleanVetId]);
+
+    // 3. Conteo de propietarios únicos (relacionados con esos pacientes)
+    const [ownCount] = await db.query(`
+        SELECT COUNT(DISTINCT p.Propietario) as total
+        FROM historia_clinica h
+        JOIN paciente p ON h.Paciente = p.idPaciente
+        WHERE h.Veterinario = ?
+    `, [cleanVetId]);
+
+    // 4. Historias recientes (las últimas 5)
+    // Usamos el controller existente pero para el dashboard suele ser más rápido una query específica
+    const recent = await getClinicalHistory(cleanVetId);
+
+    return {
+        historyCount: histCount[0].total,
+        patientCount: patCount[0].total,
+        ownerCount: ownCount[0].total,
+        recentHistories: recent.slice(0, 5)
+    };
+}
+
 module.exports = {
     getClinicalHistory,
     getClinicalHistoryById,
     createClinicalHistory,
     updateClinicalHistory,
-    deleteClinicalHistory
+    deleteClinicalHistory,
+    getDashboardStats
 }

@@ -138,13 +138,16 @@ function ClinicalHistory() {
     try {
       const userStorage = localStorage.getItem('veterinario');
       let clinicalUrl = `${API_URL}/historia_clinica`;
+      let vetId = null;
+
       if (userStorage) {
         const data = JSON.parse(userStorage);
         const user = data?.user?.[0];
         if (user) {
           setUserData(user);
           if (user.idVeterinario) {
-            clinicalUrl += `?veterinarioId=${user.idVeterinario}`;
+            vetId = user.idVeterinario;
+            clinicalUrl += `?veterinarioId=${vetId}`;
           }
         }
       }
@@ -158,7 +161,7 @@ function ClinicalHistory() {
           method: 'GET',
           headers: { 'Authorization': token, 'Content-Type': 'application/json' }
         }),
-        fetch(`${API_URL}/pacientes`, {
+        fetch(`${API_URL}/pacientes${vetId ? `?veterinarioId=${vetId}` : ''}`, {
           method: 'GET',
           headers: { 'Authorization': token, 'Content-Type': 'application/json' }
         })
@@ -169,10 +172,12 @@ function ClinicalHistory() {
         throw new Error(`Historias: ${resClinical.status} - ${errData.message || 'Error desconocido'}`);
       }
       if (!resOwners.ok) {
-        throw new Error(`Propietarios: ${resOwners.status}`);
+        const errData = await resOwners.json().catch(() => ({}));
+        throw new Error(`Propietarios: ${resOwners.status} - ${errData.message || 'Error desconocido'}`);
       }
       if (!resPatients.ok) {
-        throw new Error(`Pacientes: ${resPatients.status}`);
+        const errData = await resPatients.json().catch(() => ({}));
+        throw new Error(`Pacientes: ${resPatients.status} - ${errData.message || 'Error desconocido'}`);
       }
 
       const [dataClinical, dataOwners, dataPatients] = await Promise.all([
