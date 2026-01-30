@@ -34,7 +34,14 @@ const LoginModal = ({ isOpen, onClose, onOpenForgot }) => {
                     Contraseña: password
                 }),
             });
-            const data = await response.json();
+            const contentType = response.headers.get("content-type");
+            let data;
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await response.json();
+            } else {
+                data = { message: await response.text() };
+            }
+
             if (response.ok) {
                 setSuccess(true);
                 localStorage.setItem('token', data.token);
@@ -67,7 +74,14 @@ const LoginModal = ({ isOpen, onClose, onOpenForgot }) => {
                     credential: credentialResponse.credential
                 }),
             });
-            const data = await response.json();
+            const contentType = response.headers.get("content-type");
+            let data;
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await response.json();
+            } else {
+                data = { message: await response.text() };
+            }
+
             if (response.ok) {
                 setSuccess(true);
                 localStorage.setItem('token', data.token);

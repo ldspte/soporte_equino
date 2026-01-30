@@ -1,8 +1,8 @@
 const { db } = require('../database');
 
 
-const getClinicalHistory = async () => {
-    const [result] = await db.query(`
+const getClinicalHistory = async (veterinarioId = null) => {
+    let query = `
         SELECT 
             h.*, 
             p.Nombre as NombrePaciente, 
@@ -12,10 +12,18 @@ const getClinicalHistory = async () => {
         FROM historia_clinica h
         LEFT JOIN paciente p ON h.Paciente = p.idPaciente
         LEFT JOIN propietario pr ON p.Propietario = pr.idPropietario
-    `)
+    `;
+    const params = [];
+
+    // Validar que veterinarioId sea un número válido y no el string "undefined" o similar
+    const cleanVetId = parseInt(veterinarioId);
+    if (!isNaN(cleanVetId)) {
+        query += ` WHERE h.Veterinario = ?`;
+        params.push(cleanVetId);
+    }
+
+    const [result] = await db.query(query, params);
     const historiasConFoto = result.map(historia => {
-        // Log para debug interno del servidor (se verá en Render logs/consola)
-        console.log(`History ID: ${historia.idHistoria_clinica}, PacienteID: ${historia.Paciente}, JOIN Nombre: ${historia.NombrePaciente}`);
         if (historia.Foto && Buffer.isBuffer(historia.Foto)) {
             const base64String = historia.Foto.toString('base64');
             historia.Foto = `data:image/jpeg;base64,${base64String}`;

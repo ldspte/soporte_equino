@@ -51,12 +51,7 @@ function OtherHistorys() {
       });
 
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem('token');
-          setError('Sesión expirada. Por favor, inicie sesión nuevamente.');
-          setLoading(false);
-          return;
-        }
+
         const errorText = await response.text();
         throw new Error(errorText || 'Error al buscar historias clínicas');
       }

@@ -457,14 +457,11 @@ route.post('/api/propietarios/:idPropietario/rate', authenticateToken, async (re
 route.get('/api/historia_clinica', authenticateToken, async (req, res) => {
     const { veterinarioId } = req.query;
     try {
-        let values = await getClinicalHistory();
-        if (veterinarioId) {
-            values = values.filter(h => h.Veterinario === parseInt(veterinarioId));
-        }
+        const values = await getClinicalHistory(veterinarioId);
         res.status(200).json(values);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error al obtener las Historias Clinicas' });
+        res.status(500).json({ error: 'Error al obtener las Historias Clinicas', message: error.message });
     }
 });
 

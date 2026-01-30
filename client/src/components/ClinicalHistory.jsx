@@ -40,70 +40,12 @@ function ClinicalHistory() {
     return token ? `Bearer ${token}` : null;
   }, []);
 
-  useEffect(() => {
-    const userStorage = localStorage.getItem('veterinario');
-
-    if (userStorage) {
-      const data = JSON.parse(userStorage);
-
-      if (data.user) {
-        setUserData(data.user[0]);
-      }
-    }
-
-    console.log('userData cargado: ', userData);
-    const token = getAuthToken();
-    if (token) {
-      fetchClinical(token);
-      fetchOwners(token);
-      fetchPatients(token);
-    } else {
-      setError('No hay token de autenticación. Por favor, inicia sesión.');
-    }
-  }, [getAuthToken]);
-
-  const initialClinicalState = {
-    Veterinario: '',
-    Paciente: '',
-    Anamnesis: '',
-    Enfermedades: '',
-    Vacunas: '',
-    Desparasitacion: '',
-    Evaluacion_distancia: '',
-    Mucosas: '',
-    Llenado_capilar: '',
-    Pliegue_cutaneo: '',
-    Pulso_digital: '',
-    Frecuencia_cardiaca: '',
-    Frecuencia_respiratoria: '',
-    Motilidad_gastrointestinal: '',
-    Temperatura: '',
-    Pulso: '',
-    Aspecto: '',
-    Locomotor: '',
-    Respiratorio: '',
-    Circulatorio: '',
-    Digestivo: '',
-    Genitourinario: '',
-    Sis_nervioso: '',
-    Oidos: '',
-    Ojos: '',
-    Glangios_linfaticos: '',
-    Piel: '',
-    Diagnostico_integral: '',
-    Tratamiento: '',
-    Ayudas_diagnosticas: '',
-    Observaciones: '',
-    Foto: '',
-    Fecha: ''
-  };
-
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     const offset = date.getTimezoneOffset();
     const localDate = new Date(date.getTime() - (offset * 60 * 1000));
-    return localDate.toISOString().slice(0, 16);
+    return localDate.toISOString().slice(0, 10);
   };
 
   const normalizeClinicalData = useCallback((clinical) => {
@@ -146,6 +88,128 @@ function ClinicalHistory() {
     };
   }, []);
 
+  const initialClinicalState = {
+    Veterinario: '',
+    Paciente: '',
+    Anamnesis: '',
+    Enfermedades: '',
+    Vacunas: '',
+    Desparasitacion: '',
+    Evaluacion_distancia: '',
+    Mucosas: '',
+    Llenado_capilar: '',
+    Pliegue_cutaneo: '',
+    Pulso_digital: '',
+    Frecuencia_cardiaca: '',
+    Frecuencia_respiratoria: '',
+    Motilidad_gastrointestinal: '',
+    Temperatura: '',
+    Pulso: '',
+    Aspecto: '',
+    Locomotor: '',
+    Respiratorio: '',
+    Circulatorio: '',
+    Digestivo: '',
+    Genitourinario: '',
+    Sis_nervioso: '',
+    Oidos: '',
+    Ojos: '',
+    Glangios_linfaticos: '',
+    Piel: '',
+    Diagnostico_integral: '',
+    Tratamiento: '',
+    Ayudas_diagnosticas: '',
+    Observaciones: '',
+    Foto: '',
+    Fecha: ''
+  };
+
+
+  const loadAllData = useCallback(async (tokenArg) => {
+    setLoading(true);
+    setError(null);
+    const token = tokenArg || getAuthToken();
+    if (!token) {
+      setLoading(false);
+      setError('No hay token de autenticación. Por favor, inicia sesión.');
+      return;
+    }
+
+    try {
+      const userStorage = localStorage.getItem('veterinario');
+      let clinicalUrl = `${API_URL}/historia_clinica`;
+      if (userStorage) {
+        const data = JSON.parse(userStorage);
+        const user = data?.user?.[0];
+        if (user) {
+          setUserData(user);
+          if (user.idVeterinario) {
+            clinicalUrl += `?veterinarioId=${user.idVeterinario}`;
+          }
+        }
+      }
+
+      const [resClinical, resOwners, resPatients] = await Promise.all([
+        fetch(clinicalUrl, {
+          method: 'GET',
+          headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+        }),
+        fetch(`${API_URL}/propietarios`, {
+          method: 'GET',
+          headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+        }),
+        fetch(`${API_URL}/pacientes`, {
+          method: 'GET',
+          headers: { 'Authorization': token, 'Content-Type': 'application/json' }
+        })
+      ]);
+
+      if (!resClinical.ok && resClinical.status !== 404) {
+        const errData = await resClinical.json().catch(() => ({}));
+        throw new Error(`Historias: ${resClinical.status} - ${errData.message || 'Error desconocido'}`);
+      }
+      if (!resOwners.ok) {
+        throw new Error(`Propietarios: ${resOwners.status}`);
+      }
+      if (!resPatients.ok) {
+        throw new Error(`Pacientes: ${resPatients.status}`);
+      }
+
+      const [dataClinical, dataOwners, dataPatients] = await Promise.all([
+        resClinical.ok ? resClinical.json() : Promise.resolve([]),
+        resOwners.json(),
+        resPatients.json()
+      ]);
+
+      setOwners(dataOwners);
+      setPatients(dataPatients);
+
+      const processedClinical = Array.isArray(dataClinical)
+        ? dataClinical.map(normalizeClinicalData)
+        : dataClinical ? [normalizeClinicalData(dataClinical)] : [];
+
+      setClinical(processedClinical);
+
+      if (!processedClinical.length && resClinical.status !== 404) {
+        // Silently handle empty results if they aren't explicitly 404
+      } else if (resClinical.status === 404) {
+        setError('No se encontraron Historias Clinicas');
+      }
+
+    } catch (err) {
+      console.error('Error loading initial data: ', err);
+      setError(`Error al cargar los datos: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [getAuthToken, normalizeClinicalData]);
+
+  useEffect(() => {
+    loadAllData();
+  }, [loadAllData]);
+
+
+
   const [newClinical, setNewClinical] = useState(initialClinicalState);
   const [editClinical, setEditClinical] = useState(initialClinicalState);
 
@@ -160,124 +224,7 @@ function ClinicalHistory() {
 
 
 
-  const fetchPatients = useCallback(async (tokenArg) => {
-    setLoading(true);
-    setError(null);
-    const token = tokenArg || getAuthToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const response = await fetch(`${API_URL}/pacientes`, {
-        method: 'GET',
-        headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json'
-        }
-      });
 
-      if (!response.ok) {
-        throw new Error('Error al obtener los pacientes');
-      }
-
-      const data = await response.json();
-      setPatients(data);
-    } catch (error) {
-      console.error('Error obteniendo pacientes: ', error);
-      setError(`Error al cargar pacientes: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchOwners = useCallback(async (tokenArg) => {
-    setLoading(true);
-    const token = tokenArg || getAuthToken();
-    if (!token) {
-      setError('No hay token de autenticación');
-      setLoading(false);
-      return;
-    }
-    try {
-      const response = await fetch(`${API_URL}/propietarios`, {
-        method: 'GET',
-        headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error ${response.status}: ${errorData}`);
-      }
-      const data = await response.json();
-      setOwners(data);
-    } catch (error) {
-      console.error('Error obteniendo propietarios: ', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [getAuthToken]);
-
-  //Obtener historias clinicas
-  const fetchClinical = useCallback(async (tokenArg) => {
-    setLoading(true);
-    setError(null);
-    const token = tokenArg || getAuthToken();
-    if (!token) {
-      setError('No hay token de autenticación');
-      setLoading(false);
-      return;
-    }
-    try {
-
-
-      const response = await fetch(`${API_URL}/historia_clinica`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': token,
-            'Content-Type': 'application/json'
-          }
-        });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem('token');
-          setError('Sesion expirada. Por favor, inicie sesión nuevamente');
-          return;
-        }
-        if (response.status === 404) {
-          setClinical([]);
-          setError('No se encontraron Historias Clinicas'); // Set error for 404 specifically
-          return;
-        }
-        throw new Error(`Error ${response.status}: ${errorText || 'Error al obtener las historias clinicas'}`);
-      }
-
-      const data = await response.json();
-      console.log(data);
-      const processedData = Array.isArray(data) ? data.map(normalizeClinicalData) : [normalizeClinicalData(data)];
-      console.log('data processed: ', processedData[0])
-
-      if (!processedData.length) {
-        setError('No se encontraron Historias Clinicas');
-      }
-
-      setClinical(processedData);
-
-    } catch (error) {
-      console.error('Error encontrando Historias Clinicas: ', error);
-      setError(`Error al cargar Historias Clinicas:  ${error.message}`);
-      setClinical([]);
-    } finally {
-      setLoading(false);
-    }
-
-  }, [normalizeClinicalData]);
 
   // crear Historia clinica
 
@@ -308,7 +255,7 @@ function ClinicalHistory() {
       const payload = {
         ...newClinical,
         Veterinario: userData.idVeterinario,
-        Fecha: newClinical.Fecha || new Date().toISOString()
+        Fecha: newClinical.Fecha || new Date().toISOString().split('T')[0]
       };
 
       const response = await fetch(`${API_URL}/historia_clinica`,
@@ -345,7 +292,7 @@ function ClinicalHistory() {
     } finally {
       setIsUpdating(false);
     }
-    fetchClinical();
+    loadAllData();
   }
 
 
@@ -399,11 +346,8 @@ function ClinicalHistory() {
     }
   }, [getAuthToken]);
 
-  useEffect(() => {
-    fetchClinical();
-    // fetchOwners();
-    // fetchPatients();
-  }, [fetchClinical]);
+  // Efecto eliminado para evitar duplicidad, ya se maneja en loadAllData inicial y actualizaciones manuales
+
 
 
 
@@ -503,7 +447,7 @@ function ClinicalHistory() {
       };
       console.log('Payload para actualizar: ', payload);
       await updateClinical(idHistoria_clinica, payload);
-      await fetchClinical();
+      await loadAllData();
       setShowEditClinicalModal(false);
       setEditValidated(false);
       setError(null);
@@ -531,7 +475,7 @@ function ClinicalHistory() {
     try {
       setLoading(true);
       await deleteHistory(clinicalToDelete.idHistoria_clinica);
-      await fetchClinical();
+      await loadAllData();
       setShowDeleteModal(false);
       setClinicalToDelete(null);
       setError(null);
@@ -991,7 +935,7 @@ function ClinicalHistory() {
                 <Form.Group className="mb-3" controlId="formFecha">
                   <Form.Label>Fecha de Historia Clínica</Form.Label>
                   <Form.Control
-                    type="datetime-local"
+                    type="date"
                     name="Fecha"
                     value={formatDateForInput(newClinical.Fecha)}
                     onChange={handleInputChange}
@@ -1506,7 +1450,7 @@ function ClinicalHistory() {
                   <Form.Group className="mb-3" controlId="formFechaEdit">
                     <Form.Label>Fecha</Form.Label>
                     <Form.Control
-                      type="datetime-local"
+                      type="date"
                       name="Fecha"
                       value={formatDateForInput(editClinical.Fecha)}
                       onChange={handleEditInputChange}

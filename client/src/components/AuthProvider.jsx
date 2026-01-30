@@ -23,10 +23,30 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Esta parte se asegura de que el estado se actualice si el token cambia por alguna razón
+    // Interceptor global de fetch para manejar sesiones expiradas
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+
+      if (response.status === 403) {
+        // Evitar múltiples alertas si hay varias peticiones fallando al tiempo
+        if (!window.isSessionAlerting) {
+          window.isSessionAlerting = true;
+          alert('Tu sesión ha expirado o el token es inválido. Por favor, inicia sesión de nuevo.');
+          logout();
+          window.isSessionAlerting = false;
+        }
+      }
+      return response;
+    };
+
     const token = localStorage.getItem('token');
     setIsAuthenticated(!!token);
-  }, []);
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [logout]);
 
   const value = { isAuthenticated, login, logout };
 

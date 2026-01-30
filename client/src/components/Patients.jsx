@@ -86,10 +86,7 @@ function PatientManagement() {
             });
 
             if (!response.ok) {
-                if (response.status === 401) {
-                    setError('Sesión expirada. Por favor, inicia sesión de nuevo.');
-                    return;
-                }
+
                 throw new Error(`Error ${response.status} al obtener propietarios`);
             }
 

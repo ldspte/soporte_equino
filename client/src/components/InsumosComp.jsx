@@ -50,10 +50,7 @@ function Insumos() {
             });
 
             if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    setError('Sesión expirada o permisos insuficientes.');
-                    return;
-                }
+
                 throw new Error(`Error ${response.status} al obtener insumos`);
             }
 
