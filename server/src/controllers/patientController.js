@@ -7,12 +7,7 @@ const getPatients = async (veterinarioId = null) => {
 
     const cleanVetId = parseInt(veterinarioId);
     if (!isNaN(cleanVetId)) {
-        query = `
-            SELECT DISTINCT p.* 
-            FROM paciente p
-            JOIN historia_clinica h ON p.idPaciente = h.Paciente
-            WHERE h.Veterinario = ?
-        `;
+        query = 'SELECT * FROM paciente WHERE idVeterinario = ?';
         params.push(cleanVetId);
     }
 
@@ -50,9 +45,9 @@ const getPatientById = async (idPaciente) => {
     return rows;
 };
 
-const createPatient = async (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) => {
+const createPatient = async (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario, idVeterinario) => {
     try {
-        console.log('📝 Creando paciente:', { Nombre, Numero_registro, tieneFoto: !!Foto });
+        console.log('📝 Creando paciente:', { Nombre, Numero_registro, tieneFoto: !!Foto, idVeterinario });
 
         // Convertir base64 a buffer si es necesario
         let fotoBuffer = null;
@@ -64,9 +59,9 @@ const createPatient = async (Nombre, Numero_registro, Numero_chip, Raza, Edad, S
         }
 
         const [result] = await db.query(`
-            INSERT INTO paciente (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO paciente (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario, idVeterinario) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
-            [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, fotoBuffer, Propietario]
+            [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, fotoBuffer, Propietario, idVeterinario]
         );
         console.log('✅ Paciente creado exitosamente, id:', result.insertId);
         return result;

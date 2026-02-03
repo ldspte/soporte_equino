@@ -134,19 +134,18 @@ const getDashboardStats = async (veterinarioId) => {
     // 1. Conteo de historias del veterinario
     const [histCount] = await db.query('SELECT COUNT(*) as total FROM historia_clinica WHERE Veterinario = ?', [cleanVetId]);
 
-    // 2. Conteo de pacientes únicos atendidos por este veterinario
+    // 2. Conteo de pacientes totales de este veterinario
     const [patCount] = await db.query(`
-        SELECT COUNT(DISTINCT Paciente) as total 
-        FROM historia_clinica 
-        WHERE Veterinario = ?
+        SELECT COUNT(*) as total 
+        FROM paciente 
+        WHERE idVeterinario = ?
     `, [cleanVetId]);
 
-    // 3. Conteo de propietarios únicos (relacionados con esos pacientes)
+    // 3. Conteo de propietarios totales de este veterinario
     const [ownCount] = await db.query(`
-        SELECT COUNT(DISTINCT p.Propietario) as total
-        FROM historia_clinica h
-        JOIN paciente p ON h.Paciente = p.idPaciente
-        WHERE h.Veterinario = ?
+        SELECT COUNT(*) as total
+        FROM propietario
+        WHERE idVeterinario = ?
     `, [cleanVetId]);
 
     // 4. Historias recientes (las últimas 5)

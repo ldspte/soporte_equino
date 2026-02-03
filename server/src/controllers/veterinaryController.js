@@ -153,8 +153,16 @@ const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo,
         fotoBuffer = Buffer.from(base64Data, 'base64');
     }
 
-    let sql = `UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Descripcion = ?, Especialidad = ?, Foto = ?, Estado = ?, Redes = ?`;
-    const params = [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, fotoBuffer, Estado, Redes];
+    // Usar nombres de columnas consistentes con la base de datos
+    // Si Estado es undefined, intentamos usar el valor de la base de datos o lo omitimos para no sobreescribir con NULL
+    let sql = `UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Descripcion = ?, Especialidad = ?, Foto = ?, Redes = ?`;
+    const params = [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, fotoBuffer, Redes];
+
+    // Manejar Estado de forma segura (MySQL suele ser case-insensitive, pero por si acaso)
+    if (Estado !== undefined) {
+        sql += `, Estado = ?`;
+        params.push(Estado);
+    }
 
     if (Contraseña) {
         const hashedPassword = await bcrypt.hash(Contraseña, 10);

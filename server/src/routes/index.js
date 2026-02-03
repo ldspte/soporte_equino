@@ -338,20 +338,32 @@ route.post('/api/veterinarios', authenticateToken, async (req, res) => {
 
 route.put('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
     const { idVeterinario } = req.params;
-    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Estado, Foto, Redes, Contraseña } = req.body;
+    const {
+        Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad,
+        Estado, estado, Foto, Redes, redes,
+        Contraseña, contrasena, password
+    } = req.body;
+
+    // Normalizar campos que podrían venir con diferente capitalización o sin ñ
+    const finalEstado = Estado || estado;
+    const finalRedes = Redes || redes;
+    const finalContrasena = Contraseña || contrasena || password;
 
     try {
-        await updateVeterinary(idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, Redes, Contraseña);
+        await updateVeterinary(
+            idVeterinario, Cedula, Nombre, Apellido, Correo,
+            Descripcion, Especialidad, Foto, finalEstado,
+            finalRedes, finalContrasena
+        );
 
-        // Retornar el objeto actualizado para que el frontend no se "laguee" o rompa
         const updated = await getVeterinaryById(idVeterinario);
         if (updated.length === 0) {
             return res.status(404).json({ error: 'Veterinario no encontrado después de actualizar' });
         }
         res.status(200).json(updated[0]);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al actualizar el Veterinario' });
+        console.error('Error al actualizar veterinario:', error);
+        res.status(500).json({ error: 'Error al actualizar el Veterinario', details: error.message });
     }
 });
 
@@ -373,7 +385,8 @@ route.delete('/api/veterinarios/:idVeterinario', authenticateToken, async (req, 
 
 route.get('/api/propietarios', authenticateToken, async (req, res) => {
     try {
-        const values = await getOwners();
+        const veterinarioId = req.user.id;
+        const values = await getOwners(veterinarioId);
         res.status(200).json(values);
     } catch (error) {
         console.error(error);
@@ -397,8 +410,9 @@ route.get('/api/propietarios/:idPropietario', authenticateToken, async (req, res
 
 route.post('/api/propietarios', authenticateToken, async (req, res) => {
     const { Cedula, Nombre, Apellido, Telefono } = req.body;
+    const idVeterinario = req.user.id;
     try {
-        const values = await createOwner(Cedula, Nombre, Apellido, Telefono);
+        const values = await createOwner(Cedula, Nombre, Apellido, Telefono, idVeterinario);
         res.status(201).json(values);
     } catch (error) {
         console.error(error);
@@ -409,11 +423,15 @@ route.post('/api/propietarios', authenticateToken, async (req, res) => {
 route.put('/api/propietarios/:idPropietario', authenticateToken, async (req, res) => {
     const { idPropietario } = req.params;
     const { Cedula, Nombre, Apellido, Telefono } = req.body;
+    const idVeterinario = req.user.id;
     try {
-        const values = await updateOwner(idPropietario, Cedula, Nombre, Apellido, Telefono);
-        if (values.affectedRows === 0) {
-            return res.status(404).json({ error: 'Propietario no encontrado' });
+        // Primero verificar si el propietario pertenece al veterinario
+        const [owner] = await db.query('SELECT * FROM propietario WHERE idPropietario = ? AND idVeterinario = ?', [idPropietario, idVeterinario]);
+        if (!owner.length) {
+            return res.status(403).json({ error: 'No tienes permiso para editar este propietario' });
         }
+
+        const values = await updateOwner(idPropietario, Cedula, Nombre, Apellido, Telefono);
         res.status(200).json(values);
     } catch (error) {
         console.error(error);
@@ -423,11 +441,15 @@ route.put('/api/propietarios/:idPropietario', authenticateToken, async (req, res
 
 route.delete('/api/propietarios/:idPropietario', authenticateToken, async (req, res) => {
     const { idPropietario } = req.params;
+    const idVeterinario = req.user.id;
     try {
-        const values = await deleteOwner(idPropietario);
-        if (values.affectedRows === 0) {
-            return res.status(404).json({ error: 'Propietario no encontrado' });
+        // Verificar propiedad
+        const [owner] = await db.query('SELECT * FROM propietario WHERE idPropietario = ? AND idVeterinario = ?', [idPropietario, idVeterinario]);
+        if (!owner.length) {
+            return res.status(403).json({ error: 'No tienes permiso para eliminar este propietario' });
         }
+
+        const values = await deleteOwner(idPropietario);
         res.status(200).json(values);
     } catch (error) {
         console.error(error);
@@ -455,7 +477,7 @@ route.post('/api/propietarios/:idPropietario/rate', authenticateToken, async (re
 //HISTORIA CLINICA
 
 route.get('/api/historia_clinica', authenticateToken, async (req, res) => {
-    const { veterinarioId } = req.query;
+    const veterinarioId = req.user.id;
     try {
         const values = await getClinicalHistory(veterinarioId);
         res.status(200).json(values);
@@ -563,10 +585,7 @@ route.delete('/api/historia_clinica/:idHistoria_clinica', authenticateToken, asy
 });
 
 route.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
-    const { veterinarioId } = req.query;
-    if (!veterinarioId) {
-        return res.status(400).json({ error: 'Falta veterinarioId' });
-    }
+    const veterinarioId = req.user.id;
     try {
         const stats = await getDashboardStats(veterinarioId);
         res.status(200).json(stats);
@@ -581,7 +600,7 @@ route.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
 // PACIENTES
 
 route.get('/api/pacientes', authenticateToken, async (req, res) => {
-    const { veterinarioId } = req.query;
+    const veterinarioId = req.user.id;
     try {
         const values = await getPatients(veterinarioId);
         res.status(200).json(values);
@@ -607,8 +626,9 @@ route.get('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
 
 route.post('/api/pacientes', authenticateToken, async (req, res) => {
     const { Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario } = req.body;
+    const idVeterinario = req.user.id;
     try {
-        const values = await createPatient(Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario);
+        const values = await createPatient(Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario, idVeterinario);
         res.status(201).json(values);
     } catch (error) {
         console.error(error);
@@ -619,11 +639,15 @@ route.post('/api/pacientes', authenticateToken, async (req, res) => {
 route.put('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
     const { idPaciente } = req.params;
     const { Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario } = req.body;
+    const idVeterinario = req.user.id;
     try {
+        // Verificar propiedad
+        const [patient] = await db.query('SELECT * FROM paciente WHERE idPaciente = ? AND idVeterinario = ?', [idPaciente, idVeterinario]);
+        if (!patient.length) {
+            return res.status(403).json({ error: 'No tienes permiso para editar este paciente' });
+        }
+
         const values = await updatePatient(idPaciente, Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario);
-        if (values.affectedRows === 0) {
-            return res.status(404).json({ error: 'Paciente no encontrado' });
-        };
         res.status(200).json(values);
     } catch (error) {
         console.error(error);
@@ -633,11 +657,15 @@ route.put('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
 
 route.delete('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
     const { idPaciente } = req.params;
+    const idVeterinario = req.user.id;
     try {
+        // Verificar propiedad
+        const [patient] = await db.query('SELECT * FROM paciente WHERE idPaciente = ? AND idVeterinario = ?', [idPaciente, idVeterinario]);
+        if (!patient.length) {
+            return res.status(403).json({ error: 'No tienes permiso para eliminar este paciente' });
+        }
+
         const values = await deletePatient(idPaciente);
-        if (values.affectedRows === 0) {
-            return res.status(404).json({ error: 'Paciente no encontrado' });
-        };
         res.status(200).json(values);
     } catch (error) {
         console.error(error);

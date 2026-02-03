@@ -1,12 +1,18 @@
 const { db } = require('../database.js');
 
-const getOwners = async () => {
-    const [results] = await db.query(`
+const getOwners = async (veterinarioId = null) => {
+    let sql = `
     SELECT *, 
            COALESCE(CalificacionPromedio, 0) as CalificacionPromedio, 
            COALESCE(TotalCalificaciones, 0) as TotalCalificaciones 
-    FROM propietario  
-  `)
+    FROM propietario
+    `;
+    const params = [];
+    if (veterinarioId) {
+        sql += ' WHERE idVeterinario = ?';
+        params.push(veterinarioId);
+    }
+    const [results] = await db.query(sql, params);
     return results;
 }
 
@@ -22,12 +28,12 @@ const getOwnerById = async (idPropietario) => {
     return result;
 }
 
-const createOwner = async (Cedula, Nombre, Apellido, Telefono) => {
+const createOwner = async (Cedula, Nombre, Apellido, Telefono, idVeterinario) => {
     const [result] = await db.query(`
-        INSERT INTO propietario (Cedula, Nombre, Apellido, Telefono, CalificacionPromedio, TotalCalificaciones) 
-        VALUES (?, ?, ?, ?, 0, 0)
+        INSERT INTO propietario (Cedula, Nombre, Apellido, Telefono, CalificacionPromedio, TotalCalificaciones, idVeterinario) 
+        VALUES (?, ?, ?, ?, 0, 0, ?)
     `,
-        [Cedula, Nombre, Apellido, Telefono]
+        [Cedula, Nombre, Apellido, Telefono, idVeterinario]
     );
     return result;
 }

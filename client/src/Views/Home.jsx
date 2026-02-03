@@ -72,6 +72,10 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onSave, loading }) => 
         // Si la contraseña está vacía, la eliminamos para no sobreescribir con un string vacío
         if (!dataToSave.Contraseña) {
             delete dataToSave.Contraseña;
+        } else {
+            // Enviar alias por si acaso hay problemas con la 'ñ' en el transporte
+            dataToSave.contrasena = dataToSave.Contraseña;
+            dataToSave.password = dataToSave.Contraseña;
         }
 
         onSave(dataToSave, file);
