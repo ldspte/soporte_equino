@@ -572,11 +572,16 @@ route.put('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async 
 
 route.delete('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async (req, res) => {
     const { idHistoria_clinica } = req.params;
+    const idVeterinario = req.user.id;
     try {
-        const values = await deleteClinicalHistory(idHistoria_clinica);
-        if (values.affectedRows === 0) {
-            return res.status(404).json({ error: 'Historia Clinica no encontrada' });
+        // Verificar si la historia clínica pertenece al veterinario logueado
+        const [history] = await db.query('SELECT * FROM historia_clinica WHERE idHistoria_clinica = ? AND Veterinario = ?', [idHistoria_clinica, idVeterinario]);
+
+        if (!history.length) {
+            return res.status(403).json({ error: 'No tienes permiso para eliminar esta Historia Clínica' });
         }
+
+        const values = await deleteClinicalHistory(idHistoria_clinica);
         res.status(200).json(values);
     } catch (error) {
         console.error(error);
