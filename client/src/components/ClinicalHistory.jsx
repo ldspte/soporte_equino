@@ -4,9 +4,11 @@ import {
   FaIdCard, FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus,
   FaSave, FaCalendarPlus, FaPhone, FaMapMarkerAlt, FaEnvelope,
   FaCarSide, FaCamera, FaUser, FaHome, FaCalendarAlt, FaClock, FaTimes,
-  FaCheckCircle, FaSpinner, FaBookMedical, FaHorse, FaClipboardList, FaImage
+  FaCheckCircle, FaSpinner, FaBookMedical, FaHorse, FaClipboardList, FaImage, FaFilePdf
 } from 'react-icons/fa';
 import API_URL from '../config';
+import logo from '../assets/img/logo.png';
+import { generatePDF } from '../utils/pdfGenerator';
 import '../Styles/history.css';
 
 function ClinicalHistory() {
@@ -33,6 +35,9 @@ function ClinicalHistory() {
   // Estados para Historias Clinicas 
   const [currentClinical, setCurrentClinical] = useState(null);
   const [clinicalToDelete, setClinicalToDelete] = useState(null);
+  const [followUps, setFollowUps] = useState([]);
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [newFollowUp, setNewFollowUp] = useState({ Descripcion: '', Tratamiento: '', Observaciones: '', Fecha: new Date().toISOString().slice(0, 10) });
 
   const getAuthToken = useCallback(() => {
     const token = localStorage.getItem('token');
@@ -397,7 +402,7 @@ function ClinicalHistory() {
   };
 
   //Handler para mostrar detalles de la historia
-  const handleShowDetails = useCallback((clinical) => {
+  const handleShowDetails = useCallback(async (clinical) => {
     if (!clinical) {
       setError('Historia Clinica Invalida');
       return;
@@ -406,7 +411,21 @@ function ClinicalHistory() {
     setCurrentClinical(normalizeClinicalData(clinical));
     setShowClinicalModal(true);
     setError(null)
-  }, [normalizeClinicalData]);
+
+    // Cargar seguimientos
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_URL}/historia_clinica/${clinical.idHistoria_clinica}/seguimientos`, {
+        headers: { 'Authorization': token }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFollowUps(data);
+      }
+    } catch (err) {
+      console.error('Error loading follow-ups:', err);
+    }
+  }, [normalizeClinicalData, getAuthToken]);
 
 
   //Handler para editar Historia
@@ -431,6 +450,41 @@ function ClinicalHistory() {
       setShowDeleteModal(true);
     }
   }, [clinicals]);
+
+  const handleSubmitSeguimiento = async (e) => {
+    e.preventDefault();
+    if (!newFollowUp.Descripcion) return;
+
+    try {
+      setIsUpdating(true);
+      const token = getAuthToken();
+      const response = await fetch(`${API_URL}/historia_clinica/${currentClinical.idHistoria_clinica}/seguimientos`, {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newFollowUp)
+      });
+
+      if (response.ok) {
+        // Recargar seguimientos
+        const resFollows = await fetch(`${API_URL}/historia_clinica/${currentClinical.idHistoria_clinica}/seguimientos`, {
+          headers: { 'Authorization': token }
+        });
+        if (resFollows.ok) {
+          const data = await resFollows.json();
+          setFollowUps(data);
+        }
+        setShowFollowUpModal(false);
+        setNewFollowUp({ Descripcion: '', Tratamiento: '', Observaciones: '', Fecha: new Date().toISOString().slice(0, 10) });
+      }
+    } catch (err) {
+      console.error('Error saving follow-up:', err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
 
   //Handler para enviar edicion de Historia Clinica
@@ -828,6 +882,8 @@ function ClinicalHistory() {
                   <p><strong>Aparato genitourinario:</strong></p>
                   <p>{currentClinical.Genitourinario}</p>
                 </Col>
+              </Row>
+              <Row className='mb-4'>
                 <Col sm={6}>
                   <p><strong>Sistema Nervioso:</strong></p>
                   <p>{currentClinical.Sis_nervioso}</p>
@@ -875,19 +931,135 @@ function ClinicalHistory() {
                   </p>
                 </Col>
               </Row>
+
+              <div className="seguimientos-section mt-4 p-4 border-top bg-light rounded-bottom">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h5 className="mb-0 fw-bold"><FaClipboardList className="me-2 text-primary" /> Seguimientos y Progreso</h5>
+                  <Button
+                    variant="success"
+                    size="sm"
+                    onClick={() => setShowFollowUpModal(true)}
+                    className="shadow-sm"
+                  >
+                    <FaPlus className="me-1" /> Nuevo Seguimiento
+                  </Button>
+                </div>
+
+                {followUps.length === 0 ? (
+                  <div className="text-center py-4 bg-white rounded border">
+                    <p className="text-muted mb-0">No hay seguimientos registrados aún.</p>
+                    <small>Usa los seguimientos para documentar la evolución del paciente.</small>
+                  </div>
+                ) : (
+                  <div className="follow-up-list px-2" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {followUps.map((s) => (
+                      <Card key={s.idSeguimiento} className="mb-3 border-start border-4 border-primary shadow-sm">
+                        <Card.Body className="py-2 px-3">
+                          <div className="d-flex justify-content-between align-items-center border-bottom pb-1 mb-2">
+                            <span className="badge bg-primary">
+                              <FaCalendarAlt className="me-1" /> {new Date(s.Fecha).toLocaleDateString('es-CO')}
+                            </span>
+                            <small className="text-muted">Dr. {s.NombreVeterinario} {s.Apellido_veterinario || s.ApellidoVeterinario}</small>
+                          </div>
+                          <div className="mb-2">
+                            <strong className="d-block text-dark small">Notas de Progreso:</strong>
+                            <p className="mb-1" style={{ whiteSpace: 'pre-wrap' }}>{s.Descripcion}</p>
+                          </div>
+                          {s.Tratamiento && (
+                            <div className="mb-2 bg-white p-1 rounded border-start border-3 border-info">
+                              <strong className="d-block text-info small">Tratamiento Aplicado:</strong>
+                              <p className="mb-0 small">{s.Tratamiento}</p>
+                            </div>
+                          )}
+                          {s.Observaciones && (
+                            <small className="text-muted d-block mt-2 italic border-top pt-1">
+                              <strong>Obs:</strong> {s.Observaciones}
+                            </small>
+                          )}
+                        </Card.Body>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </Modal.Body>
         <Modal.Footer>
+          <Button variant="outline-danger" onClick={() => generatePDF(currentClinical, patients.find(p => p.idPaciente === currentClinical.Paciente), owners.find(o => o.idPropietario === (patients.find(p => p.idPaciente === currentClinical.Paciente)?.Propietario)), followUps, logo)}>
+            <FaFilePdf className="me-2" />
+            Descargar PDF
+          </Button>
           <Button variant="secondary" onClick={() => setShowClinicalModal(false)}>
             <FaTimes className="me-2" />
             Cerrar
           </Button>
-          <Button variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }} onClick={() => setShowClinicalModal(false)}>
+          <Button variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }} onClick={() => handleEditClinical(currentClinical)}>
             <FaEdit className="me-2" />
             Editar Información
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* Modal Añadir Seguimiento */}
+      <Modal show={showFollowUpModal} onHide={() => setShowFollowUpModal(false)} centered>
+        <Modal.Header closeButton style={{ backgroundColor: '#0d3b66', color: 'white' }}>
+          <Modal.Title><FaPlus className="me-2" /> Añadir Seguimiento</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleSubmitSeguimiento}>
+            <Form.Group className="mb-3">
+              <Form.Label>Fecha</Form.Label>
+              <Form.Control
+                type="date"
+                value={newFollowUp.Fecha}
+                onChange={(e) => setNewFollowUp({ ...newFollowUp, Fecha: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Progreso / Descripción</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Describe la evolución del caballo..."
+                value={newFollowUp.Descripcion}
+                onChange={(e) => setNewFollowUp({ ...newFollowUp, Descripcion: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Tratamiento Sugerido/Aplicado</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                placeholder="Opcional..."
+                value={newFollowUp.Tratamiento}
+                onChange={(e) => setNewFollowUp({ ...newFollowUp, Tratamiento: e.target.value })}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Observaciones Adicionales</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Opcional..."
+                value={newFollowUp.Observaciones}
+                onChange={(e) => setNewFollowUp({ ...newFollowUp, Observaciones: e.target.value })}
+              />
+            </Form.Group>
+            <div className="d-flex justify-content-end">
+              <Button variant="secondary" onClick={() => setShowFollowUpModal(false)} className="me-2">Cancelar</Button>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={isUpdating}
+                style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}
+              >
+                {isUpdating ? <><FaSpinner className="fa-spin me-2" /> Guardando...</> : 'Guardar Seguimiento'}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
       </Modal>
 
       {/* Modal Crear Historia Clinica */}

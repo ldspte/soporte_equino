@@ -21,6 +21,7 @@ const { getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, d
 const { getOwners, getOwnerById, createOwner, updateOwner, deleteOwner, rateOwner } = require('../controllers/ownerController');
 const { getClinicalHistory, getClinicalHistoryById, createClinicalHistory, updateClinicalHistory, deleteClinicalHistory, getDashboardStats } = require('../controllers/clinicalHystory');
 const { getPatients, getPatientById, createPatient, updatePatient, deletePatient } = require('../controllers/patientController')
+const { getFollowUpsByHistory, createFollowUp, deleteFollowUp } = require('../controllers/followUpController');
 
 
 //RUTAS PROTEGIDAS
@@ -604,6 +605,50 @@ route.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
 });
 
 
+
+// SEGUIMIENTOS
+
+route.get('/api/historia_clinica/:idHistoria_clinica/seguimientos', authenticateToken, async (req, res) => {
+    const { idHistoria_clinica } = req.params;
+    try {
+        const values = await getFollowUpsByHistory(idHistoria_clinica);
+        res.status(200).json(values);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al obtener los seguimientos' });
+    }
+});
+
+route.post('/api/historia_clinica/:idHistoria_clinica/seguimientos', authenticateToken, async (req, res) => {
+    const { idHistoria_clinica } = req.params;
+    const { Fecha, Descripcion, Tratamiento, Observaciones } = req.body;
+    const idVeterinario = req.user.id;
+    try {
+        const result = await createFollowUp(idHistoria_clinica, Fecha, Descripcion, Tratamiento, Observaciones, idVeterinario);
+        res.status(201).json({ idSeguimiento: result.insertId, message: 'Seguimiento creado con éxito' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al crear el seguimiento' });
+    }
+});
+
+route.delete('/api/seguimientos/:idSeguimiento', authenticateToken, async (req, res) => {
+    const { idSeguimiento } = req.params;
+    const idVeterinario = req.user.id;
+    try {
+        // Verificar propiedad
+        const [seguimiento] = await db.query('SELECT * FROM seguimiento WHERE idSeguimiento = ? AND idVeterinario = ?', [idSeguimiento, idVeterinario]);
+        if (!seguimiento.length) {
+            return res.status(403).json({ error: 'No tienes permiso para eliminar este seguimiento' });
+        }
+
+        await deleteFollowUp(idSeguimiento);
+        res.status(200).json({ message: 'Seguimiento eliminado con éxito' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al eliminar el seguimiento' });
+    }
+});
 
 // PACIENTES
 

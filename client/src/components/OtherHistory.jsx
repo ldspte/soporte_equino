@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { Form, Button, Card, Row, Col, Alert, Table, Modal } from 'react-bootstrap';
 import {
   FaSearch, FaHorse, FaUser, FaUserCircle, FaClipboardList,
-  FaCalendarAlt, FaBookMedical, FaImage, FaTimes
+  FaCalendarAlt, FaBookMedical, FaImage, FaTimes, FaFilePdf
 } from 'react-icons/fa';
 import API_URL from '../config';
+import logo from '../assets/img/logo.png';
+import { generatePDF } from '../utils/pdfGenerator';
 
 function OtherHistorys() {
   const [registro, setRegistro] = useState('');
@@ -17,10 +19,11 @@ function OtherHistorys() {
   // Estados para ver detalles
   const [showClinicalModal, setShowClinicalModal] = useState(false);
   const [currentClinical, setCurrentClinical] = useState(null);
+  const [followUps, setFollowUps] = useState([]);
 
   const getAuthToken = useCallback(() => {
     const token = localStorage.getItem('token');
-    return token ? `Bearer ${token}` : null;
+    return token ? `Bearer ${token} ` : null;
   }, []);
 
   const normalizeClinicalData = useCallback((clinical) => {
@@ -63,9 +66,23 @@ function OtherHistorys() {
     };
   }, []);
 
-  const handleShowDetails = (clinical) => {
+  const handleShowDetails = async (clinical) => {
     setCurrentClinical(normalizeClinicalData(clinical));
     setShowClinicalModal(true);
+
+    // Cargar seguimientos
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_URL}/historia_clinica/${clinical.idHistoria_clinica}/seguimientos`, {
+        headers: { 'Authorization': token }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFollowUps(data);
+      }
+    } catch (err) {
+      console.error('Error loading follow-ups:', err);
+    }
   };
 
   const handleSearch = async (e) => {
@@ -94,7 +111,7 @@ function OtherHistorys() {
       if (paciente.trim()) params.append('paciente', paciente.trim());
       if (propietario.trim()) params.append('propietario', propietario.trim());
 
-      const response = await fetch(`${API_URL}/historia_clinica/buscar?${params.toString()}`, {
+      const response = await fetch(`${API_URL} /historia_clinica/buscar ? ${params.toString()} `, {
         method: 'GET',
         headers: {
           'Authorization': token,
@@ -116,7 +133,7 @@ function OtherHistorys() {
         setResults(data);
       }
     } catch (err) {
-      setError(`Error en la búsqueda: ${err.message}`);
+      setError(`Error en la búsqueda: ${err.message} `);
     } finally {
       setLoading(false);
     }
@@ -202,7 +219,7 @@ function OtherHistorys() {
                       </td>
                       <td>
                         <FaUserCircle className="me-2" style={{ color: '#0d3b66' }} />
-                        {clinical.NombrePropietario ? `${clinical.NombrePropietario} ${clinical.ApellidoPropietario || ''}` : 'No asignado'}
+                        {clinical.NombrePropietario ? `${clinical.NombrePropietario} ${clinical.ApellidoPropietario || ''} ` : 'No asignado'}
                       </td>
                       <td>
                         <FaCalendarAlt className="me-2" style={{ color: '#0d3b66' }} />
@@ -249,7 +266,7 @@ function OtherHistorys() {
                   <p className='mb-1'><strong>Propietario</strong></p>
                   <p className='d-flex align-items-center'>
                     <FaUserCircle className="me-2" style={{ color: '#0d3b66' }} />
-                    {currentClinical.NombrePropietario ? `${currentClinical.NombrePropietario} ${currentClinical.ApellidoPropietario || ''}` : 'No asignado'}
+                    {currentClinical.NombrePropietario ? `${currentClinical.NombrePropietario} ${currentClinical.ApellidoPropietario || ''} ` : 'No asignado'}
                   </p>
                 </Col>
                 <Col sm={6}>
@@ -314,6 +331,10 @@ function OtherHistorys() {
           )}
         </Modal.Body>
         <Modal.Footer>
+          <Button variant="outline-danger" onClick={() => generatePDF(currentClinical, { Nombre: currentClinical.NombrePaciente, Numero_registro: registro }, { Nombre: currentClinical.NombrePropietario, Apellido: currentClinical.ApellidoPropietario }, followUps, logo)}>
+            <FaFilePdf className="me-2" />
+            Descargar PDF
+          </Button>
           <Button variant="secondary" onClick={() => setShowClinicalModal(false)}>
             <FaTimes className="me-2" />
             Cerrar
