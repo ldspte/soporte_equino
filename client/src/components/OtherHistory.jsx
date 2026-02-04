@@ -20,6 +20,19 @@ function OtherHistorys() {
   const [showClinicalModal, setShowClinicalModal] = useState(false);
   const [currentClinical, setCurrentClinical] = useState(null);
   const [followUps, setFollowUps] = useState([]);
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const userStorage = localStorage.getItem('veterinario');
+    if (userStorage) {
+      try {
+        const data = JSON.parse(userStorage);
+        setUserData(data.user?.[0]);
+      } catch (e) {
+        console.error("Error loading user data:", e);
+      }
+    }
+  }, []);
 
   const getAuthToken = useCallback(() => {
     const token = localStorage.getItem('token');
@@ -331,7 +344,7 @@ function OtherHistorys() {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-danger" onClick={() => generatePDF(currentClinical, { Nombre: currentClinical.NombrePaciente, Numero_registro: registro }, { Nombre: currentClinical.NombrePropietario, Apellido: currentClinical.ApellidoPropietario }, followUps, logo)}>
+          <Button variant="outline-danger" onClick={() => generatePDF(currentClinical, { Nombre: currentClinical.NombrePaciente, Numero_registro: registro }, { Nombre: currentClinical.NombrePropietario, Apellido: currentClinical.ApellidoPropietario }, followUps, logo, userData)}>
             <FaFilePdf className="me-2" />
             Descargar PDF
           </Button>

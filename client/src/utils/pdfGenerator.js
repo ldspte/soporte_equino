@@ -1,29 +1,55 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-export const generatePDF = (clinical, patient, owner, followUps, logoUrl) => {
+export const generatePDF = (clinical, patient, owner, followUps, logoUrl, veterinarian) => {
     const doc = jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
     // -- Header --
     if (logoUrl) {
         try {
-            doc.addImage(logoUrl, 'PNG', 15, 10, 30, 30);
+            doc.addImage(logoUrl, 'PNG', 15, 10, 25, 25);
         } catch (e) {
             console.error("Error adding logo to PDF:", e);
         }
     }
 
-    doc.setFontSize(22);
+    doc.setFontSize(20);
     doc.setTextColor(13, 59, 102); // #0d3b66
-    doc.text('Soporte Equino', 50, 25);
+    doc.text('Soporte Equino', 45, 20);
 
-    doc.setFontSize(14);
+    doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text('Historia Clínica Veterinaria', 50, 35);
+    doc.text('Gestión Veterinaria Inteligente', 45, 26);
+
+    // -- Veterinarian Info (Right aligned or below logo) --
+    if (veterinarian) {
+        doc.setFontSize(9);
+        doc.setTextColor(50);
+        const vetName = `Dr(a). ${veterinarian.Nombre || ''} ${veterinarian.Apellido || ''}`;
+        const vetDetails = [
+            vetName,
+            `Especialidad: ${veterinarian.Especialidad || 'Veterinario'}`,
+            `Cédula: ${veterinarian.Cedula || 'N/A'}`,
+            `Correo: ${veterinarian.Correo || 'N/A'}`,
+            `Teléfono: ${veterinarian.Redes?.whatsapp || 'N/A'}`
+        ];
+
+        // Position on the right
+        let rightY = 15;
+        vetDetails.forEach(line => {
+            doc.text(line, pageWidth - 15, rightY, { align: 'right' });
+            rightY += 4;
+        });
+    }
 
     doc.setDrawColor(200);
-    doc.line(15, 45, pageWidth - 15, 45);
+    doc.line(15, 40, pageWidth - 15, 40);
+
+    // -- Title --
+    doc.setFontSize(14);
+    doc.setTextColor(13, 59, 102);
+    doc.text('HISTORIA CLÍNICA VETERINARIA', pageWidth / 2, 48, { align: 'center' });
 
     // -- Basic Info --
     doc.setFontSize(12);

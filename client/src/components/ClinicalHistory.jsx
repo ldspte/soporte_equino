@@ -986,7 +986,7 @@ function ClinicalHistory() {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-danger" onClick={() => generatePDF(currentClinical, patients.find(p => p.idPaciente === currentClinical.Paciente), owners.find(o => o.idPropietario === (patients.find(p => p.idPaciente === currentClinical.Paciente)?.Propietario)), followUps, logo)}>
+          <Button variant="outline-danger" onClick={() => generatePDF(currentClinical, patients.find(p => p.idPaciente === currentClinical.Paciente), owners.find(o => o.idPropietario === (patients.find(p => p.idPaciente === currentClinical.Paciente)?.Propietario)), followUps, logo, userData)}>
             <FaFilePdf className="me-2" />
             Descargar PDF
           </Button>
