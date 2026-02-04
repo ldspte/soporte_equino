@@ -28,11 +28,11 @@ export const AuthProvider = ({ children }) => {
     window.fetch = async (...args) => {
       const response = await originalFetch(...args);
 
-      if (response.status === 403) {
-        // Evitar múltiples alertas si hay varias peticiones fallando al tiempo
+      if (response.status === 401) {
+        // 401 Unauthorized suele significar que no hay token o es inválido
         if (!window.isSessionAlerting) {
           window.isSessionAlerting = true;
-          alert('Tu sesión ha expirado o el token es inválido. Por favor, inicia sesión de nuevo.');
+          alert('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
           logout();
           window.isSessionAlerting = false;
         }
