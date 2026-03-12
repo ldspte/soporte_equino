@@ -93,6 +93,7 @@ const getVeterinarys = async () => {
             const base64String = veterinario.Foto.toString('base64');
             veterinario.Foto = `data:image/jpeg;base64,${base64String}`;
         }
+        // Si ya es una URL/ruta (empieza con /uploads), se deja igual
         return veterinario;
     });
     return veterinariosConFoto;
@@ -129,36 +130,21 @@ const createVeterinary = async (Cedula, Nombre, Apellido, Correo, Descripcion, E
     const password = generatePassword();
     const Contraseña = await bcrypt.hash(password, 10);
 
-    // Asegurar que Foto sea Buffer si viene como base64 o similar
-    let fotoBuffer = Foto;
-    if (typeof Foto === 'string' && Foto.startsWith('data:image')) {
-        const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
-        fotoBuffer = Buffer.from(base64Data, 'base64');
-    }
-
     const result = await db.query(`
         INSERT INTO veterinario (Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, Foto, Redes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
-        [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, fotoBuffer, Redes]
+        [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, Foto, Redes]
     );
     await sendPasswordEmail(Correo, password); // Enviar correo con la contraseña
     return result;
 }
 
 const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, Redes, Contraseña) => {
-    // Asegurar que Foto sea Buffer si viene como base64
-    let fotoBuffer = Foto;
-    if (typeof Foto === 'string' && Foto.startsWith('data:image')) {
-        const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
-        fotoBuffer = Buffer.from(base64Data, 'base64');
-    }
-
     // Usar nombres de columnas consistentes con la base de datos
-    // Si Estado es undefined, intentamos usar el valor de la base de datos o lo omitimos para no sobreescribir con NULL
     let sql = `UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Descripcion = ?, Especialidad = ?, Foto = ?, Redes = ?`;
-    const params = [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, fotoBuffer, Redes];
+    const params = [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Redes];
 
-    // Manejar Estado de forma segura (MySQL suele ser case-insensitive, pero por si acaso)
+    // Manejar Estado de forma segura
     if (Estado !== undefined) {
         sql += `, Estado = ?`;
         params.push(Estado);

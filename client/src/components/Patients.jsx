@@ -11,8 +11,8 @@ function PatientManagement() {
     const [error, setError] = useState(null);
     const [showNewPatientModal, setShowNewPatientModal] = useState(false);
     const [showEditPatientModal, setShowEditPatientModal] = useState(false);
-    const [newPatient, setNewPatient] = useState({ Nombre: '', Numero_registro: '', Numero_chip: '', Edad: '', Raza: '', Sexo: '', Foto: '', Propietario: '' });
-    const [editPatient, setEditPatient] = useState({ Nombre: '', Numero_registro: '', Numero_chip: '', Edad: '', Raza: '', Sexo: '', Foto: '', Propietario: '' });
+    const [newPatient, setNewPatient] = useState({ Nombre: '', Numero_registro: '', Numero_chip: '', Edad_valor: '', Edad_unidad: 'años', Raza: '', Sexo: '', Foto: '', Propietario: '' });
+    const [editPatient, setEditPatient] = useState({ Nombre: '', Numero_registro: '', Numero_chip: '', Edad_valor: '', Edad_unidad: 'años', Raza: '', Sexo: '', Foto: '', Propietario: '' });
     const [currentPatient, setCurrentPatient] = useState(null);
 
     // --- Funciones de Utilidad y Hooks ---
@@ -175,7 +175,7 @@ function PatientManagement() {
             // Refrescar datos y cerrar modal
             fetchPatients(token);
             setShowNewPatientModal(false);
-            setNewPatient({ Nombre: '', Numero_registro: '', Numero_chip: '', Edad: '', Raza: '', Sexo: '', Foto: '', Propietario: '' });
+            setNewPatient({ Nombre: '', Numero_registro: '', Numero_chip: '', Edad_valor: '', Edad_unidad: 'años', Raza: '', Sexo: '', Foto: '', Propietario: '' });
             setError(null);
         } catch (error) {
             setError(error.message);
@@ -305,6 +305,7 @@ function PatientManagement() {
                                         <th>Nombre</th>
                                         <th>Registro</th>
                                         <th>Raza</th>
+                                        <th>Edad</th>
                                         <th>Sexo</th>
                                         <th>Propietario</th>
                                         <th>Acciones</th>
@@ -329,6 +330,7 @@ function PatientManagement() {
                                             <td> {patient.Nombre}</td>
                                             <td><FaIdCard className='me-2 text-info' /> {patient.Numero_registro}</td>
                                             <td>{patient.Raza}</td>
+                                            <td>{patient.Edad}</td>
                                             <td>{patient.Sexo === 'M' ? 'Macho' : patient.Sexo === 'F' ? 'Hembra' : patient.Sexo}</td>
                                             <td>
                                                 <FaUserCircle className='me-2 text-success' />
@@ -375,7 +377,30 @@ function PatientManagement() {
                         </Form.Group>
                         <Form.Group controlId="formEdad" className='mb-2'>
                             <Form.Label>Edad</Form.Label>
-                            <Form.Control type="number" name="Edad" value={newPatient.Edad} onChange={handleInputChange} required />
+                            <Row>
+                                <Col sm={8}>
+                                    <Form.Control
+                                        type="number"
+                                        name="Edad_valor"
+                                        placeholder="Valor"
+                                        value={newPatient.Edad_valor}
+                                        onChange={handleInputChange}
+                                        required
+                                    />
+                                </Col>
+                                <Col sm={4}>
+                                    <Form.Control
+                                        as="select"
+                                        name="Edad_unidad"
+                                        value={newPatient.Edad_unidad}
+                                        onChange={handleInputChange}
+                                        required
+                                    >
+                                        <option value="años">Años</option>
+                                        <option value="meses">Meses</option>
+                                    </Form.Control>
+                                </Col>
+                            </Row>
                         </Form.Group>
                         <Form.Group controlId="formRaza" className='mb-2'>
                             <Form.Label>Raza</Form.Label>
@@ -434,7 +459,30 @@ function PatientManagement() {
                             </Form.Group>
                             <Form.Group controlId="formEdad" className='mb-2'>
                                 <Form.Label>Edad</Form.Label>
-                                <Form.Control type="number" name="Edad" value={editPatient.Edad} onChange={handleEditInputChange} required />
+                                <Row>
+                                    <Col sm={8}>
+                                        <Form.Control
+                                            type="number"
+                                            name="Edad_valor"
+                                            placeholder="Valor"
+                                            value={editPatient.Edad_valor}
+                                            onChange={handleEditInputChange}
+                                            required
+                                        />
+                                    </Col>
+                                    <Col sm={4}>
+                                        <Form.Control
+                                            as="select"
+                                            name="Edad_unidad"
+                                            value={editPatient.Edad_unidad}
+                                            onChange={handleEditInputChange}
+                                            required
+                                        >
+                                            <option value="años">Años</option>
+                                            <option value="meses">Meses</option>
+                                        </Form.Control>
+                                    </Col>
+                                </Row>
                             </Form.Group>
                             <Form.Group controlId="formRaza" className='mb-2'>
                                 <Form.Label>Raza</Form.Label>

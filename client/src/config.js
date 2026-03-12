@@ -1,3 +1,3 @@
-const API_URL = 'https://soporte-equino.onrender.com/api';
+const API_URL = '/api';
 
 export default API_URL;

@@ -9,13 +9,27 @@ const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-// const { OAuth2Client } = require('google-auth-library');
-// const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-// const multer = require('multer');
-// // --- Configuración de Multer ---
-// // --- Configuración de Multer ---
-// const storage = multer.memoryStorage();
-// const upload = multer({ storage: storage });
+const multer = require('multer');
+
+// Configuración de Multer para almacenamiento en disco
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const dir = './uploads';
+        if (!fs.existsSync(dir)){
+            fs.mkdirSync(dir);
+        }
+        cb(null, dir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
 const { getItems, getItemById, createItem, updateItem, deleteItem } = require('../controllers/itemsController');
 const { getVeterinarys, getVeterinaryById, createVeterinary, updateVeterinary, deleteVeterinary, getVeterinarystatus } = require('../controllers/veterinaryController')
 const { getOwners, getOwnerById, createOwner, updateOwner, deleteOwner, rateOwner } = require('../controllers/ownerController');
@@ -220,8 +234,9 @@ route.get('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
     }
 });
 
-route.post('/api/insumos', authenticateToken, async (req, res) => {
-    const { Nombre, Descripcion, Foto, Precio } = req.body;
+route.post('/api/insumos', authenticateToken, upload.single('Foto'), async (req, res) => {
+    const { Nombre, Descripcion, Precio } = req.body;
+    const Foto = req.file ? `/uploads/${req.file.filename}` : null;
     console.log('📝 Creando insumo:', { Nombre, Descripcion, Precio, tieneFoto: !!Foto });
 
     try {
@@ -249,9 +264,10 @@ route.post('/api/insumos', authenticateToken, async (req, res) => {
     }
 });
 
-route.put('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
+route.put('/api/insumos/:idInsumos', authenticateToken, upload.single('Foto'), async (req, res) => {
     const { idInsumos } = req.params;
-    const { Nombre, Descripcion, Foto, Precio } = req.body;
+    const { Nombre, Descripcion, Precio } = req.body;
+    const Foto = req.file ? `/uploads/${req.file.filename}` : req.body.Foto;
     try {
         // Convertir base64 a buffer si se proporciona una nueva foto
         let fotoBuffer = Foto;
@@ -325,8 +341,9 @@ route.get('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res
 });
 
 
-route.post('/api/veterinarios', authenticateToken, async (req, res) => {
-    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Redes } = req.body;
+route.post('/api/veterinarios', authenticateToken, upload.single('Foto'), async (req, res) => {
+    const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Redes } = req.body;
+    const Foto = req.file ? `/uploads/${req.file.filename}` : null;
 
     try {
         const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Redes);
@@ -337,13 +354,15 @@ route.post('/api/veterinarios', authenticateToken, async (req, res) => {
     }
 });
 
-route.put('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res) => {
+route.put('/api/veterinarios/:idVeterinario', authenticateToken, upload.single('Foto'), async (req, res) => {
     const { idVeterinario } = req.params;
     const {
         Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad,
-        Estado, estado, Foto, Redes, redes,
+        Estado, estado, Redes, redes,
         Contraseña, contrasena, password
     } = req.body;
+    
+    const Foto = req.file ? `/uploads/${req.file.filename}` : req.body.Foto;
 
     // Normalizar campos que podrían venir con diferente capitalización o sin ñ
     const finalEstado = Estado || estado;
@@ -545,8 +564,10 @@ route.get('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async 
     }
 });
 
-route.post('/api/historia_clinica', authenticateToken, async (req, res) => {
-    const { Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha } = req.body;
+route.post('/api/historia_clinica', authenticateToken, upload.single('Foto'), async (req, res) => {
+    const data = { ...req.body };
+    if (req.file) data.Foto = `/uploads/${req.file.filename}`;
+    const { Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha } = data;
     try {
         const values = await createClinicalHistory(Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha);
         res.status(201).json(values);
@@ -556,9 +577,11 @@ route.post('/api/historia_clinica', authenticateToken, async (req, res) => {
     }
 });
 
-route.put('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async (req, res) => {
+route.put('/api/historia_clinica/:idHistoria_clinica', authenticateToken, upload.single('Foto'), async (req, res) => {
     const { idHistoria_clinica } = req.params;
-    const { Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha } = req.body;
+    const data = { ...req.body };
+    if (req.file) data.Foto = `/uploads/${req.file.filename}`;
+    const { Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha } = data;
     try {
         const values = await updateClinicalHistory(idHistoria_clinica, Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha);
         if (values.affectedRows === 0) {
@@ -677,11 +700,12 @@ route.get('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
     }
 });
 
-route.post('/api/pacientes', authenticateToken, async (req, res) => {
-    const { Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario } = req.body;
+route.post('/api/pacientes', authenticateToken, upload.single('Foto'), async (req, res) => {
+    const { Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Sexo, Propietario } = req.body;
+    const Foto = req.file ? `/uploads/${req.file.filename}` : null;
     const idVeterinario = req.user.id;
     try {
-        const values = await createPatient(Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario, idVeterinario);
+        const values = await createPatient(Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Sexo, Foto, Propietario, idVeterinario);
         res.status(201).json(values);
     } catch (error) {
         console.error(error);
@@ -689,9 +713,10 @@ route.post('/api/pacientes', authenticateToken, async (req, res) => {
     }
 });
 
-route.put('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
+route.put('/api/pacientes/:idPaciente', authenticateToken, upload.single('Foto'), async (req, res) => {
     const { idPaciente } = req.params;
-    const { Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario } = req.body;
+    const { Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Sexo, Propietario } = req.body;
+    const Foto = req.file ? `/uploads/${req.file.filename}` : req.body.Foto;
     const idVeterinario = req.user.id;
     try {
         // Verificar propiedad
@@ -700,7 +725,7 @@ route.put('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: 'No tienes permiso para editar este paciente' });
         }
 
-        const values = await updatePatient(idPaciente, Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario);
+        const values = await updatePatient(idPaciente, Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Sexo, Foto, Propietario);
         res.status(200).json(values);
     } catch (error) {
         console.error(error);
@@ -764,7 +789,8 @@ route.post('/api/forgot-password', async (req, res) => {
         await db.query('UPDATE veterinario SET resetToken = ?, resetTokenExpiry = ? WHERE idVeterinario = ?', [resetToken, tokenExpiry, idVeterinario]);
 
         // 4. Crear el enlace para el email
-        const resetLink = `https://soporte-equino.onrender.com/reset-password/${resetToken}`; // Asegúrate de que esta URL sea la de tu frontend
+        const frontendUrl = process.env.FRONTEND_URL || 'https://soporte-equino.onrender.com';
+        const resetLink = `${frontendUrl}/reset-password/${resetToken}`;
 
         // Configurar email
         const mailOptions = {

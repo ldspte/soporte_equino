@@ -10,7 +10,18 @@ const route = require('./routes/index'); // Asegúrate de que la ruta sea correc
 app.use(cors()); // Puedes configurar CORS aquí si es necesario
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Servir archivos estáticos del frontend
+app.use(express.static(path.join(__dirname, 'public')));
+// Servir archivos subidos (fotos)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 app.use('/', route);
+
+// Ruta para manejar el ruteo de React (debajo de las rutas de la API)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Middleware para manejo de errores
 app.use((err, req, res, next) => {

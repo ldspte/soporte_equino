@@ -58,6 +58,7 @@ export const generatePDF = (clinical, patient, owner, followUps, logoUrl, veteri
 
     const basicInfo = [
         ['Paciente:', patient?.Nombre || 'N/A', 'Registro:', patient?.Numero_registro || 'S/N'],
+        ['Edad:', patient?.Edad || 'N/A', 'Raza:', patient?.Raza || 'N/A'],
         ['Especie:', 'Equino', 'Género:', patient?.Sexo || 'N/A'],
         ['Propietario:', `${owner?.Nombre || ''} ${owner?.Apellido || ''}`, 'Teléfono:', owner?.Telefono || 'N/A'],
         ['Fecha Historia:', clinical.Fecha ? new Date(clinical.Fecha).toLocaleDateString() : 'N/A', 'ID Historia:', `#${clinical.idHistoria_clinica}`]

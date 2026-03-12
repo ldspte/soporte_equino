@@ -1,5 +1,28 @@
 const { db } = require('../database')
 
+const calculateAge = (valor, unidad, fechaRef) => {
+    if (!valor || !fechaRef) return 'No especificada';
+
+    const refDate = new Date(fechaRef);
+    const today = new Date();
+
+    // Diferencia en meses
+    let diffMonths = (today.getFullYear() - refDate.getFullYear()) * 12 + (today.getMonth() - refDate.getMonth());
+    if (today.getDate() < refDate.getDate()) diffMonths--;
+
+    const totalMonths = (unidad === 'meses' ? valor : valor * 12) + diffMonths;
+
+    if (totalMonths < 0) return `${valor} ${unidad}`; // Caso base si la fecha de ref es futura (no debería pasar)
+
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+
+    if (years >= 1) {
+        return `${years} ${years === 1 ? 'año' : 'años'}${months > 0 ? ` y ${months} ${months === 1 ? 'mes' : 'meses'}` : ''}`;
+    } else {
+        return `${months} ${months === 1 ? 'mes' : 'meses'}`;
+    }
+}
 
 const getPatients = async (veterinarioId = null) => {
     let query = 'SELECT * FROM paciente';
@@ -13,20 +36,25 @@ const getPatients = async (veterinarioId = null) => {
 
     const [rows] = await db.query(query, params);
 
-    // Convertir fotos LONGBLOB a base64 (igual que en insumos)
-    const patientsWithPhoto = rows.map(patient => {
+    // Convertir fotos LONGBLOB a base64 y calcular edad dinámica
+    const processedPatients = rows.map(patient => {
+        // Calcular edad dinámica
+        const edadCalculada = calculateAge(patient.Edad_valor, patient.Edad_unidad, patient.Fecha_referencia);
+
+        let processedPatient = {
+            ...patient,
+            Edad: edadCalculada
+        };
+
         if (patient.Foto && Buffer.isBuffer(patient.Foto)) {
             const base64String = patient.Foto.toString('base64');
-            const dataUrl = `data:image/jpeg;base64,${base64String}`;
-            return {
-                ...patient,
-                Foto: dataUrl
-            };
+            processedPatient.Foto = `data:image/jpeg;base64,${base64String}`;
         }
-        return patient;
+
+        return processedPatient;
     });
 
-    return patientsWithPhoto;
+    return processedPatients;
 }
 
 const getPatientById = async (idPaciente) => {
@@ -36,34 +64,28 @@ const getPatientById = async (idPaciente) => {
         [idPaciente]
     )
 
-    // Convertir foto a base64 si existe
-    if (rows.length > 0 && rows[0].Foto && Buffer.isBuffer(rows[0].Foto)) {
-        const base64String = rows[0].Foto.toString('base64');
-        rows[0].Foto = `data:image/jpeg;base64,${base64String}`;
+    if (rows.length > 0) {
+        const patient = rows[0];
+        // Calcular edad dinámica
+        patient.Edad = calculateAge(patient.Edad_valor, patient.Edad_unidad, patient.Fecha_referencia);
+
+        // Convertir foto a base64 si existe
+        if (patient.Foto && Buffer.isBuffer(patient.Foto)) {
+            const base64String = patient.Foto.toString('base64');
+            patient.Foto = `data:image/jpeg;base64,${base64String}`;
+        }
     }
 
     return rows;
 };
 
-const createPatient = async (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario, idVeterinario) => {
+const createPatient = async (Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Sexo, Foto, Propietario, idVeterinario) => {
     try {
-        console.log('📝 Creando paciente:', { Nombre, Numero_registro, tieneFoto: !!Foto, idVeterinario });
-
-        // Convertir base64 a buffer si es necesario
-        let fotoBuffer = null;
-        if (Foto && typeof Foto === 'string' && Foto.startsWith('data:image')) {
-            console.log('🖼️ Procesando imagen para nuevo paciente...');
-            const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
-            fotoBuffer = Buffer.from(base64Data, 'base64');
-            console.log('✅ Buffer de imagen creado:', fotoBuffer.length, 'bytes');
-        }
-
         const [result] = await db.query(`
-            INSERT INTO paciente (Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario, idVeterinario) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO paciente (Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Fecha_referencia, Sexo, Foto, Propietario, idVeterinario) VALUES (?, ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?)
         `,
-            [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, fotoBuffer, Propietario, idVeterinario]
+            [Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Sexo, Foto, Propietario, idVeterinario]
         );
-        console.log('✅ Paciente creado exitosamente, id:', result.insertId);
         return result;
     } catch (error) {
         console.error('❌ Error en createPatient:', error);
@@ -71,28 +93,13 @@ const createPatient = async (Nombre, Numero_registro, Numero_chip, Raza, Edad, S
     }
 }
 
-const updatePatient = async (idPaciente, Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, Foto, Propietario) => {
+const updatePatient = async (idPaciente, Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Sexo, Foto, Propietario) => {
     try {
-        console.log('🔄 Actualizando paciente ID:', idPaciente, { Nombre, tieneFoto: !!Foto });
-
-        // Convertir base64 a buffer si se proporciona una nueva foto o se mantiene la actual
-        let fotoBuffer = null;
-        if (Foto && typeof Foto === 'string' && Foto.startsWith('data:image')) {
-            console.log('🖼️ Procesando imagen para actualización...');
-            const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
-            fotoBuffer = Buffer.from(base64Data, 'base64');
-            console.log('✅ Buffer de imagen creado:', fotoBuffer.length, 'bytes');
-        } else {
-            // Si Foto es null o no es un data URL, mantenemos lo que venga (podría ser null)
-            fotoBuffer = Foto;
-        }
-
         const [result] = await db.query(`
-            UPDATE paciente SET Nombre = ?, Numero_registro = ?, Numero_chip = ?, Raza = ?, Edad = ?, Sexo = ?, Foto = ?, Propietario = ? WHERE idPaciente = ?
+            UPDATE paciente SET Nombre = ?, Numero_registro = ?, Numero_chip = ?, Raza = ?, Edad_valor = ?, Edad_unidad = ?, Fecha_referencia = CURDATE(), Sexo = ?, Foto = ?, Propietario = ? WHERE idPaciente = ?
         `,
-            [Nombre, Numero_registro, Numero_chip, Raza, Edad, Sexo, fotoBuffer, Propietario, idPaciente]
+            [Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Sexo, Foto, Propietario, idPaciente]
         );
-        console.log('✅ Paciente actualizado exitosamente, affectedRows:', result.affectedRows);
         return result;
     } catch (error) {
         console.error('❌ Error en updatePatient:', error);
