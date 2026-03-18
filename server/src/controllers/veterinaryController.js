@@ -130,8 +130,13 @@ const getVeterinaryById = async (idVeterinario) => {
         [idVeterinario]
     )
     if (result.length > 0 && result[0].Foto && Buffer.isBuffer(result[0].Foto)) {
-        const base64String = result[0].Foto.toString('base64');
-        result[0].Foto = `data:image/jpeg;base64,${base64String}`;
+        const fotoStr = result[0].Foto.toString('utf8');
+        if (fotoStr.startsWith('/uploads/') || fotoStr.startsWith('http') || fotoStr.startsWith('data:image/')) {
+            result[0].Foto = fotoStr;
+        } else {
+            const base64String = result[0].Foto.toString('base64');
+            result[0].Foto = `data:image/jpeg;base64,${base64String}`;
+        }
     }
     return result;
 };

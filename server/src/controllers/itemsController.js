@@ -7,14 +7,14 @@ const getItems = async () => {
     `)
     const insumosConFoto = result.map(insumo => {
         if (insumo.Foto && Buffer.isBuffer(insumo.Foto)) {
-            // Convierte el buffer binario a una cadena Base64
-            const base64String = insumo.Foto.toString('base64');
-            // Crea una "URL de datos"
-            const dataUrl = `data:image/jpeg;base64,${base64String}`;
-            return {
-                ...insumo,
-                Foto: dataUrl
-            };
+            const fotoStr = insumo.Foto.toString('utf8');
+            if (fotoStr.startsWith('/uploads/') || fotoStr.startsWith('http') || fotoStr.startsWith('data:image/')) {
+                return { ...insumo, Foto: fotoStr };
+            } else {
+                const base64String = insumo.Foto.toString('base64');
+                const dataUrl = `data:image/jpeg;base64,${base64String}`;
+                return { ...insumo, Foto: dataUrl };
+            }
         }
         return insumo;
     });
