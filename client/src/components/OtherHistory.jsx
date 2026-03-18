@@ -34,10 +34,21 @@ function OtherHistorys() {
     }
   }, []);
 
-  const getAuthToken = useCallback(() => {
-    const token = localStorage.getItem('token');
-    return token ? `Bearer ${token} ` : null;
-  }, []);
+    const getAuthToken = useCallback(() => {
+        let token = localStorage.getItem('token');
+        if (!token) {
+            const userStorage = localStorage.getItem('veterinario');
+            if (userStorage) {
+                try {
+                    const userData = JSON.parse(userStorage);
+                    token = userData.token;
+                } catch (e) {
+                    console.error("Error parsing veterinario for token:", e);
+                }
+            }
+        }
+        return token ? `Bearer ${token}` : null;
+    }, []);
 
   const normalizeClinicalData = useCallback((clinical) => {
     return {

@@ -126,20 +126,20 @@ const getVeterinaryById = async (idVeterinario) => {
     return result;
 };
 
-const createVeterinary = async (Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Redes) => {
+const createVeterinary = async (Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Redes, Rol = 'Veterinario') => {
     const password = generatePassword();
     const Contraseña = await bcrypt.hash(password, 10);
 
     const result = await db.query(`
-        INSERT INTO veterinario (Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, Foto, Redes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO veterinario (Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, Foto, Redes, Rol) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
-        [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, Foto, Redes]
+        [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Contraseña, Foto, Redes, Rol]
     );
     await sendPasswordEmail(Correo, password); // Enviar correo con la contraseña
     return result;
 }
 
-const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, Redes, Contraseña) => {
+const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Estado, Redes, Contraseña, Rol) => {
     // Usar nombres de columnas consistentes con la base de datos
     let sql = `UPDATE veterinario SET Cedula = ?, Nombre = ?, Apellido = ?, Correo = ?, Descripcion = ?, Especialidad = ?, Foto = ?, Redes = ?`;
     const params = [Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Redes];
@@ -148,6 +148,11 @@ const updateVeterinary = async (idVeterinario, Cedula, Nombre, Apellido, Correo,
     if (Estado !== undefined) {
         sql += `, Estado = ?`;
         params.push(Estado);
+    }
+
+    if (Rol !== undefined) {
+        sql += `, Rol = ?`;
+        params.push(Rol);
     }
 
     if (Contraseña) {

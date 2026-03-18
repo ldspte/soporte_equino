@@ -32,7 +32,8 @@ export default function NavBarHome() {
     // 1. Hook para cargar el rol del usuario al montar el componente
     useEffect(() => {
         const userStorage = localStorage.getItem('veterinario');
-        if (userStorage) {
+        const token = localStorage.getItem('token');
+        if (userStorage && token) {
             try {
                 const userData = JSON.parse(userStorage);
                 // Asumiendo que la estructura guardada es { token: '...', user: { Rol: '...' } }

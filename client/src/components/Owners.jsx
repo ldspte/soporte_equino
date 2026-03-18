@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Row, Col, InputGroup, Form, Modal, Alert, Spinner } from 'react-bootstrap';
 import { FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus, FaPhone, FaIdCard, FaStar } from 'react-icons/fa';
 
-const API_URL = 'https://soporte-equino.onrender.com/api';
+import API_URL from '../config';
 
 // --- Componente de Calificación de Estrellas (Anidado) ---
 const StarRating = ({ ownerId, initialRating = 0, onRatingUpdated }) => {

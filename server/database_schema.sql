@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS `veterinario` (
   `Foto` varchar(255) DEFAULT NULL,
   `Redes` text DEFAULT NULL,
   `Estado` varchar(20) DEFAULT 'Activo',
+  `Rol` varchar(50) DEFAULT 'Veterinario',
   `resetToken` varchar(255) DEFAULT NULL,
   `resetTokenExpiry` datetime DEFAULT NULL,
   PRIMARY KEY (`idVeterinario`)

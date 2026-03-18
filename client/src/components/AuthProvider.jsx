@@ -6,18 +6,39 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     // Revisa si el token existe al cargar la aplicación
-    const token = localStorage.getItem('token');
-    return !!token; // `!!` convierte el valor a booleano
+    let token = localStorage.getItem('token');
+    
+    // Si no está el token solo, buscarlo en el objeto veterinario
+    if (!token) {
+      const userStorage = localStorage.getItem('veterinario');
+      if (userStorage) {
+        try {
+          const userData = JSON.parse(userStorage);
+          token = userData.token;
+          if (token) {
+            localStorage.setItem('token', token); // Recuperar consistencia
+            console.log("Token recuperado desde objeto veterinario en AuthProvider");
+          }
+        } catch (e) {
+          console.error("Error al parsear veterinario:", e);
+        }
+      }
+    }
+    
+    console.log("AuthProvider inicializado: isAuthenticated =", !!token);
+    return !!token;
   });
   const navigate = useNavigate();
 
   const login = (token) => {
+    console.log("Ejecutando login en AuthProvider con token");
     localStorage.setItem('token', token);
     setIsAuthenticated(true);
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('veterinario');
     setIsAuthenticated(false);
     navigate('/', { replace: true }); // Redirige al login y evita que el usuario vuelva atrás
   };

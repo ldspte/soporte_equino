@@ -1,3 +1,4 @@
+import API_URL from '../config';
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Container, Row, Col, InputGroup, Form, Modal, Badge, Alert } from 'react-bootstrap';
 import {
@@ -57,11 +58,28 @@ const Veterinarios = () => {
 
   // Funci贸n para obtener el token de autenticaci贸n
   const getAuthToken = useCallback(() => {
-    const token = localStorage.getItem('token');
+    let token = localStorage.getItem('token');
+    console.log("getAuthToken - Inicial:", !!token);
+    if (!token) {
+      const userStorage = localStorage.getItem('veterinario');
+      console.log("getAuthToken - Buscando en veterinario:", !!userStorage);
+      if (userStorage) {
+        try {
+          const userData = JSON.parse(userStorage);
+          token = userData.token;
+          if (token) {
+            localStorage.setItem('token', token);
+            console.log("getAuthToken - Token recuperado de objeto veterinario");
+          }
+        } catch (e) {
+          console.error("Error parsing veterinario for token:", e);
+        }
+      }
+    }
     return token ? `Bearer ${token}` : null;
   }, []);
 
-  // Funci贸n para normalizar datos de veterinarios
+  // Funci脙鲁n para normalizar datos de veterinarios
   const normalizeVeterinarioData = useCallback((veterinario) => {
     return {
       idVeterinario: veterinario.idVeterinario || '',
@@ -73,7 +91,7 @@ const Veterinarios = () => {
     };
   }, []);
 
-  // Funci贸n para obtener todos los veterinarios
+  // Funci脙鲁n para obtener todos los veterinarios
   const fetchVeterinarios = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -81,12 +99,16 @@ const Veterinarios = () => {
     try {
       const token = getAuthToken();
       if (!token) {
-        setError('No hay token de autenticaci贸n');
+        console.warn("fetchVeterinarios - No se encontr贸 token. localStorage state:", {
+          token: !!localStorage.getItem('token'),
+          veterinario: !!localStorage.getItem('veterinario')
+        });
+        setError('No hay token de autenticaci贸n (Recuperaci贸n fallida)');
         setLoading(false);
         return;
       }
 
-      const response = await fetch('https://soporte-equino.onrender.com/api/veterinarios', {
+      const response = await fetch(`${API_URL}/veterinarios`, {
         method: 'GET',
         headers: {
           'Authorization': token,
@@ -96,9 +118,14 @@ const Veterinarios = () => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        if (response.status === 401 || response.status === 403) {
+        console.error("fetchVeterinarios - Error:", response.status, errorText);
+        if (response.status === 401) {
           localStorage.removeItem('token');
           setError('Sesi贸n expirada. Por favor, inicie sesi贸n nuevamente.');
+          return;
+        }
+        if (response.status === 403) {
+          setError('No tienes permisos suficientes para ver esta secci贸n (Solo Administradores).');
           return;
         }
         throw new Error(errorText || 'Error al obtener los veterinarios');
@@ -123,7 +150,7 @@ const Veterinarios = () => {
     }
   }, [getAuthToken, normalizeVeterinarioData]);
 
-  // Funci贸n para crear un nuevo veterinario
+  // Funci脙鲁n para crear un nuevo veterinario
   const handleSubmitNewVeterinario = async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -161,7 +188,7 @@ const Veterinarios = () => {
         Correo: newVeterinario.Correo.trim(),
       };
 
-      const response = await fetch('https://soporte-equino.onrender.com/api/veterinarios', {
+      const response = await fetch(`${API_URL}/veterinarios`, {
         method: 'POST',
         headers: {
           'Authorization': token,
@@ -198,11 +225,11 @@ const Veterinarios = () => {
     fetchVeterinarios();
   };
 
-  // Funci贸n para editar un veterinario
+  // Funci脙鲁n para editar un veterinario
   const updateVeterinario = useCallback(async (idVeterinario, veterinarioData) => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`https://soporte-equino.onrender.com/api/veterinarios/${idVeterinario}`, {
+      const response = await fetch(`${API_URL}/veterinarios/${idVeterinario}`, {
         method: 'PUT',
         headers: {
           'Authorization': token,
@@ -222,11 +249,11 @@ const Veterinarios = () => {
     }
   }, [getAuthToken]);
 
-  // Funci贸n para eliminar un veterinario
+  // Funci脙鲁n para eliminar un veterinario
   const deleteVeterinario = useCallback(async (veterinarioId) => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`https://soporte-equino.onrender.com/api/veterinarios/${veterinarioId}`, {
+      const response = await fetch(`${API_URL}/veterinarios/${veterinarioId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': token,
@@ -276,7 +303,7 @@ const Veterinarios = () => {
   // Handler para editar veterinario
   const handleEditVeterinario = useCallback((veterinario) => {
     if (!veterinario) {
-      setError('Veterinario inv谩lido para editar');
+      setError('Veterinario inv脙隆lido para editar');
       return;
     }
 
@@ -296,7 +323,7 @@ const Veterinarios = () => {
     }
   }, [veterinarios]);
 
-  // Handler para enviar edici贸n de veterinario
+  // Handler para enviar edici脙鲁n de veterinario
   const handleSubmitEditVeterinario = async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -332,7 +359,7 @@ const Veterinarios = () => {
     }
   };
 
-  // Confirmar eliminaci贸n de veterinario
+  // Confirmar eliminaci脙鲁n de veterinario
   const confirmDeleteVeterinario = async () => {
     if (!veterinarioToDelete) return;
 
@@ -391,7 +418,7 @@ const Veterinarios = () => {
         </div>
       )}
 
-      {/* Filtros y b煤squeda */}
+      {/* Filtros y b脙潞squeda */}
       <Card className="mb-4">
         <Card.Body>
           <Row>
@@ -632,31 +659,16 @@ const Veterinarios = () => {
                   </Form.Group>              </Col>
               </Row>
               <Row className="mb-3">
-              <Row className="mb-3">
                 <Col md={12}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Descripci髇</Form.Label>
+                    <Form.Label>Descripci贸n</Form.Label>
                     <Form.Control
                       as="textarea"
                       rows={3}
                       name="Descripcion"
                       value={newVeterinario.Descripcion}
                       onChange={handleInputChange}
-                      placeholder="Ingrese una descripci髇 breve del veterinario (especialidad, a駉s de experiencia, etc.)"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-                <Col md={12}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Descripci髇</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      name="Descripcion"
-                      value={newVeterinario.Descripcion}
-                      onChange={handleInputChange}
-                      placeholder="Ingrese una descripci髇 breve del veterinario (especialidad, a駉s de experiencia, etc.)"
+                      placeholder="Ingrese una descripci贸n breve del veterinario (especialidad, a帽os de experiencia, etc.)"
                     />
                   </Form.Group>
                 </Col>
@@ -782,19 +794,20 @@ const Veterinarios = () => {
                     <Form.Control.Feedback type="invalid">
                       Ingrese un email v谩lido
                     </Form.Control.Feedback>
-                  </Form.Group>              </Col>
+                  </Form.Group>
+                </Col>
               </Row>
               <Row className="mb-3">
                 <Col md={12}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Descripci髇</Form.Label>
+                    <Form.Label>Descripci贸n</Form.Label>
                     <Form.Control
                       as="textarea"
                       rows={3}
                       name="Descripcion"
-                      value={newVeterinario.Descripcion}
-                      onChange={handleInputChange}
-                      placeholder="Ingrese una descripci髇 breve del veterinario (especialidad, a駉s de experiencia, etc.)"
+                      value={editVeterinario.Descripcion}
+                      onChange={handleEditInputChange}
+                      placeholder="Ingrese una descripci贸n breve del veterinario (especialidad, a帽os de experiencia, etc.)"
                     />
                   </Form.Group>
                 </Col>
@@ -916,7 +929,7 @@ const Veterinarios = () => {
         </div>
       )}
 
-      {/* Modal de 茅xito para crear veterinario */}
+      {/* Modal de 脙漏xito para crear veterinario */}
       <Modal
         show={showSuccessModal}
         centered
@@ -935,7 +948,7 @@ const Veterinarios = () => {
         </Modal.Body>
       </Modal>
 
-      {/* Modal de 茅xito para editar veterinario */}
+      {/* Modal de 脙漏xito para editar veterinario */}
       <Modal
         show={showEditSuccessModal}
         centered
@@ -951,7 +964,7 @@ const Veterinarios = () => {
         </Modal.Body>
       </Modal>
 
-      {/* Modal de 茅xito para eliminar veterinario */}
+      {/* Modal de 脙漏xito para eliminar veterinario */}
       <Modal
         show={showDeleteSuccessModal}
         centered
@@ -971,3 +984,4 @@ const Veterinarios = () => {
 };
 
 export default Veterinarios;
+

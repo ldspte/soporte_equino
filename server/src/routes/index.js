@@ -38,28 +38,66 @@ const { getPatients, getPatientById, createPatient, updatePatient, deletePatient
 const { getFollowUpsByHistory, createFollowUp, deleteFollowUp } = require('../controllers/followUpController');
 
 
-//RUTAS PROTEGIDAS
+// Helper para guardar fotos (soporta req.file de multer o base64 en body)
+const savePhoto = (req, fieldName = 'Foto') => {
+    // 1. Si multer ya procesó el archivo
+    if (req.file) {
+        return `/uploads/${req.file.filename}`;
+    }
+
+    // 2. Si viene como base64 en el body
+    const base64Data = req.body[fieldName];
+    if (base64Data && typeof base64Data === 'string' && base64Data.startsWith('data:image')) {
+        try {
+            const matches = base64Data.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
+            if (!matches || matches.length !== 3) return base64Data; // No es base64 válido, devolver como está
+
+            const extension = matches[1];
+            const data = matches[2];
+            const buffer = Buffer.from(data, 'base64');
+            const fileName = `upload-${Date.now()}-${Math.round(Math.random() * 1E9)}.${extension}`;
+            const uploadDir = path.join(__dirname, '../../uploads');
+            
+            // Asegurar que el directorio existe
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            
+            const filePath = path.join(uploadDir, fileName);
+
+            fs.writeFileSync(filePath, buffer);
+            return `/uploads/${fileName}`;
+        } catch (error) {
+            console.error('Error saving base64 photo:', error);
+            return base64Data;
+        }
+    }
+
+    return req.body[fieldName] || null;
+};
+
+// RUTA DE AUTENTICACION
 const authenticateToken = (req, res, next) => {
     // Obtener el token del encabezado de la solicitud
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // El token se envía como "Bearer TOKEN"
 
     if (!token) {
-        // Si no hay token, el usuario no está autenticado
+        console.error('🚫 Auth: No se proporcionó token en la cabecera');
         return res.status(401).send('Acceso denegado. No se proporcionó token de autenticación.');
     }
 
     // Verificar el token
     jwt.verify(token, SECRET_KEY, (err, user) => {
         if (err) {
+            console.error('🚫 Auth: Token inválido o expirado:', err.message);
             // Si el token no es válido o ha expirado
-            return res.status(403).send('Token de autenticación inválido.');
+            return res.status(403).send('Token de autenticación inválido o expirado.');
         }
 
         // Si el token es válido, guardar los datos del usuario en el objeto de solicitud
-        // para que las rutas puedan acceder a ellos
         req.user = user;
-        next(); // Continuar con la siguiente función (la ruta)
+        next(); 
     });
 };
 
@@ -236,48 +274,24 @@ route.get('/api/insumos/:idInsumos', authenticateToken, async (req, res) => {
 
 route.post('/api/insumos', authenticateToken, upload.single('Foto'), async (req, res) => {
     const { Nombre, Descripcion, Precio } = req.body;
-    const Foto = req.file ? `/uploads/${req.file.filename}` : null;
-    console.log('📝 Creando insumo:', { Nombre, Descripcion, Precio, tieneFoto: !!Foto });
+    const Foto = savePhoto(req, 'Foto');
+    console.log('📝 Creando insumo:', { Nombre, Descripcion, Precio, Foto });
 
     try {
-        // Convertir base64 a buffer para almacenar en LONGBLOB
-        let fotoBuffer = null;
-        if (Foto) {
-            console.log('🖼️ Procesando imagen base64...');
-            // Extraer solo los datos base64 (sin el prefijo data:image/...)
-            const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
-            fotoBuffer = Buffer.from(base64Data, 'base64');
-            console.log('✅ Buffer creado, tamaño:', fotoBuffer.length, 'bytes');
-        }
-
-        const values = await createItem(Nombre, Descripcion, fotoBuffer, Precio);
-        console.log('✅ Insumo creado exitosamente');
+        const values = await createItem(Nombre, Descripcion, Foto, Precio);
         res.status(201).json(values);
     } catch (error) {
         console.error('❌ Error al crear insumo:', error);
-        console.error('Stack trace:', error.stack);
-        res.status(500).json({
-            error: 'Error al crear el insumo',
-            message: error.message,
-            details: error.sqlMessage || error.toString()
-        });
+        res.status(500).json({ error: 'Error al crear el insumo', message: error.message });
     }
 });
 
 route.put('/api/insumos/:idInsumos', authenticateToken, upload.single('Foto'), async (req, res) => {
     const { idInsumos } = req.params;
     const { Nombre, Descripcion, Precio } = req.body;
-    const Foto = req.file ? `/uploads/${req.file.filename}` : req.body.Foto;
+    const Foto = savePhoto(req, 'Foto');
     try {
-        // Convertir base64 a buffer si se proporciona una nueva foto
-        let fotoBuffer = Foto;
-        if (Foto && Foto.startsWith('data:image')) {
-            // Es una nueva imagen en base64
-            const base64Data = Foto.replace(/^data:image\/\w+;base64,/, '');
-            fotoBuffer = Buffer.from(base64Data, 'base64');
-        }
-
-        const values = await updateItem(idInsumos, Nombre, Descripcion, fotoBuffer, Precio);
+        const values = await updateItem(idInsumos, Nombre, Descripcion, Foto, Precio);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Insumo no encontrado' });
         }
@@ -343,7 +357,7 @@ route.get('/api/veterinarios/:idVeterinario', authenticateToken, async (req, res
 
 route.post('/api/veterinarios', authenticateToken, upload.single('Foto'), async (req, res) => {
     const { Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Redes } = req.body;
-    const Foto = req.file ? `/uploads/${req.file.filename}` : null;
+    const Foto = savePhoto(req, 'Foto');
 
     try {
         const values = await createVeterinary(Cedula, Nombre, Apellido, Correo, Descripcion, Especialidad, Foto, Redes);
@@ -362,7 +376,7 @@ route.put('/api/veterinarios/:idVeterinario', authenticateToken, upload.single('
         Contraseña, contrasena, password
     } = req.body;
     
-    const Foto = req.file ? `/uploads/${req.file.filename}` : req.body.Foto;
+    const Foto = savePhoto(req, 'Foto');
 
     // Normalizar campos que podrían venir con diferente capitalización o sin ñ
     const finalEstado = Estado || estado;
@@ -566,7 +580,7 @@ route.get('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async 
 
 route.post('/api/historia_clinica', authenticateToken, upload.single('Foto'), async (req, res) => {
     const data = { ...req.body };
-    if (req.file) data.Foto = `/uploads/${req.file.filename}`;
+    data.Foto = savePhoto(req, 'Foto');
     const { Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha } = data;
     try {
         const values = await createClinicalHistory(Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha);
@@ -580,7 +594,7 @@ route.post('/api/historia_clinica', authenticateToken, upload.single('Foto'), as
 route.put('/api/historia_clinica/:idHistoria_clinica', authenticateToken, upload.single('Foto'), async (req, res) => {
     const { idHistoria_clinica } = req.params;
     const data = { ...req.body };
-    if (req.file) data.Foto = `/uploads/${req.file.filename}`;
+    data.Foto = savePhoto(req, 'Foto');
     const { Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha } = data;
     try {
         const values = await updateClinicalHistory(idHistoria_clinica, Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha);
@@ -702,7 +716,7 @@ route.get('/api/pacientes/:idPaciente', authenticateToken, async (req, res) => {
 
 route.post('/api/pacientes', authenticateToken, upload.single('Foto'), async (req, res) => {
     const { Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Sexo, Propietario } = req.body;
-    const Foto = req.file ? `/uploads/${req.file.filename}` : null;
+    const Foto = savePhoto(req, 'Foto');
     const idVeterinario = req.user.id;
     try {
         const values = await createPatient(Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Sexo, Foto, Propietario, idVeterinario);
@@ -716,7 +730,7 @@ route.post('/api/pacientes', authenticateToken, upload.single('Foto'), async (re
 route.put('/api/pacientes/:idPaciente', authenticateToken, upload.single('Foto'), async (req, res) => {
     const { idPaciente } = req.params;
     const { Nombre, Numero_registro, Numero_chip, Raza, Edad_valor, Edad_unidad, Sexo, Propietario } = req.body;
-    const Foto = req.file ? `/uploads/${req.file.filename}` : req.body.Foto;
+    const Foto = savePhoto(req, 'Foto');
     const idVeterinario = req.user.id;
     try {
         // Verificar propiedad

@@ -1,5 +1,5 @@
 const { db } = require('../database');
-const { fs } = require('fs')
+const fs = require('fs');
 
 const getItems = async () => {
     const [result] = await db.query(`

@@ -1,5 +1,6 @@
 require('dotenv').config();
-const express = require('express'); // Asegúrate de importar express
+const express = require('express'); 
+const path = require('path');
 const cors = require('cors');
 const app = express();
 const bcrypt = require('bcryptjs');
@@ -18,8 +19,9 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/', route);
 
-// Ruta para manejar el ruteo de React (debajo de las rutas de la API)
-app.get('*', (req, res) => {
+// Ruta para manejar el ruteo de React (catch-all)
+// Usamos app.use al final para que cualquier ruta que no sea API cargue el frontend
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

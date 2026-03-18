@@ -193,7 +193,22 @@ const VeterinarioDashboard = () => {
 
     // 2. Helpers
     const getAuthHeader = useCallback(() => {
-        const token = localStorage.getItem('token');
+        let token = localStorage.getItem('token');
+        if (!token) {
+            const userStorage = localStorage.getItem('veterinario');
+            if (userStorage) {
+                try {
+                    const userData = JSON.parse(userStorage);
+                    token = userData.token;
+                    if (token) {
+                        localStorage.setItem('token', token);
+                        console.log("Token recuperado en Home.jsx");
+                    }
+                } catch (e) {
+                    console.error("Error al obtener token en Dashboard:", e);
+                }
+            }
+        }
         return token ? `Bearer ${token}` : null;
     }, []);
 
@@ -332,13 +347,19 @@ const VeterinarioDashboard = () => {
                 dataToSubmit.Foto = base64;
             }
 
+            console.log("handleUpdateProfile - Enviando datos:", { ...dataToSubmit, Foto: dataToSubmit.Foto ? "Base64..." : "No photo" });
+
             const response = await fetch(`${API_URL}/veterinarios/${formData.idVeterinario}`, {
                 method: 'PUT',
                 headers: { 'Authorization': token, 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataToSubmit)
             });
 
-            if (!response.ok) throw new Error("Update failed");
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("handleUpdateProfile - Error del servidor:", response.status, errorText);
+                throw new Error(errorText || "Error al actualizar perfil");
+            }
 
             const updatedObj = await response.json();
             const finalUser = formatUser(updatedObj);

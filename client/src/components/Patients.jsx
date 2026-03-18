@@ -18,7 +18,18 @@ function PatientManagement() {
     // --- Funciones de Utilidad y Hooks ---
 
     const getAuthToken = useCallback(() => {
-        const token = localStorage.getItem('token');
+        let token = localStorage.getItem('token');
+        if (!token) {
+            const userStorage = localStorage.getItem('veterinario');
+            if (userStorage) {
+                try {
+                    const userData = JSON.parse(userStorage);
+                    token = userData.token;
+                } catch (e) {
+                    console.error("Error parsing veterinario for token:", e);
+                }
+            }
+        }
         return token ? `Bearer ${token}` : null;
     }, []);
 

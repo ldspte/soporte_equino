@@ -40,8 +40,18 @@ function ClinicalHistory() {
   const [newFollowUp, setNewFollowUp] = useState({ Descripcion: '', Tratamiento: '', Observaciones: '', Fecha: new Date().toISOString().slice(0, 10) });
 
   const getAuthToken = useCallback(() => {
-    const token = localStorage.getItem('token');
-    console.log(token ? `Bearer ${token}` : "XXXX")
+    let token = localStorage.getItem('token');
+    if (!token) {
+      const userStorage = localStorage.getItem('veterinario');
+      if (userStorage) {
+        try {
+          const userData = JSON.parse(userStorage);
+          token = userData.token;
+        } catch (e) {
+          console.error("Error parsing veterinario for token:", e);
+        }
+      }
+    }
     return token ? `Bearer ${token}` : null;
   }, []);
 
