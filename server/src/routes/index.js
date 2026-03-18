@@ -40,37 +40,23 @@ const { getFollowUpsByHistory, createFollowUp, deleteFollowUp } = require('../co
 
 // Helper para guardar fotos (soporta req.file de multer o base64 en body)
 const savePhoto = (req, fieldName = 'Foto') => {
-    // 1. Si multer ya procesó el archivo
+    const fs = require('fs');
+    // 1. Si multer procesó un archivo
     if (req.file) {
-        return `/uploads/${req.file.filename}`;
+        try {
+            const buffer = fs.readFileSync(req.file.path);
+            const base64 = buffer.toString('base64');
+            try { fs.unlinkSync(req.file.path); } catch(e) {}
+            return `data:${req.file.mimetype};base64,${base64}`;
+        } catch (error) {
+            console.error('Error convirtiendo multer a base64:', error);
+        }
     }
 
-    // 2. Si viene como base64 en el body
+    // 2. Si viene como base64, se asume LONGBLOB compatibility
     const base64Data = req.body[fieldName];
-    if (base64Data && typeof base64Data === 'string' && base64Data.startsWith('data:image')) {
-        try {
-            const matches = base64Data.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
-            if (!matches || matches.length !== 3) return base64Data; // No es base64 válido, devolver como está
-
-            const extension = matches[1];
-            const data = matches[2];
-            const buffer = Buffer.from(data, 'base64');
-            const fileName = `upload-${Date.now()}-${Math.round(Math.random() * 1E9)}.${extension}`;
-            const uploadDir = path.join(__dirname, '../../uploads');
-            
-            // Asegurar que el directorio existe
-            if (!fs.existsSync(uploadDir)) {
-                fs.mkdirSync(uploadDir, { recursive: true });
-            }
-            
-            const filePath = path.join(uploadDir, fileName);
-
-            fs.writeFileSync(filePath, buffer);
-            return `/uploads/${fileName}`;
-        } catch (error) {
-            console.error('Error saving base64 photo:', error);
-            return base64Data;
-        }
+    if (base64Data && typeof base64Data === 'string') {
+        return base64Data;
     }
 
     return req.body[fieldName] || null;
