@@ -90,8 +90,13 @@ const getVeterinarys = async () => {
     `)
     const veterinariosConFoto = result.map(veterinario => {
         if (veterinario.Foto && Buffer.isBuffer(veterinario.Foto)) {
-            const base64String = veterinario.Foto.toString('base64');
-            veterinario.Foto = `data:image/jpeg;base64,${base64String}`;
+            const fotoStr = veterinario.Foto.toString('utf8');
+            if (fotoStr.startsWith('/uploads/') || fotoStr.startsWith('http') || fotoStr.startsWith('data:image/')) {
+                veterinario.Foto = fotoStr;
+            } else {
+                const base64String = veterinario.Foto.toString('base64');
+                veterinario.Foto = `data:image/jpeg;base64,${base64String}`;
+            }
         }
         // Si ya es una URL/ruta (empieza con /uploads), se deja igual
         return veterinario;
@@ -105,8 +110,13 @@ const getVeterinarystatus = async () => {
     `)
     const veterinariosConFoto = result.map(veterinario => {
         if (veterinario.Foto && Buffer.isBuffer(veterinario.Foto)) {
-            const base64String = veterinario.Foto.toString('base64');
-            veterinario.Foto = `data:image/jpeg;base64,${base64String}`;
+            const fotoStr = veterinario.Foto.toString('utf8');
+            if (fotoStr.startsWith('/uploads/') || fotoStr.startsWith('http') || fotoStr.startsWith('data:image/')) {
+                veterinario.Foto = fotoStr;
+            } else {
+                const base64String = veterinario.Foto.toString('base64');
+                veterinario.Foto = `data:image/jpeg;base64,${base64String}`;
+            }
         }
         return veterinario;
     });

@@ -25,8 +25,13 @@ const getClinicalHistory = async (veterinarioId = null) => {
     const [result] = await db.query(query, params);
     const historiasConFoto = result.map(historia => {
         if (historia.Foto && Buffer.isBuffer(historia.Foto)) {
-            const base64String = historia.Foto.toString('base64');
-            historia.Foto = `data:image/jpeg;base64,${base64String}`;
+            const fotoStr = historia.Foto.toString('utf8');
+            if (fotoStr.startsWith('/uploads/') || fotoStr.startsWith('http') || fotoStr.startsWith('data:image/')) {
+                historia.Foto = fotoStr;
+            } else {
+                const base64String = historia.Foto.toString('base64');
+                historia.Foto = `data:image/jpeg;base64,${base64String}`;
+            }
         }
         return historia;
     });

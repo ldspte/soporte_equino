@@ -47,32 +47,13 @@ const getPatients = async (veterinarioId = null) => {
         };
 
         if (patient.Foto && Buffer.isBuffer(patient.Foto)) {
-            const base64String = patient.Foto.toString('base64');
-            processedPatient.Foto = `data:image/jpeg;base64,${base64String}`;
-        }
-
-        return processedPatient;
-    });
-
-    return processedPatients;
-}
-
-const getPatientById = async (idPaciente) => {
-    const [rows] = await db.query(`
-        SELECT * FROM paciente WHERE idPaciente = ?
-    `,
-        [idPaciente]
-    )
-
-    if (rows.length > 0) {
-        const patient = rows[0];
-        // Calcular edad dinámica
-        patient.Edad = calculateAge(patient.Edad_valor, patient.Edad_unidad, patient.Fecha_referencia);
-
-        // Convertir foto a base64 si existe
-        if (patient.Foto && Buffer.isBuffer(patient.Foto)) {
-            const base64String = patient.Foto.toString('base64');
-            patient.Foto = `data:image/jpeg;base64,${base64String}`;
+            const fotoStr = patient.Foto.toString('utf8');
+            if (fotoStr.startsWith('/uploads/') || fotoStr.startsWith('http') || fotoStr.startsWith('data:image/')) {
+                patient.Foto = fotoStr;
+            } else {
+                const base64String = patient.Foto.toString('base64');
+                patient.Foto = `data:image/jpeg;base64,${base64String}`;
+            }
         }
     }
 

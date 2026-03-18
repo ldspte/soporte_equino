@@ -121,9 +121,14 @@ route.post('/api/login', [
         const user = users[0];
         // Convertir Foto Buffer a base64 para que el frontend la vea
         if (user.Foto && Buffer.isBuffer(user.Foto)) {
+        const fotoStr = user.Foto.toString('utf8');
+        if (fotoStr.startsWith('/uploads/') || fotoStr.startsWith('http') || fotoStr.startsWith('data:image/')) {
+            user.Foto = fotoStr;
+        } else {
             const base64String = user.Foto.toString('base64');
             user.Foto = `data:image/jpeg;base64,${base64String}`;
         }
+    }
 
         const token = jwt.sign({ id: user.idVeterinario }, SECRET_KEY, { expiresIn: '1h' });
         res.json({ token, user: [user] });
@@ -133,8 +138,9 @@ route.post('/api/login', [
     }
 });
 
-/* 
-// LOGIN CON GOOGLE - COMENTADO TEMPORALMENTE POR PROBLEMAS DE LIBRERÍA EN RENDER
+// LOGIN CON GOOGLE
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 route.post('/api/google-login', async (req, res) => {
     const { credential } = req.body;
     try {
@@ -158,19 +164,22 @@ route.post('/api/google-login', async (req, res) => {
         
         // Convertir Foto Buffer a base64
         if (user.Foto && Buffer.isBuffer(user.Foto)) {
+        const fotoStr = user.Foto.toString('utf8');
+        if (fotoStr.startsWith('/uploads/') || fotoStr.startsWith('http') || fotoStr.startsWith('data:image/')) {
+            user.Foto = fotoStr;
+        } else {
             const base64String = user.Foto.toString('base64');
             user.Foto = `data:image/jpeg;base64,${base64String}`;
         }
+    }
 
         // 3. Generar nuestro propio JWT
         const token = jwt.sign({ id: user.idVeterinario }, SECRET_KEY, { expiresIn: '1h' });
         res.json({ token, user: [user] });
     } catch (error) {
-        console.error('Error en Google Login:', error);
-        res.status(500).json({ message: 'Error al autenticar con Google' });
+        console.error('Error en Google Login:', error);        res.status(500).json({ message: 'Error al autenticar con Google' });
     }
 });
-*/
 
 //CONTRASEÑA POR DEFECTO
 
@@ -551,9 +560,14 @@ route.get('/api/historia_clinica/buscar', authenticateToken, async (req, res) =>
         // Convertir fotos si existen
         const formattedResults = results.map(historia => {
             if (historia.Foto && Buffer.isBuffer(historia.Foto)) {
-                const base64String = historia.Foto.toString('base64');
-                historia.Foto = `data:image/jpeg;base64,${base64String}`;
-            }
+        const fotoStr = historia.Foto.toString('utf8');
+        if (fotoStr.startsWith('/uploads/') || fotoStr.startsWith('http') || fotoStr.startsWith('data:image/')) {
+            historia.Foto = fotoStr;
+        } else {
+            const base64String = historia.Foto.toString('base64');
+            historia.Foto = `data:image/jpeg;base64,${base64String}`;
+        }
+    }
             return historia;
         });
 
