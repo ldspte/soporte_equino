@@ -271,21 +271,27 @@ function ClinicalHistory() {
         return;
       }
 
-      //Preparar Payload
+      //Preparar FormData
+      const formData = new FormData();
       const payload = {
         ...newClinical,
         Veterinario: userData.idVeterinario,
         Fecha: newClinical.Fecha || new Date().toISOString().split('T')[0]
       };
+      Object.entries(payload).forEach(([key, val]) => {
+        if (key !== 'Foto') formData.append(key, val ?? '');
+      });
+      if (newPhotoFile) {
+        formData.append('Foto', newPhotoFile);
+      } else if (newClinical.Foto && !newClinical.Foto.startsWith('blob:')) {
+        formData.append('Foto', newClinical.Foto);
+      }
 
       const response = await fetch(`${API_URL}/historia_clinica`,
         {
           method: 'POST',
-          headers: {
-            'Authorization': token,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload)
+          headers: { 'Authorization': token },
+          body: formData
         }
       )
 
@@ -320,25 +326,32 @@ function ClinicalHistory() {
   const updateClinical = useCallback(async (idHistoria_clinica, clinicalData) => {
     try {
       const token = getAuthToken();
+      const formData = new FormData();
+      Object.entries(clinicalData).forEach(([key, val]) => {
+        if (key !== 'Foto') formData.append(key, val ?? '');
+      });
+      if (editPhotoFile) {
+        formData.append('Foto', editPhotoFile);
+      } else if (clinicalData.Foto && !clinicalData.Foto.startsWith('blob:')) {
+        formData.append('Foto', clinicalData.Foto);
+      }
       const response = await fetch(`${API_URL}/historia_clinica/${idHistoria_clinica}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(clinicalData)
+        headers: { 'Authorization': token },
+        body: formData
       });
 
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || 'Error al actualizar Historia clinica.');
       }
+      setEditPhotoFile(null);
       return await response.json();
     } catch (error) {
       console.error('Error updating History: ', error.message);
       throw error;
     }
-  }, [getAuthToken]);
+  }, [getAuthToken, editPhotoFile]);
 
 
   //Eliminar Historia Clinica
@@ -372,40 +385,26 @@ function ClinicalHistory() {
 
 
 
-  // --- Funciones de Utilidad ---
-  const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-  };
+  // Archivos de foto seleccionados por el usuario
+  const [newPhotoFile, setNewPhotoFile] = useState(null);
+  const [editPhotoFile, setEditPhotoFile] = useState(null);
 
   // Funciones para manejar la creación y edición de historias clínicas
-  const handleInputChange = async (e) => {
+  const handleInputChange = (e) => {
     const { name, value, files } = e.target;
     if (name === 'Foto' && files && files[0]) {
-      try {
-        const base64 = await fileToBase64(files[0]);
-        setNewClinical(prev => ({ ...prev, [name]: base64 }));
-      } catch (error) {
-        console.error('Error al convertir imagen:', error);
-      }
+      setNewPhotoFile(files[0]);
+      setNewClinical(prev => ({ ...prev, Foto: URL.createObjectURL(files[0]) }));
     } else {
       setNewClinical(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleEditInputChange = async (e) => {
+  const handleEditInputChange = (e) => {
     const { name, value, files } = e.target;
     if (name === 'Foto' && files && files[0]) {
-      try {
-        const base64 = await fileToBase64(files[0]);
-        setEditClinical(prev => ({ ...prev, [name]: base64 }));
-      } catch (error) {
-        console.error('Error al convertir imagen:', error);
-      }
+      setEditPhotoFile(files[0]);
+      setEditClinical(prev => ({ ...prev, Foto: URL.createObjectURL(files[0]) }));
     } else {
       setEditClinical(prev => ({ ...prev, [name]: value }));
     }

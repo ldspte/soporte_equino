@@ -82,45 +82,24 @@ function Insumos() {
 
     // --- Handlers de Formulario ---
 
-    // Función para convertir archivo a base64
-    const fileToBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = (error) => reject(error);
-        });
-    };
+    const [newPhotoFile, setNewPhotoFile] = useState(null);
+    const [editPhotoFile, setEditPhotoFile] = useState(null);
 
-    const handleInputChange = async (e) => {
+    const handleInputChange = (e) => {
         const { name, value, files } = e.target;
-
-        // Si es un input de tipo file, convertir a base64
         if (name === 'Foto' && files && files[0]) {
-            try {
-                const base64 = await fileToBase64(files[0]);
-                setNewInsumo(prev => ({ ...prev, [name]: base64 }));
-            } catch (error) {
-                console.error('Error al convertir imagen a base64:', error);
-                setError('Error al procesar la imagen');
-            }
+            setNewPhotoFile(files[0]);
+            setNewInsumo(prev => ({ ...prev, Foto: URL.createObjectURL(files[0]) }));
         } else {
             setNewInsumo(prev => ({ ...prev, [name]: value }));
         }
     };
 
-    const handleEditInputChange = async (e) => {
+    const handleEditInputChange = (e) => {
         const { name, value, files } = e.target;
-
-        // Si es un input de tipo file, convertir a base64
         if (name === 'Foto' && files && files[0]) {
-            try {
-                const base64 = await fileToBase64(files[0]);
-                setEditInsumo(prev => ({ ...prev, [name]: base64 }));
-            } catch (error) {
-                console.error('Error al convertir imagen a base64:', error);
-                setError('Error al procesar la imagen');
-            }
+            setEditPhotoFile(files[0]);
+            setEditInsumo(prev => ({ ...prev, Foto: URL.createObjectURL(files[0]) }));
         } else {
             setEditInsumo(prev => ({ ...prev, [name]: value }));
         }
@@ -136,13 +115,19 @@ function Insumos() {
         }
 
         try {
+            const formData = new FormData();
+            Object.entries(newInsumo).forEach(([key, val]) => {
+                if (key !== 'Foto') formData.append(key, val ?? '');
+            });
+            if (newPhotoFile) {
+                formData.append('Foto', newPhotoFile);
+            } else if (newInsumo.Foto && newInsumo.Foto.startsWith('/uploads/')) {
+                formData.append('Foto', newInsumo.Foto);
+            }
             const response = await fetch(`${API_URL}/insumos`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(newInsumo)
+                headers: { 'Authorization': token },
+                body: formData
             });
 
             if (!response.ok) {
@@ -185,13 +170,19 @@ function Insumos() {
         }
 
         try {
+            const formData = new FormData();
+            Object.entries(editInsumo).forEach(([key, val]) => {
+                if (key !== 'Foto') formData.append(key, val ?? '');
+            });
+            if (editPhotoFile) {
+                formData.append('Foto', editPhotoFile);
+            } else if (editInsumo.Foto && !editInsumo.Foto.startsWith('blob:')) {
+                formData.append('Foto', editInsumo.Foto);
+            }
             const response = await fetch(`${API_URL}/insumos/${currentInsumo.idInsumos}`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(editInsumo)
+                headers: { 'Authorization': token },
+                body: formData
             });
 
             if (!response.ok) {
@@ -201,6 +192,7 @@ function Insumos() {
 
             fetchInsumos(token);
             setShowEditInsumoModal(false);
+            setEditPhotoFile(null);
             setError(null);
         } catch (error) {
             setError(error.message);

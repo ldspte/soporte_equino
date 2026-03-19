@@ -112,45 +112,28 @@ function PatientManagement() {
 
     // --- Handlers de Formulario ---
 
-    // Función para convertir archivo a base64
-    const fileToBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = (error) => reject(error);
-        });
-    };
+    // Guardar referencia al archivo seleccionado
+    const [newPhotoFile, setNewPhotoFile] = useState(null);
+    const [editPhotoFile, setEditPhotoFile] = useState(null);
 
-    const handleInputChange = async (e) => {
+    const handleInputChange = (e) => {
         const { name, value, files } = e.target;
-
-        // Si es un input de tipo file, convertir a base64
         if (name === 'Foto' && files && files[0]) {
-            try {
-                const base64 = await fileToBase64(files[0]);
-                setNewPatient(prev => ({ ...prev, [name]: base64 }));
-            } catch (error) {
-                console.error('Error al convertir imagen a base64:', error);
-                setError('Error al procesar la imagen');
-            }
+            setNewPhotoFile(files[0]);
+            // Preview local
+            const url = URL.createObjectURL(files[0]);
+            setNewPatient(prev => ({ ...prev, Foto: url }));
         } else {
             setNewPatient(prev => ({ ...prev, [name]: value }));
         }
     };
 
-    const handleEditInputChange = async (e) => {
+    const handleEditInputChange = (e) => {
         const { name, value, files } = e.target;
-
-        // Si es un input de tipo file, convertir a base64
         if (name === 'Foto' && files && files[0]) {
-            try {
-                const base64 = await fileToBase64(files[0]);
-                setEditPatient(prev => ({ ...prev, [name]: base64 }));
-            } catch (error) {
-                console.error('Error al convertir imagen a base64:', error);
-                setError('Error al procesar la imagen');
-            }
+            setEditPhotoFile(files[0]);
+            const url = URL.createObjectURL(files[0]);
+            setEditPatient(prev => ({ ...prev, Foto: url }));
         } else {
             setEditPatient(prev => ({ ...prev, [name]: value }));
         }
@@ -165,10 +148,19 @@ function PatientManagement() {
         }
 
         try {
+            const formData = new FormData();
+            Object.entries(newPatient).forEach(([key, val]) => {
+                if (key !== 'Foto') formData.append(key, val ?? '');
+            });
+            if (newPhotoFile) {
+                formData.append('Foto', newPhotoFile);
+            } else if (newPatient.Foto && newPatient.Foto.startsWith('/uploads/')) {
+                formData.append('Foto', newPatient.Foto);
+            }
             const response = await fetch(`${API_URL}/pacientes`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': token },
-                body: JSON.stringify(newPatient)
+                headers: { 'Authorization': token },
+                body: formData
             });
 
             if (!response.ok) {
@@ -208,10 +200,19 @@ function PatientManagement() {
         }
 
         try {
+            const formData = new FormData();
+            Object.entries(editPatient).forEach(([key, val]) => {
+                if (key !== 'Foto') formData.append(key, val ?? '');
+            });
+            if (editPhotoFile) {
+                formData.append('Foto', editPhotoFile);
+            } else if (editPatient.Foto && !editPatient.Foto.startsWith('blob:')) {
+                formData.append('Foto', editPatient.Foto);
+            }
             const response = await fetch(`${API_URL}/pacientes/${currentPatient.idPaciente}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': token },
-                body: JSON.stringify(editPatient)
+                headers: { 'Authorization': token },
+                body: formData
             });
 
             if (!response.ok) {
