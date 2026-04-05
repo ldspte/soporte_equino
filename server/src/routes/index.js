@@ -36,6 +36,7 @@ const { getOwners, getOwnerById, createOwner, updateOwner, deleteOwner, rateOwne
 const { getClinicalHistory, getClinicalHistoryById, createClinicalHistory, updateClinicalHistory, deleteClinicalHistory, getDashboardStats } = require('../controllers/clinicalHystory');
 const { getPatients, getPatientById, createPatient, updatePatient, deletePatient } = require('../controllers/patientController')
 const { getFollowUpsByHistory, createFollowUp, deleteFollowUp } = require('../controllers/followUpController');
+const { getAttachmentsByEntity, createAttachments, deleteAttachment, getAttachmentsByMultipleEntities } = require('../controllers/attachmentController');
 
 
 // Helper para guardar fotos - Guarda archivo en /uploads y devuelve la ruta
@@ -454,10 +455,10 @@ route.get('/api/propietarios/:idPropietario', authenticateToken, async (req, res
 });
 
 route.post('/api/propietarios', authenticateToken, async (req, res) => {
-    const { Cedula, Nombre, Apellido, Telefono } = req.body;
+    const { Cedula, Nombre, Apellido, Telefono, Direccion } = req.body;
     const idVeterinario = req.user.id;
     try {
-        const values = await createOwner(Cedula, Nombre, Apellido, Telefono, idVeterinario);
+        const values = await createOwner(Cedula, Nombre, Apellido, Telefono, Direccion, idVeterinario);
         res.status(201).json(values);
     } catch (error) {
         console.error(error);
@@ -467,7 +468,7 @@ route.post('/api/propietarios', authenticateToken, async (req, res) => {
 
 route.put('/api/propietarios/:idPropietario', authenticateToken, async (req, res) => {
     const { idPropietario } = req.params;
-    const { Cedula, Nombre, Apellido, Telefono } = req.body;
+    const { Cedula, Nombre, Apellido, Telefono, Direccion } = req.body;
     const idVeterinario = req.user.id;
     try {
         // Primero verificar si el propietario pertenece al veterinario
@@ -476,7 +477,7 @@ route.put('/api/propietarios/:idPropietario', authenticateToken, async (req, res
             return res.status(403).json({ error: 'No tienes permiso para editar este propietario' });
         }
 
-        const values = await updateOwner(idPropietario, Cedula, Nombre, Apellido, Telefono);
+        const values = await updateOwner(idPropietario, Cedula, Nombre, Apellido, Telefono, Direccion);
         res.status(200).json(values);
     } catch (error) {
         console.error(error);
@@ -597,9 +598,9 @@ route.get('/api/historia_clinica/:idHistoria_clinica', authenticateToken, async 
 route.post('/api/historia_clinica', authenticateToken, upload.single('Foto'), async (req, res) => {
     const data = { ...req.body };
     data.Foto = savePhoto(req, 'Foto');
-    const { Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha } = data;
+    const { Veterinario, Paciente, Vacunas, Vacunas_detalle, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Lista_problemas, Foto, Fecha } = data;
     try {
-        const values = await createClinicalHistory(Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha);
+        const values = await createClinicalHistory(Veterinario, Paciente, Vacunas, Vacunas_detalle, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Lista_problemas, Foto, Fecha);
         res.status(201).json(values);
     } catch (error) {
         console.error(error);
@@ -611,9 +612,9 @@ route.put('/api/historia_clinica/:idHistoria_clinica', authenticateToken, upload
     const { idHistoria_clinica } = req.params;
     const data = { ...req.body };
     data.Foto = savePhoto(req, 'Foto');
-    const { Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha } = data;
+    const { Veterinario, Paciente, Vacunas, Vacunas_detalle, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Lista_problemas, Foto, Fecha } = data;
     try {
-        const values = await updateClinicalHistory(idHistoria_clinica, Veterinario, Paciente, Vacunas, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Foto, Fecha);
+        const values = await updateClinicalHistory(idHistoria_clinica, Veterinario, Paciente, Vacunas, Vacunas_detalle, Enfermedades, Anamnesis, Evaluacion_distancia, Desparasitacion, Pliegue_cutaneo, Frecuencia_respiratoria, Motilidad_gastrointestinal, Temperatura, Pulso, Frecuencia_cardiaca, Llenado_capilar, Mucosas, Pulso_digital, Aspecto, Locomotor, Respiratorio, Circulatorio, Digestivo, Genitourinario, Sis_nervioso, Oidos, Ojos, Glangios_linfaticos, Piel, Diagnostico_integral, Tratamiento, Observaciones, Ayudas_diagnosticas, Lista_problemas, Foto, Fecha);
         if (values.affectedRows === 0) {
             return res.status(404).json({ error: 'Historia Clinica no encontrada' });
         }
@@ -665,20 +666,35 @@ route.get('/api/historia_clinica/:idHistoria_clinica/seguimientos', authenticate
     const { idHistoria_clinica } = req.params;
     try {
         const values = await getFollowUpsByHistory(idHistoria_clinica);
-        res.status(200).json(values);
+        // Incluir archivos adjuntos de cada seguimiento
+        const seguimientoIds = values.map(s => s.idSeguimiento);
+        const allAttachments = await getAttachmentsByMultipleEntities('seguimiento', seguimientoIds);
+        const enriched = values.map(s => ({
+            ...s,
+            archivos: allAttachments.filter(a => a.id_entidad === s.idSeguimiento)
+        }));
+        res.status(200).json(enriched);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener los seguimientos' });
     }
 });
 
-route.post('/api/historia_clinica/:idHistoria_clinica/seguimientos', authenticateToken, async (req, res) => {
+route.post('/api/historia_clinica/:idHistoria_clinica/seguimientos', authenticateToken, upload.array('archivos', 10), async (req, res) => {
     const { idHistoria_clinica } = req.params;
     const { Fecha, Descripcion, Tratamiento, Observaciones } = req.body;
     const idVeterinario = req.user.id;
     try {
         const result = await createFollowUp(idHistoria_clinica, Fecha, Descripcion, Tratamiento, Observaciones, idVeterinario);
-        res.status(201).json({ idSeguimiento: result.insertId, message: 'Seguimiento creado con éxito' });
+        const idSeguimiento = result.insertId;
+
+        // Guardar archivos adjuntos si los hay
+        let archivos = [];
+        if (req.files && req.files.length > 0) {
+            archivos = await createAttachments('seguimiento', idSeguimiento, req.files);
+        }
+
+        res.status(201).json({ idSeguimiento, message: 'Seguimiento creado con éxito', archivos });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al crear el seguimiento' });
@@ -700,6 +716,53 @@ route.delete('/api/seguimientos/:idSeguimiento', authenticateToken, async (req, 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al eliminar el seguimiento' });
+    }
+});
+
+// ARCHIVOS ADJUNTOS
+
+route.get('/api/archivos/:tipo_entidad/:id_entidad', authenticateToken, async (req, res) => {
+    const { tipo_entidad, id_entidad } = req.params;
+    try {
+        const archivos = await getAttachmentsByEntity(tipo_entidad, id_entidad);
+        res.status(200).json(archivos);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al obtener archivos adjuntos' });
+    }
+});
+
+route.post('/api/archivos/:tipo_entidad/:id_entidad', authenticateToken, upload.array('archivos', 10), async (req, res) => {
+    const { tipo_entidad, id_entidad } = req.params;
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'No se enviaron archivos' });
+        }
+        const archivos = await createAttachments(tipo_entidad, id_entidad, req.files);
+        res.status(201).json(archivos);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al subir archivos' });
+    }
+});
+
+route.delete('/api/archivos/:idArchivo', authenticateToken, async (req, res) => {
+    const { idArchivo } = req.params;
+    try {
+        const deleted = await deleteAttachment(idArchivo);
+        if (!deleted) {
+            return res.status(404).json({ error: 'Archivo no encontrado' });
+        }
+        // Intentar eliminar el archivo físico
+        const fs = require('fs');
+        const filePath = require('path').join(__dirname, '../../', deleted.ruta_archivo);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        res.status(200).json({ message: 'Archivo eliminado con éxito' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al eliminar el archivo' });
     }
 });
 
@@ -819,7 +882,7 @@ route.post('/api/forgot-password', async (req, res) => {
         await db.query('UPDATE veterinario SET resetToken = ?, resetTokenExpiry = ? WHERE idVeterinario = ?', [resetToken, tokenExpiry, idVeterinario]);
 
         // 4. Crear el enlace para el email
-        const frontendUrl = process.env.FRONTEND_URL || 'https://soporte-equino.onrender.com';
+        const frontendUrl = process.env.FRONTEND_URL;
         const resetLink = `${frontendUrl}/reset-password/${resetToken}`;
 
         // Configurar email

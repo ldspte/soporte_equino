@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS `propietario` (
   `Nombre` varchar(100) NOT NULL,
   `Apellido` varchar(100) NOT NULL,
   `Telefono` varchar(20) DEFAULT NULL,
+  `Direccion` varchar(255) DEFAULT NULL,
   `CalificacionPromedio` decimal(3,2) DEFAULT '0.00',
   `TotalCalificaciones` int(11) DEFAULT '0',
   `idVeterinario` int(11) DEFAULT NULL,
@@ -73,6 +74,7 @@ CREATE TABLE IF NOT EXISTS `historia_clinica` (
   `Veterinario` int(11) DEFAULT NULL,
   `Paciente` int(11) DEFAULT NULL,
   `Vacunas` text DEFAULT NULL,
+  `Vacunas_detalle` varchar(255) DEFAULT NULL,
   `Enfermedades` text DEFAULT NULL,
   `Anamnesis` text DEFAULT NULL,
   `Evaluacion_distancia` text DEFAULT NULL,
@@ -101,6 +103,7 @@ CREATE TABLE IF NOT EXISTS `historia_clinica` (
   `Tratamiento` text DEFAULT NULL,
   `Observaciones` text DEFAULT NULL,
   `Ayudas_diagnosticas` text DEFAULT NULL,
+  `Lista_problemas` text DEFAULT NULL,
   `Foto` varchar(255) DEFAULT NULL,
   `Fecha` date DEFAULT NULL,
   PRIMARY KEY (`idHistoria_clinica`),
@@ -124,4 +127,17 @@ CREATE TABLE IF NOT EXISTS `seguimiento` (
   KEY `fk_seguimiento_veterinario` (`idVeterinario`),
   CONSTRAINT `fk_seguimiento_historia` FOREIGN KEY (`idHistoria_clinica`) REFERENCES `historia_clinica` (`idHistoria_clinica`) ON DELETE CASCADE,
   CONSTRAINT `fk_seguimiento_veterinario` FOREIGN KEY (`idVeterinario`) REFERENCES `veterinario` (`idVeterinario`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabla de Archivos Adjuntos (PDFs de exámenes y fotos para historias clínicas y seguimientos)
+CREATE TABLE IF NOT EXISTS `archivo_adjunto` (
+  `idArchivo` int(11) NOT NULL AUTO_INCREMENT,
+  `tipo_entidad` ENUM('historia_clinica', 'seguimiento') NOT NULL,
+  `id_entidad` int(11) NOT NULL,
+  `nombre_original` varchar(255) NOT NULL,
+  `ruta_archivo` varchar(500) NOT NULL,
+  `tipo_archivo` ENUM('pdf', 'imagen') NOT NULL,
+  `fecha_subida` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`idArchivo`),
+  KEY `idx_entidad` (`tipo_entidad`, `id_entidad`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

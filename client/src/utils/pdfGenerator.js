@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-export const generatePDF = (clinical, patient, owner, followUps, logoUrl, veterinarian) => {
+export const generatePDF = (clinical, patient, owner, followUps, logoUrl, veterinarian, attachments = []) => {
     const doc = jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -116,6 +116,59 @@ export const generatePDF = (clinical, patient, owner, followUps, logoUrl, veteri
         styles: { fontSize: 9, overflow: 'linebreak' },
         columnStyles: { 0: { fontStyle: 'bold', width: 40 } }
     });
+    
+    // -- Problem List --
+    if (clinical.Lista_problemas) {
+        try {
+            const problemas = JSON.parse(clinical.Lista_problemas);
+            if (problemas && problemas.length > 0) {
+                currentY = doc.lastAutoTable.finalY + 10;
+                if (currentY > 230) { doc.addPage(); currentY = 20; }
+                
+                doc.setFontSize(12);
+                doc.setTextColor(13, 59, 102);
+                doc.text('LISTA DE PROBLEMAS', 15, currentY);
+                
+                const problemData = problemas.map((p, idx) => [
+                    idx + 1,
+                    p.problema,
+                    p.observacion,
+                    p.veterinario,
+                    new Date(p.fecha).toLocaleDateString()
+                ]);
+                
+                autoTable(doc, {
+                    startY: currentY + 5,
+                    head: [['#', 'Problema', 'Observación', 'Veterinario', 'Fecha']],
+                    body: problemData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [13, 59, 102] },
+                    styles: { fontSize: 8 },
+                    columnStyles: { 0: { width: 10 }, 1: { fontStyle: 'bold' } }
+                });
+            }
+        } catch (e) {
+            console.error("Error adding problem list to PDF:", e);
+        }
+    }
+
+    // -- Attachments List --
+    currentY = doc.lastAutoTable.finalY + 10;
+    if (attachments && attachments.length > 0) {
+        if (currentY > 230) { doc.addPage(); currentY = 20; }
+        doc.setFontSize(10);
+        doc.setTextColor(13, 59, 102);
+        doc.text('DOCUMENTOS Y EXÁMENES ADJUNTOS', 15, currentY);
+        
+        const attachData = attachments.map(a => [a.nombre_original || a.nombre_archivo || 'Documento Adjunto']);
+        
+        autoTable(doc, {
+            startY: currentY + 5,
+            body: attachData,
+            theme: 'plain',
+            styles: { fontSize: 9, fontStyle: 'italic', textColor: [50, 50, 50] }
+        });
+    }
 
     // -- Photo --
     currentY = doc.lastAutoTable.finalY + 10;

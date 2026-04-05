@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Logo from '../assets/img/logo.png';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Navbar, Nav, Button, Modal, Badge } from 'react-bootstrap';
 import { FaSignOutAlt, FaBookMedical, FaUserMd, FaWarehouse, FaUserTie, FaHorse, FaUserCircle } from 'react-icons/fa';
+import { useAuth } from './AuthProvider';
 
 // Definición de Roles
 // Los roles deben coincidir con lo que devuelve tu backend (e.g., 'Administrador', 'Veterinario')
@@ -24,7 +25,7 @@ const NAV_PERMISSIONS = [
 
 
 export default function NavBarHome() {
-    const navigate = useNavigate();
+    const { logout } = useAuth();
     const [showModal, setShowModal] = useState(false);
     const [userRole, setUserRole] = useState(null);
     const [userName, setUserName] = useState('');
@@ -42,17 +43,13 @@ export default function NavBarHome() {
             } catch (e) {
                 console.error("Error al parsear datos del veterinario:", e);
                 // Si hay un error, forzar el cierre de sesión
-                handleLogout(); 
+                logout(); 
             }
         }
     }, []);
 
     const handleLogout = () => {
-        // Elimina el token del localStorage y redirige. 
-        // Esto debe ser llamado por el AuthProvider en una app real, pero lo hacemos aquí por simplicidad.
-        localStorage.removeItem('token');
-        localStorage.removeItem('veterinario');
-        navigate('/', { replace: true });
+        logout();
     };
 
     const handleShowModal = () => setShowModal(true);

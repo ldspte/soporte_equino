@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext(null);
@@ -36,12 +36,12 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('veterinario');
     setIsAuthenticated(false);
     navigate('/', { replace: true }); // Redirige al login y evita que el usuario vuelva atrás
-  };
+  }, [navigate]);
 
   useEffect(() => {
     // Interceptor global de fetch para manejar sesiones expiradas

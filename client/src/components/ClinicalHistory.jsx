@@ -4,7 +4,7 @@ import {
   FaIdCard, FaUserCircle, FaSearch, FaEdit, FaTrashAlt, FaPlus,
   FaSave, FaCalendarPlus, FaPhone, FaMapMarkerAlt, FaEnvelope,
   FaCarSide, FaCamera, FaUser, FaHome, FaCalendarAlt, FaClock, FaTimes,
-  FaCheckCircle, FaSpinner, FaBookMedical, FaHorse, FaClipboardList, FaImage, FaFilePdf
+  FaCheckCircle, FaSpinner, FaBookMedical, FaHorse, FaClipboardList, FaImage, FaFilePdf, FaImages
 } from 'react-icons/fa';
 import API_URL from '../config';
 import logo from '../assets/img/logo.png';
@@ -39,6 +39,13 @@ function ClinicalHistory() {
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
   const [newFollowUp, setNewFollowUp] = useState({ Descripcion: '', Tratamiento: '', Observaciones: '', Fecha: new Date().toISOString().slice(0, 10) });
 
+  // Nuevos estados para Archivos Adjuntos
+  const [newPdfFiles, setNewPdfFiles] = useState([]);
+  const [followUpFiles, setFollowUpFiles] = useState([]);
+  const [currentAttachments, setCurrentAttachments] = useState([]);
+  const [tempProblem, setTempProblem] = useState({ problema: '', observacion: '' });
+  const [tempNewProblem, setTempNewProblem] = useState({ problema: '', observacion: '' });
+
   const getAuthToken = useCallback(() => {
     let token = localStorage.getItem('token');
     if (!token) {
@@ -71,6 +78,7 @@ function ClinicalHistory() {
       Anamnesis: clinical.Anamnesis || '',
       Enfermedades: clinical.Enfermedades || '',
       Vacunas: clinical.Vacunas || '',
+      Vacunas_detalle: clinical.Vacunas_detalle || '',
       Desparasitacion: clinical.Desparasitacion || '',
       Evaluacion_distancia: clinical.Evaluacion_distancia || '',
       Mucosas: clinical.Mucosas || '',
@@ -97,6 +105,7 @@ function ClinicalHistory() {
       Tratamiento: clinical.Tratamiento || '',
       Ayudas_diagnosticas: clinical.Ayudas_diagnosticas || '',
       Observaciones: clinical.Observaciones || '',
+      Lista_problemas: clinical.Lista_problemas || '[]',
       Foto: clinical.Foto || '',
       Fecha: clinical.Fecha || '',
       idHistoria_clinica: clinical.idHistoria_clinica || null
@@ -109,6 +118,7 @@ function ClinicalHistory() {
     Anamnesis: '',
     Enfermedades: '',
     Vacunas: '',
+    Vacunas_detalle: '',
     Desparasitacion: '',
     Evaluacion_distancia: '',
     Mucosas: '',
@@ -135,6 +145,7 @@ function ClinicalHistory() {
     Tratamiento: '',
     Ayudas_diagnosticas: '',
     Observaciones: '',
+    Lista_problemas: '[]',
     Foto: '',
     Fecha: ''
   };
@@ -232,17 +243,10 @@ function ClinicalHistory() {
 
   const [newClinical, setNewClinical] = useState(initialClinicalState);
   const [editClinical, setEditClinical] = useState(initialClinicalState);
+  const [editPdfFiles, setEditPdfFiles] = useState([]);
 
 
   // Estados para alertas y mensajes de éxito
-  const [showSendingAlert, setShowSendingAlert] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showEditSuccessModal, setShowEditSuccessModal] = useState(false);
-  const [showDeleteSuccessModal, setShowDeleteSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [successSubMessage, setSuccessSubMessage] = useState('');
-
-
 
 
 
@@ -301,15 +305,34 @@ function ClinicalHistory() {
       }
 
       const data = await response.json();
+      const newHistoryId = data.clinical?.idHistoria_clinica || data.idHistoria_clinica || data.insertId;
+
+      // Si hay PDFs adicionales, subirlos
+      if (newHistoryId && newPdfFiles.length > 0) {
+        const filesFormData = new FormData();
+        Array.from(newPdfFiles).forEach(file => {
+          filesFormData.append('archivos', file);
+        });
+
+        const uploadRes = await fetch(`${API_URL}/archivos/historia_clinica/${newHistoryId}`, {
+          method: 'POST',
+          headers: { 'Authorization': token },
+          body: filesFormData
+        });
+
+        if (!uploadRes.ok) {
+          console.error('Error subiendo PDFs adjuntos');
+        }
+      }
 
       setShowNewClinicalModal(false);
-      setSuccessMessage('¡Historia clinica Creada!');
-      setShowSuccessModal(true);
 
-      setTimeout(() => setShowSuccessModal(false), 3000);
-
-      setClinical(prevClinicals => [normalizeClinicalData(data.clinical || data), ...prevClinicals]);
+      // Fetch completo para asegurar que tenemos todos los datos relacionales 
+      // y no fallan las vistas
+      await loadAllData();
+      
       setNewClinical(initialClinicalState);
+      setNewPdfFiles([]);
       setValidated(false);
 
     } catch (error) {
@@ -318,7 +341,6 @@ function ClinicalHistory() {
     } finally {
       setIsUpdating(false);
     }
-    loadAllData();
   }
 
 
@@ -410,6 +432,39 @@ function ClinicalHistory() {
     }
   };
 
+  const handleAddProblem = (isEdit) => {
+    const currentList = JSON.parse(isEdit ? editClinical.Lista_problemas : newClinical.Lista_problemas);
+    const newEntry = {
+      problema: isEdit ? tempProblem.problema : tempNewProblem.problema,
+      observacion: isEdit ? tempProblem.observacion : tempNewProblem.observacion,
+      veterinario: `${userData?.Nombre} ${userData?.Apellido || ''}`,
+      fecha: new Date().toISOString()
+    };
+    
+    if (!newEntry.problema) return;
+
+    const newList = JSON.stringify([...currentList, newEntry]);
+    if (isEdit) {
+      setEditClinical(prev => ({ ...prev, Lista_problemas: newList }));
+      setTempProblem({ problema: '', observacion: '' });
+    } else {
+      setNewClinical(prev => ({ ...prev, Lista_problemas: newList }));
+      setTempNewProblem({ problema: '', observacion: '' });
+    }
+  };
+
+  const handleRemoveProblem = (isEdit, index) => {
+    const currentList = JSON.parse(isEdit ? editClinical.Lista_problemas : newClinical.Lista_problemas);
+    const newList = JSON.stringify(currentList.filter((_, i) => i !== index));
+    if (isEdit) {
+      setEditClinical(prev => ({ ...prev, Lista_problemas: newList }));
+    } else {
+      setNewClinical(prev => ({ ...prev, Lista_problemas: newList }));
+    }
+  };
+
+
+
   //Handler para mostrar detalles de la historia
   const handleShowDetails = useCallback(async (clinical) => {
     if (!clinical) {
@@ -421,9 +476,10 @@ function ClinicalHistory() {
     setShowClinicalModal(true);
     setError(null)
 
-    // Cargar seguimientos
+    // Cargar seguimientos y archivos adjuntos
     try {
       const token = getAuthToken();
+      // 1. Obtener seguimientos
       const response = await fetch(`${API_URL}/historia_clinica/${clinical.idHistoria_clinica}/seguimientos`, {
         headers: { 'Authorization': token }
       });
@@ -431,14 +487,25 @@ function ClinicalHistory() {
         const data = await response.json();
         setFollowUps(data);
       }
+
+      // 2. Obtener archivos adjuntos de la historia
+      const filesRes = await fetch(`${API_URL}/archivos/historia_clinica/${clinical.idHistoria_clinica}`, {
+        headers: { 'Authorization': token }
+      });
+      if (filesRes.ok) {
+        const filesData = await filesRes.json();
+        setCurrentAttachments(filesData);
+      } else {
+        setCurrentAttachments([]);
+      }
     } catch (err) {
-      console.error('Error loading follow-ups:', err);
+      console.error('Error loading follow-ups/attachments:', err);
     }
   }, [normalizeClinicalData, getAuthToken]);
 
 
   //Handler para editar Historia
-  const handleEditClinical = useCallback((clinical) => {
+  const handleEditClinical = useCallback(async (clinical) => {
     if (!clinical) {
       setError('Historia clinica invalida para editar');
       return;
@@ -449,7 +516,24 @@ function ClinicalHistory() {
     setShowEditClinicalModal(true);
     setEditValidated(false);
     setError(null);
-  }, [normalizeClinicalData]);
+    setEditPdfFiles([]);
+    
+    // Cargar archivos adjuntos actuales para mostrar en el modal de edición
+    try {
+      const token = getAuthToken();
+      const filesRes = await fetch(`${API_URL}/archivos/historia_clinica/${clinical.idHistoria_clinica}`, {
+        headers: { 'Authorization': token }
+      });
+      if (filesRes.ok) {
+        const filesData = await filesRes.json();
+        setCurrentAttachments(filesData);
+      } else {
+        setCurrentAttachments([]);
+      }
+    } catch (err) {
+      console.error('Error loading attachments for edit mode:', err);
+    }
+  }, [normalizeClinicalData, getAuthToken]);
 
   //Handler para eliminar Historia Clinica
   const handleDeleteClinical = useCallback((idHistoria_clinica) => {
@@ -467,13 +551,23 @@ function ClinicalHistory() {
     try {
       setIsUpdating(true);
       const token = getAuthToken();
+
+      const formData = new FormData();
+      formData.append('Fecha', newFollowUp.Fecha);
+      formData.append('Descripcion', newFollowUp.Descripcion);
+      formData.append('Tratamiento', newFollowUp.Tratamiento);
+      formData.append('Observaciones', newFollowUp.Observaciones);
+
+      if (followUpFiles && followUpFiles.length > 0) {
+        Array.from(followUpFiles).forEach(file => {
+          formData.append('archivos', file);
+        });
+      }
+
       const response = await fetch(`${API_URL}/historia_clinica/${currentClinical.idHistoria_clinica}/seguimientos`, {
         method: 'POST',
-        headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newFollowUp)
+        headers: { 'Authorization': token },
+        body: formData
       });
 
       if (response.ok) {
@@ -487,6 +581,7 @@ function ClinicalHistory() {
         }
         setShowFollowUpModal(false);
         setNewFollowUp({ Descripcion: '', Tratamiento: '', Observaciones: '', Fecha: new Date().toISOString().slice(0, 10) });
+        setFollowUpFiles([]);
       }
     } catch (err) {
       console.error('Error saving follow-up:', err);
@@ -515,26 +610,67 @@ function ClinicalHistory() {
       };
       console.log('Payload para actualizar: ', payload);
       await updateClinical(idHistoria_clinica, payload);
+      
+      // Si hay PDFs adicionales, subirlos
+      if (editPdfFiles.length > 0) {
+        const filesFormData = new FormData();
+        Array.from(editPdfFiles).forEach(file => {
+          filesFormData.append('archivos', file);
+        });
+
+        const token = getAuthToken();
+        const uploadRes = await fetch(`${API_URL}/archivos/historia_clinica/${idHistoria_clinica}`, {
+          method: 'POST',
+          headers: { 'Authorization': token },
+          body: filesFormData
+        });
+
+        if (!uploadRes.ok) {
+          console.error('Error subiendo PDFs adjuntos en edición');
+        }
+      }
+
       await loadAllData();
       setShowEditClinicalModal(false);
       setEditValidated(false);
       setError(null);
-
-      //Modales de Exito
-
-      setSuccessMessage('Historia clinica Actualizada Exitosamente!');
-      setSuccessSubMessage('Los cambios han sido guardados correctamente');
-      setShowEditSuccessModal(true);
-
-      //ocultar modales
-
-      setTimeout(() => setShowEditSuccessModal(false), 3000);
+      setEditPdfFiles([]);
     } catch (error) {
       setError(`Error al actualizar Historia Clinica: ${error.message}`);
     } finally {
       setLoading(false);
     }
   }
+
+  const handleDeleteAttachment = async (idArchivo, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este archivo adjunto? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const token = getAuthToken();
+      const response = await fetch(`${API_URL}/archivos/${idArchivo}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+      });
+
+      if (response.ok) {
+        // Actualizar la lista local quitando el archivo borrado
+        setCurrentAttachments(prev => prev.filter(a => a.idArchivo !== idArchivo));
+      } else {
+        const errData = await response.json();
+        alert(`Error: ${errData.error || 'No se pudo eliminar el archivo'}`);
+      }
+    } catch (error) {
+      console.error('Error eliminando adjunto:', error);
+      alert('Hubo un error al intentar eliminar el archivo');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Confirmar eliminacion de Historia Clinica
   const confirmDeleteClinical = async () => {
@@ -546,15 +682,7 @@ function ClinicalHistory() {
       await loadAllData();
       setShowDeleteModal(false);
       setClinicalToDelete(null);
-      setError(null);
-
-      //Mostrar modal de exito
-      setSuccessMessage('Historia Clinica Eliminada exitosamente!');
-      setSuccessSubMessage('La historia clinica fue removida del sistema con exito');
-      setShowDeleteSuccessModal(true);
-
-      setTimeout(() => setShowDeleteSuccessModal(false), 3000);
-    } catch (error) {
+      setError(null);    } catch (error) {
       setError(`Error al Eliminar la Historia Clinica: ${error.message}`);
     } finally {
       setLoading(false);
@@ -586,7 +714,7 @@ function ClinicalHistory() {
 
   // Renderizado del componente
   return (
-    <div>
+    <>
       <div className='page-header d-flex justify-content-between align-items-center mt-4 mb-4'>
         <h1>Mis Historias Clinicas</h1>
         <Button
@@ -941,7 +1069,66 @@ function ClinicalHistory() {
                 </Col>
               </Row>
 
+              <div className="lista-problemas-section mt-4 p-4 border-top bg-white rounded shadow-sm">
+                <h5 className="mb-3 fw-bold text-primary"><FaClipboardList className="me-2" /> Lista de Problemas Clínica</h5>
+                <Table responsive hover size="sm" className="border">
+                  <thead className="bg-light">
+                    <tr>
+                      <th className="fw-bold">#</th>
+                      <th className="fw-bold">Problema</th>
+                      <th className="fw-bold">Observación</th>
+                      <th className="fw-bold">Veterinario</th>
+                      <th className="fw-bold">Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {JSON.parse(currentClinical.Lista_problemas || '[]').map((p, idx) => (
+                      <tr key={idx}>
+                        <td>{idx + 1}</td>
+                        <td className="fw-bold text-dark">{p.problema}</td>
+                        <td>{p.observacion}</td>
+                        <td><small className="text-secondary">{p.veterinario}</small></td>
+                        <td><small className="text-muted">{new Date(p.fecha).toLocaleDateString()}</small></td>
+                      </tr>
+                    ))}
+                    {JSON.parse(currentClinical.Lista_problemas || '[]').length === 0 && (
+                      <tr><td colSpan="5" className="text-center text-muted py-3">No hay problemas registrados en esta historia</td></tr>
+                    )}
+                  </tbody>
+                </Table>
+              </div>
+
               <div className="seguimientos-section mt-4 p-4 border-top bg-light rounded-bottom">
+                
+                {/* Visualización de archivos adjuntos de la historia clínica */}
+                {currentAttachments && currentAttachments.length > 0 && (
+                  <div className="mb-4">
+                    <h5 className="mb-3 fw-bold"><FaFilePdf className="me-2 text-danger" /> Exámenes Clínicos Adjuntos</h5>
+                    <div className="d-flex flex-wrap gap-2">
+                      {currentAttachments.map(archivo => (
+                        <Card key={archivo.idArchivo} className="shadow-sm border-0 bg-white" style={{ minWidth: '200px' }}>
+                          <Card.Body className="py-2 px-3 d-flex align-items-center">
+                            <FaFilePdf className="text-danger me-2 fs-4" />
+                            <div className="flex-grow-1 text-truncate me-3" style={{ maxWidth: '150px' }} title={archivo.nombre_original}>
+                              <small className="fw-bold d-block text-truncate">{archivo.nombre_original}</small>
+                              <small className="text-muted" style={{ fontSize: '0.7em' }}>{new Date(archivo.fecha_subida).toLocaleDateString()}</small>
+                            </div>
+                            <Button 
+                              variant="outline-primary" 
+                              size="sm"
+                              className="rounded-circle p-1"
+                              style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              onClick={() => window.open(`${API_URL.replace('/api', '')}${archivo.ruta_archivo}`, '_blank')}
+                            >
+                              <FaSearch size={12} />
+                            </Button>
+                          </Card.Body>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <h5 className="mb-0 fw-bold"><FaClipboardList className="me-2 text-primary" /> Seguimientos y Progreso</h5>
                   <Button
@@ -985,6 +1172,41 @@ function ClinicalHistory() {
                               <strong>Obs:</strong> {s.Observaciones}
                             </small>
                           )}
+                          
+                          {/* Archivos del seguimiento */}
+                          {s.archivos && s.archivos.length > 0 && (
+                            <div className="mt-3 pt-2 border-top">
+                              <strong className="d-block text-dark small mb-2"><FaImage className="me-1"/> Archivos Adjuntos:</strong>
+                              <div className="d-flex flex-wrap gap-2">
+                                {s.archivos.map(archivo => (
+                                  <div key={archivo.idArchivo} className="position-relative">
+                                    {archivo.tipo_archivo === 'imagen' ? (
+                                      <a href={`${API_URL.replace('/api', '')}${archivo.ruta_archivo}`} target="_blank" rel="noopener noreferrer">
+                                        <img 
+                                          src={`${API_URL.replace('/api', '')}${archivo.ruta_archivo}`} 
+                                          alt={archivo.nombre_original}
+                                          className="rounded"
+                                          style={{ width: '60px', height: '60px', objectFit: 'cover', cursor: 'pointer', border: '1px solid #ddd' }}
+                                        />
+                                      </a>
+                                    ) : (
+                                      <Button 
+                                        variant="outline-danger" 
+                                        size="sm" 
+                                        className="d-flex align-items-center"
+                                        style={{ height: '60px', padding: '0 10px' }}
+                                        onClick={() => window.open(`${API_URL.replace('/api', '')}${archivo.ruta_archivo}`, '_blank')}
+                                        title={archivo.nombre_original}
+                                      >
+                                        <FaFilePdf className="me-1 fs-5" />
+                                        <span className="small text-truncate" style={{ maxWidth: '80px' }}>PDF</span>
+                                      </Button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </Card.Body>
                       </Card>
                     ))}
@@ -995,7 +1217,7 @@ function ClinicalHistory() {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-danger" onClick={() => generatePDF(currentClinical, patients.find(p => p.idPaciente === currentClinical.Paciente), owners.find(o => o.idPropietario === (patients.find(p => p.idPaciente === currentClinical.Paciente)?.Propietario)), followUps, logo, userData)}>
+          <Button variant="outline-danger" onClick={() => generatePDF(currentClinical, patients.find(p => p.idPaciente === currentClinical.Paciente), owners.find(o => o.idPropietario === (patients.find(p => p.idPaciente === currentClinical.Paciente)?.Propietario)), followUps, logo, userData, currentAttachments)}>
             <FaFilePdf className="me-2" />
             Descargar PDF
           </Button>
@@ -1056,6 +1278,22 @@ function ClinicalHistory() {
                 onChange={(e) => setNewFollowUp({ ...newFollowUp, Observaciones: e.target.value })}
               />
             </Form.Group>
+            <Form.Group className="mb-4 bg-light p-3 rounded border">
+              <Form.Label className="fw-bold"><FaImages className="me-2 text-primary"/>Fotos y Exámenes (Opcional)</Form.Label>
+              <p className="text-muted small mb-2">Puedes adjuntar fotos del progreso o resultados de exámenes en la fecha del seguimiento.</p>
+              <Form.Control
+                type="file"
+                multiple
+                accept="image/*,.pdf"
+                onChange={(e) => setFollowUpFiles(e.target.files)}
+                className="mb-2"
+              />
+              {followUpFiles && followUpFiles.length > 0 && (
+                <div className="small text-primary mt-1 fw-bold">
+                  {followUpFiles.length} archivo(s) seleccionado(s) listos para subir.
+                </div>
+              )}
+            </Form.Group>
             <div className="d-flex justify-content-end">
               <Button variant="secondary" onClick={() => setShowFollowUpModal(false)} className="me-2">Cancelar</Button>
               <Button
@@ -1115,6 +1353,22 @@ function ClinicalHistory() {
                   </Form.Control.Feedback>
                 </Form.Group>
               </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3" controlId="formEvaluacionDistancia">
+                  <Form.Label>Evaluación a distancia *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="Evaluacion_distancia"
+                    value={newClinical.Evaluacion_distancia}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Evaluación a distancia"
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    La evaluación a distancia es obligatoria
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </Col>
             </Row>
             <Row>
               <Col md={12}>
@@ -1170,30 +1424,53 @@ function ClinicalHistory() {
               <Col md={6}>
                 <Form.Group className="mb-3" controlId="formVacunas">
                   <Form.Label>Vacunas *</Form.Label>
-                  <Form.Control
-                    type="text"
+                  <Form.Select
                     name="Vacunas"
                     value={newClinical.Vacunas}
                     onChange={handleInputChange}
                     required
-                    placeholder="Vacunas administradas"
-                  />
+                  >
+                    <option value="">Seleccione una opción</option>
+                    <option value="Sí">Sí</option>
+                    <option value="No">No</option>
+                    <option value="No reportado">No reportado</option>
+                  </Form.Select>
                   <Form.Control.Feedback type="invalid">
                     Las vacunas son obligatorias
                   </Form.Control.Feedback>
                 </Form.Group>
+                
+                {newClinical.Vacunas === 'Sí' && (
+                  <Form.Group className="mb-3 mt-2" controlId="formVacunasDetalle">
+                    <Form.Label>¿Cuáles vacunas? *</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="Vacunas_detalle"
+                      value={newClinical.Vacunas_detalle}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Especifique las vacunas"
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      Especifique las vacunas
+                    </Form.Control.Feedback>
+                  </Form.Group>
+                )}
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3" controlId="formDesparasitacion">
                   <Form.Label>Desparasitacion *</Form.Label>
-                  <Form.Control
-                    type="text"
+                  <Form.Select
                     name="Desparasitacion"
                     value={newClinical.Desparasitacion}
                     onChange={handleInputChange}
                     required
-                    placeholder="Desparasitacion"
-                  />
+                  >
+                    <option value="">Seleccione una opción</option>
+                    <option value="Sí">Sí</option>
+                    <option value="No">No</option>
+                    <option value="No reportado">No reportado</option>
+                  </Form.Select>
                   <Form.Control.Feedback type="invalid">
                     La desparasitacion es obligatoria
                   </Form.Control.Feedback>
@@ -1217,14 +1494,14 @@ function ClinicalHistory() {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3" controlId="formLlenadoCapilar">
-                  <Form.Label>Tiempo de llenado capilar *</Form.Label>
+                  <Form.Label>Tiempo de llenado capilar (Seg) *</Form.Label>
                   <Form.Control
                     type="number"
                     name="Llenado_capilar"
                     value={newClinical.Llenado_capilar}
                     onChange={handleInputChange}
                     required
-                    placeholder="Tiempo de llenado capilar"
+                    placeholder="Segundos"
                   />
                   <Form.Control.Feedback type="invalid">
                     El tiempo de llenado capilar es obligatorio
@@ -1233,14 +1510,14 @@ function ClinicalHistory() {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3" controlId="formPliegueCutaneo">
-                  <Form.Label>Pliegue cutáneo *</Form.Label>
+                  <Form.Label>Pliegue cutáneo (Seg) *</Form.Label>
                   <Form.Control
                     type="number"
                     name="Pliegue_cutaneo"
                     value={newClinical.Pliegue_cutaneo}
                     onChange={handleInputChange}
                     required
-                    placeholder="Pliegue cutáneo"
+                    placeholder="Segundos"
                   />
                   <Form.Control.Feedback type="invalid">
                     El pliegue cutáneo es obligatorio
@@ -1249,14 +1526,14 @@ function ClinicalHistory() {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3" controlId="formFrecuenciaCardiaca">
-                  <Form.Label>Frecuencia cardiaca *</Form.Label>
+                  <Form.Label>Frecuencia cardiaca (LPM) *</Form.Label>
                   <Form.Control
                     type="number"
                     name="Frecuencia_cardiaca"
                     value={newClinical.Frecuencia_cardiaca}
                     onChange={handleInputChange}
                     required
-                    placeholder="Frecuencia cardiaca"
+                    placeholder="LPM"
                   />
                   <Form.Control.Feedback type="invalid">
                     La frecuencia cardiaca es obligatoria
@@ -1265,14 +1542,14 @@ function ClinicalHistory() {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3" controlId="formFrecuenciaRespiratoria">
-                  <Form.Label>Frecuencia respiratoria *</Form.Label>
+                  <Form.Label>Frecuencia respiratoria (RPM) *</Form.Label>
                   <Form.Control
                     type="number"
                     name="Frecuencia_respiratoria"
                     value={newClinical.Frecuencia_respiratoria}
                     onChange={handleInputChange}
                     required
-                    placeholder="Frecuencia respiratoria"
+                    placeholder="RPM"
                   />
                   <Form.Control.Feedback type="invalid">
                     La frecuencia respiratoria es obligatoria
@@ -1282,14 +1559,18 @@ function ClinicalHistory() {
               <Col md={6}>
                 <Form.Group className="mb-3" controlId="formMotilidadGastrointestinal">
                   <Form.Label>Motilidad gastrointestinal *</Form.Label>
-                  <Form.Control
-                    type="text"
+                  <Form.Select
                     name="Motilidad_gastrointestinal"
                     value={newClinical.Motilidad_gastrointestinal}
                     onChange={handleInputChange}
                     required
-                    placeholder="Motilidad gastrointestinal"
-                  />
+                  >
+                    <option value="">Seleccione una opción</option>
+                    <option value="Amotil">Amotil</option>
+                    <option value="Normomotil">Normomotil</option>
+                    <option value="Hipomotil">Hipomotil</option>
+                    <option value="Hipermotil">Hipermotil</option>
+                  </Form.Select>
                   <Form.Control.Feedback type="invalid">
                     La motilidad gastrointestinal es obligatoria
                   </Form.Control.Feedback>
@@ -1330,22 +1611,6 @@ function ClinicalHistory() {
             </Row>
             <Row>
               <Col md={6}>
-                <Form.Group className="mb-3" controlId="formEvaluacionDistancia">
-                  <Form.Label>Evaluación a distancia *</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="Evaluacion_distancia"
-                    value={newClinical.Evaluacion_distancia}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Evaluación a distancia"
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    La evaluación a distancia es obligatoria
-                  </Form.Control.Feedback>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
                 <Form.Group className="mb-3" controlId="formPulsoDigital">
                   <Form.Label>Pulso digital *</Form.Label>
                   <Form.Control
@@ -1377,11 +1642,11 @@ function ClinicalHistory() {
               )}
             </Form.Group>
             <Button type="button" variant="warning" onClick={() => setShowAdditionalFields(!showAdditionalFields)} className='mb-3'>
-              {showAdditionalFields ? 'Ocultar Campos Adicionales' : 'Mostrar Campos Adicionales'}
+              {showAdditionalFields ? 'Ocultar Examen Fisico Especial' : 'Mostrar Examen Fisico Especialonales'}
             </Button>
             {showAdditionalFields && (
               <div>
-                <h5 className='border-bottom pb-2 mb-3'>Campos Adicionales</h5>
+                <h5 className='border-bottom pb-2 mb-3'>Examen Fisico Especial</h5>
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3" controlId="formAspecto">
@@ -1557,27 +1822,114 @@ function ClinicalHistory() {
                   </Col>
                   <Col md={6}>
                     <Form.Group className="mb-3" controlId="formObservaciones">
-                      <Form.Label>Observaciones *</Form.Label>
+                      <Form.Label>Observaciones (Opcional)</Form.Label>
                       <Form.Control
                         type="text"
                         name="Observaciones"
                         value={newClinical.Observaciones}
                         onChange={handleInputChange}
-                        required
                         placeholder="Observaciones adicionales"
                       />
-                      <Form.Control.Feedback type="invalid">
-                        Las observaciones son obligatorias
-                      </Form.Control.Feedback>
+                    </Form.Group>
+                  </Col>
+                  <Col md={12}>
+                    <Form.Group className="mb-4 bg-light p-3 rounded border">
+                      <Form.Label className="fw-bold">
+                        <FaFilePdf className="me-2 text-danger" />
+                        Exámenes Clínicos, Laboratorios o Radiografías (Múltiples PDFs)
+                      </Form.Label>
+                      <Form.Control
+                        type="file"
+                        multiple
+                        accept=".pdf"
+                        onChange={(e) => setNewPdfFiles(e.target.files)}
+                        className="mb-2"
+                      />
+                      <small className="text-muted d-block">
+                        Puedes seleccionar varios archivos PDF manteniendo presionada la tecla Ctrl (o Cmd en Mac) al seleccionar.
+                      </small>
+                      {newPdfFiles && newPdfFiles.length > 0 && (
+                        <div className="mt-2 text-primary fw-bold">
+                          <FaCheckCircle className="me-1" /> {newPdfFiles.length} PDF(s) seleccionado(s) listos para adjuntar
+                        </div>
+                      )}
                     </Form.Group>
                   </Col>
                 </Row>
               </div>
             )}
-            <Button type="submit" variant="warning">
-              <FaPlus className="me-2" />
-              Crear Historia Clínica
-            </Button>
+            
+            <h5 className='border-bottom pb-2 mb-3 mt-4'>Lista de Problemas</h5>
+            <div className="bg-light p-3 rounded border mb-3">
+              <Row>
+                <Col md={5}>
+                  <Form.Group className="mb-2">
+                    <Form.Label className="small fw-bold">Problema</Form.Label>
+                    <Form.Control 
+                      type="text" 
+                      placeholder="Ej: Cojera" 
+                      value={tempNewProblem.problema}
+                      onChange={(e) => setTempNewProblem({...tempNewProblem, problema: e.target.value})}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={5}>
+                  <Form.Group className="mb-2">
+                    <Form.Label className="small fw-bold">Observación</Form.Label>
+                    <Form.Control 
+                      type="text" 
+                      placeholder="Observaciones..." 
+                      value={tempNewProblem.observacion}
+                      onChange={(e) => setTempNewProblem({...tempNewProblem, observacion: e.target.value})}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={2} className="d-flex align-items-end">
+                  <Button variant="success" className="mb-2 w-100" onClick={() => handleAddProblem(false)}>
+                    <FaPlus />
+                  </Button>
+                </Col>
+              </Row>
+              
+              <Table size="sm" className="mt-3 bg-white">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Problema</th>
+                    <th>Observación</th>
+                    <th>Veterinario</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {JSON.parse(newClinical.Lista_problemas || '[]').map((p, idx) => (
+                    <tr key={idx}>
+                      <td>{idx + 1}</td>
+                      <td>{p.problema}</td>
+                      <td>{p.observacion}</td>
+                      <td><small>{p.veterinario}</small></td>
+                      <td>
+                        <Button variant="link" className="text-danger p-0" onClick={() => handleRemoveProblem(false, idx)}>
+                          <FaTrashAlt />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {JSON.parse(newClinical.Lista_problemas || '[]').length === 0 && (
+                    <tr><td colSpan="5" className="text-center text-muted small">No se han registrado problemas</td></tr>
+                  )}
+                </tbody>
+              </Table>
+            </div>
+            
+            <div className="d-flex justify-content-between align-items-center mt-4">
+              <Button type="button" variant="outline-warning" onClick={() => setShowAdditionalFields(!showAdditionalFields)}>
+                {showAdditionalFields ? 'Ocultar Examen Fisico Especial' : 'Mostrar Examen Fisico Especial'}
+              </Button>
+              <Button type="submit" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }} disabled={isUpdating}>
+                {isUpdating ? <><FaSpinner className="fa-spin me-2" />Creando...</> : <><FaPlus className="me-2" />Crear Historia Clínica</>}
+              </Button>
+            </div>
           </Form>
         </Modal.Body>
         <Modal.Footer>
@@ -1644,6 +1996,24 @@ function ClinicalHistory() {
                   </Form.Group>
                 </Col>
               </Row>
+              <Row>
+                <Col md={12}>
+                  <Form.Group className="mb-3" controlId="formEvaluacionDistanciaEdit">
+                    <Form.Label>Evaluación a distancia *</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="Evaluacion_distancia"
+                      value={editClinical.Evaluacion_distancia}
+                      onChange={handleEditInputChange}
+                      required
+                      placeholder="Evaluación a distancia"
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      La evaluación a distancia es obligatoria
+                    </Form.Control.Feedback>
+                  </Form.Group>
+                </Col>
+              </Row>
 
               <h5 className='border-bottom pb-2 mb-3'>Examen Físico</h5>
               <Row>
@@ -1682,30 +2052,53 @@ function ClinicalHistory() {
                 <Col md={6}>
                   <Form.Group className="mb-3" controlId="formVacunas">
                     <Form.Label>Vacunas *</Form.Label>
-                    <Form.Control
-                      type="text"
+                    <Form.Select
                       name="Vacunas"
                       value={editClinical.Vacunas}
                       onChange={handleEditInputChange}
                       required
-                      placeholder="Vacunas administradas"
-                    />
+                    >
+                      <option value="">Seleccione una opción</option>
+                      <option value="Sí">Sí</option>
+                      <option value="No">No</option>
+                      <option value="No reportado">No reportado</option>
+                    </Form.Select>
                     <Form.Control.Feedback type="invalid">
                       Las vacunas son obligatorias
                     </Form.Control.Feedback>
                   </Form.Group>
+
+                  {editClinical.Vacunas === 'Sí' && (
+                    <Form.Group className="mb-3 mt-2" controlId="formVacunasDetalleEdit">
+                      <Form.Label>¿Cuáles vacunas? *</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="Vacunas_detalle"
+                        value={editClinical.Vacunas_detalle || ''}
+                        onChange={handleEditInputChange}
+                        required
+                        placeholder="Especifique las vacunas"
+                      />
+                      <Form.Control.Feedback type="invalid">
+                        Especifique las vacunas
+                      </Form.Control.Feedback>
+                    </Form.Group>
+                  )}
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3" controlId="formDesparasitacion">
                     <Form.Label>Desparasitacion *</Form.Label>
-                    <Form.Control
-                      type="text"
+                    <Form.Select
                       name="Desparasitacion"
                       value={editClinical.Desparasitacion}
                       onChange={handleEditInputChange}
                       required
-                      placeholder="Desparasitacion"
-                    />
+                    >
+                      <option value="">Seleccione una opción</option>
+                      <option value="Sí">Sí</option>
+                      <option value="No">No</option>
+                      <option value="No reportado">No reportado</option>
+                    </Form.Select>
                     <Form.Control.Feedback type="invalid">
                       La desparasitacion es obligatoria
                     </Form.Control.Feedback>
@@ -1729,14 +2122,14 @@ function ClinicalHistory() {
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3" controlId="formLlenadoCapilar">
-                    <Form.Label>Tiempo de llenado capilar *</Form.Label>
+                    <Form.Label>Tiempo de llenado capilar (Seg) *</Form.Label>
                     <Form.Control
                       type="number"
                       name="Llenado_capilar"
                       value={editClinical.Llenado_capilar}
                       onChange={handleEditInputChange}
                       required
-                      placeholder="Tiempo de llenado capilar"
+                      placeholder="Segundos"
                     />
                     <Form.Control.Feedback type="invalid">
                       El tiempo de llenado capilar es obligatorio
@@ -1745,14 +2138,14 @@ function ClinicalHistory() {
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3" controlId="formPliegueCutaneo">
-                    <Form.Label>Pliegue cutáneo *</Form.Label>
+                    <Form.Label>Pliegue cutáneo (Seg) *</Form.Label>
                     <Form.Control
                       type="number"
                       name="Pliegue_cutaneo"
                       value={editClinical.Pliegue_cutaneo}
                       onChange={handleEditInputChange}
                       required
-                      placeholder="Pliegue cutáneo"
+                      placeholder="Segundos"
                     />
                     <Form.Control.Feedback type="invalid">
                       El pliegue cutáneo es obligatorio
@@ -1761,14 +2154,14 @@ function ClinicalHistory() {
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3" controlId="formFrecuenciaCardiaca">
-                    <Form.Label>Frecuencia cardiaca *</Form.Label>
+                    <Form.Label>Frecuencia cardiaca (LPM) *</Form.Label>
                     <Form.Control
                       type="number"
                       name="Frecuencia_cardiaca"
                       value={editClinical.Frecuencia_cardiaca}
                       onChange={handleEditInputChange}
                       required
-                      placeholder="Frecuencia cardiaca"
+                      placeholder="LPM"
                     />
                     <Form.Control.Feedback type="invalid">
                       La frecuencia cardiaca es obligatoria
@@ -1777,14 +2170,14 @@ function ClinicalHistory() {
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3" controlId="formFrecuenciaRespiratoria">
-                    <Form.Label>Frecuencia respiratoria *</Form.Label>
+                    <Form.Label>Frecuencia respiratoria (RPM) *</Form.Label>
                     <Form.Control
                       type="number"
                       name="Frecuencia_respiratoria"
                       value={editClinical.Frecuencia_respiratoria}
                       onChange={handleEditInputChange}
                       required
-                      placeholder="Frecuencia respiratoria"
+                      placeholder="RPM"
                     />
                     <Form.Control.Feedback type="invalid">
                       La frecuencia respiratoria es obligatoria
@@ -1794,14 +2187,18 @@ function ClinicalHistory() {
                 <Col md={6}>
                   <Form.Group className="mb-3" controlId="formMotilidadGastrointestinal">
                     <Form.Label>Motilidad gastrointestinal *</Form.Label>
-                    <Form.Control
-                      type="text"
+                    <Form.Select
                       name="Motilidad_gastrointestinal"
                       value={editClinical.Motilidad_gastrointestinal}
                       onChange={handleEditInputChange}
                       required
-                      placeholder="Motilidad gastrointestinal"
-                    />
+                    >
+                      <option value="">Seleccione una opción</option>
+                      <option value="Amotil">Amotil</option>
+                      <option value="Normomotil">Normomotil</option>
+                      <option value="Hipomotil">Hipomotil</option>
+                      <option value="Hipermotil">Hipermotil</option>
+                    </Form.Select>
                     <Form.Control.Feedback type="invalid">
                       La motilidad gastrointestinal es obligatoria
                     </Form.Control.Feedback>
@@ -1841,22 +2238,6 @@ function ClinicalHistory() {
                 </Col>
               </Row>
               <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3" controlId="formEvaluacionDistanciaEdit">
-                    <Form.Label>Evaluación a distancia *</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="Evaluacion_distancia"
-                      value={editClinical.Evaluacion_distancia}
-                      onChange={handleEditInputChange}
-                      required
-                      placeholder="Evaluación a distancia"
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      La evaluación a distancia es obligatoria
-                    </Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3" controlId="formPulsoDigitalEdit">
                     <Form.Label>Pulso digital *</Form.Label>
@@ -2069,28 +2450,149 @@ function ClinicalHistory() {
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3" controlId="formObservaciones">
-                        <Form.Label>Observaciones *</Form.Label>
+                        <Form.Label>Observaciones (Opcional)</Form.Label>
                         <Form.Control
                           type="text"
                           name="Observaciones"
                           value={editClinical.Observaciones}
                           onChange={handleEditInputChange}
-                          required
                           placeholder="Observaciones adicionales"
                         />
-                        <Form.Control.Feedback type="invalid">
-                          Las observaciones son obligatorias
-                        </Form.Control.Feedback>
                       </Form.Group>
                     </Col>
-                  </Row>
-                </div>
-              )}
-              <Button type="submit" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}>
-                <FaSave className="me-2" />
-                Actualizar Historia Clínica
+                  <Col md={12}>
+                    <div className="mb-4 bg-light p-3 rounded border">
+                      <h6 className="fw-bold border-bottom pb-2 mb-3">
+                        <FaFilePdf className="me-2 text-danger" />
+                        Gestión de Exámenes Clínicos Adjuntos
+                      </h6>
+                      
+                      {/* Archivos Actuales */}
+                      {currentAttachments && currentAttachments.length > 0 && (
+                        <div className="mb-3">
+                          <p className="small fw-bold text-muted mb-2">Archivos Actuales (Toca el basurero para eliminar):</p>
+                          <div className="d-flex flex-wrap gap-2">
+                            {currentAttachments.map(archivo => (
+                              <Card key={archivo.idArchivo} className="shadow-sm border-0 bg-white">
+                                <Card.Body className="py-1 px-2 d-flex align-items-center">
+                                  <div className="text-truncate me-2" style={{ maxWidth: '120px' }}>
+                                    <small className="d-block text-truncate" title={archivo.nombre_original}>{archivo.nombre_original}</small>
+                                  </div>
+                                  <Button 
+                                    variant="outline-danger" 
+                                    size="sm"
+                                    className="p-1 border-0"
+                                    onClick={(e) => handleDeleteAttachment(archivo.idArchivo, e)}
+                                    title="Eliminar este archivo"
+                                  >
+                                    <FaTrashAlt size={12} />
+                                  </Button>
+                                </Card.Body>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Subir Nuevos */}
+                      <div>
+                        <Form.Group controlId="formArchivosEdit">
+                          <Form.Label className="small fw-bold text-muted">Añadir Nuevos PDFs:</Form.Label>
+                          <Form.Control
+                            type="file"
+                            multiple
+                            accept=".pdf"
+                            onChange={(e) => setEditPdfFiles(e.target.files)}
+                            className="mb-1"
+                          />
+                          <small className="text-muted d-block" style={{ fontSize: '0.8em' }}>
+                            Mantén presionada la tecla Ctrl/Cmd para seleccionar varios archivos.
+                          </small>
+                          {editPdfFiles && editPdfFiles.length > 0 && (
+                            <div className="mt-1 text-primary fw-bold small">
+                              <FaCheckCircle className="me-1" /> {editPdfFiles.length} nuevo(s) PDF(s) seleccionado(s)
+                            </div>
+                          )}
+                        </Form.Group>
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+              </div>
+            )}
+
+              <h5 className='border-bottom pb-2 mb-3 mt-4'>Lista de Problemas</h5>
+              <div className="bg-light p-3 rounded border mb-3">
+                <Row>
+                  <Col md={5}>
+                    <Form.Group className="mb-2">
+                      <Form.Label className="small fw-bold">Problema</Form.Label>
+                      <Form.Control 
+                        type="text" 
+                        placeholder="Ej: Cojera" 
+                        value={tempProblem.problema}
+                        onChange={(e) => setTempProblem({...tempProblem, problema: e.target.value})}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={5}>
+                    <Form.Group className="mb-2">
+                      <Form.Label className="small fw-bold">Observación</Form.Label>
+                      <Form.Control 
+                        type="text" 
+                        placeholder="Observaciones..." 
+                        value={tempProblem.observacion}
+                        onChange={(e) => setTempProblem({...tempProblem, observacion: e.target.value})}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={2} className="d-flex align-items-end">
+                    <Button variant="success" className="mb-2 w-100" onClick={() => handleAddProblem(true)}>
+                      <FaPlus />
+                    </Button>
+                  </Col>
+                </Row>
+                
+                <Table size="sm" className="mt-3 bg-white">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Problema</th>
+                      <th>Observación</th>
+                      <th>Veterinario</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {JSON.parse(editClinical.Lista_problemas || '[]').map((p, idx) => (
+                      <tr key={idx}>
+                        <td>{idx + 1}</td>
+                        <td>{p.problema}</td>
+                        <td>{p.observacion}</td>
+                        <td><small>{p.veterinario}</small></td>
+                        <td>
+                          <Button variant="link" className="text-danger p-0" onClick={() => handleRemoveProblem(true, idx)}>
+                            <FaTrashAlt />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    {JSON.parse(editClinical.Lista_problemas || '[]').length === 0 && (
+                      <tr><td colSpan="5" className="text-center text-muted small">No se han registrado problemas</td></tr>
+                    )}
+                  </tbody>
+                </Table>
+              </div>
+
+              <div className="d-flex justify-content-end mt-4">
+              <Button variant="secondary" onClick={() => { setShowEditClinicalModal(false); setEditValidated(false); }} className="me-2">
+                Cancelar
               </Button>
-            </Form>
+              <Button type="submit" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }} disabled={loading}>
+                {loading ? <><FaSpinner className="fa-spin me-2" />Guardando...</> : <><FaSave className="me-2" />Actualizar Historia Clínica</>}
+              </Button>
+            </div>
+          </Form>
           )}
         </Modal.Body>
         <Modal.Footer>
@@ -2172,7 +2674,7 @@ function ClinicalHistory() {
           </Button>
         </Modal.Footer>
       </Modal>
-    </div >
+    </>
   );
 }
 

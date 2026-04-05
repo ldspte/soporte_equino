@@ -135,7 +135,7 @@ function OtherHistorys() {
       if (paciente.trim()) params.append('paciente', paciente.trim());
       if (propietario.trim()) params.append('propietario', propietario.trim());
 
-      const response = await fetch(`${API_URL} /historia_clinica/buscar ? ${params.toString()} `, {
+      const response = await fetch(`${API_URL}/historia_clinica/buscar?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': token,

@@ -99,8 +99,8 @@ function Owners() {
     const [showNewOwnerModal, setShowNewOwnerModal] = useState(false);
     const [showEditOwnerModal, setShowEditOwnerModal] = useState(false);
     const [currentOwner, setCurrentOwner] = useState(null);
-    const [newOwner, setNewOwner] = useState({ Cedula: '', Nombre: '', Apellido: '', Telefono: '' });
-    const [editOwner, setEditOwner] = useState({ Cedula: '', Nombre: '', Apellido: '', Telefono: '' });
+    const [newOwner, setNewOwner] = useState({ Cedula: '', Nombre: '', Apellido: '', Telefono: '', Direccion: '' });
+    const [editOwner, setEditOwner] = useState({ Cedula: '', Nombre: '', Apellido: '', Telefono: '', Direccion: '' });
 
     // --- Funciones de Utilidad y Hooks ---
 
@@ -185,7 +185,7 @@ function Owners() {
 
             fetchOwners(token);
             setShowNewOwnerModal(false);
-            setNewOwner({ Cedula: '', Nombre: '', Apellido: '', Telefono: '' });
+            setNewOwner({ Cedula: '', Nombre: '', Apellido: '', Telefono: '', Direccion: '' });
             setError(null);
         } catch (error) {
             setError(error.message);
@@ -260,7 +260,8 @@ function Owners() {
             owner.Cedula?.toString().includes(searchTerm) ||
             owner.Nombre?.toLowerCase().includes(termLower) ||
             owner.Apellido?.toLowerCase().includes(termLower) ||
-            owner.Telefono?.includes(searchTerm)
+            owner.Telefono?.includes(searchTerm) ||
+            owner.Direccion?.toLowerCase().includes(termLower)
         );
     });
 
@@ -311,6 +312,7 @@ function Owners() {
                                         <th><FaUserCircle className='me-1' /> Nombre</th>
                                         <th>Apellido</th>
                                         <th><FaPhone className='me-1' /> Teléfono</th>
+                                        <th>Dirección</th>
                                         <th>Calificación</th> {/* Nueva Columna */}
                                         <th>Acciones</th>
                                     </tr>
@@ -322,6 +324,7 @@ function Owners() {
                                             <td>{owner.Nombre}</td>
                                             <td>{owner.Apellido}</td>
                                             <td>{owner.Telefono}</td>
+                                            <td>{owner.Direccion}</td>
 
                                             {/* Columna de Calificación */}
                                             <td>
@@ -369,9 +372,13 @@ function Owners() {
                             <Form.Label>Apellido</Form.Label>
                             <Form.Control type="text" name="Apellido" value={newOwner.Apellido} onChange={handleInputChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formTelefono" className='mb-4'>
+                        <Form.Group controlId="formTelefono" className='mb-2'>
                             <Form.Label>Teléfono</Form.Label>
                             <Form.Control type="text" name="Telefono" value={newOwner.Telefono} onChange={handleInputChange} required />
+                        </Form.Group>
+                        <Form.Group controlId="formDireccion" className='mb-4'>
+                            <Form.Label>Dirección</Form.Label>
+                            <Form.Control type="text" name="Direccion" value={newOwner.Direccion} onChange={handleInputChange} />
                         </Form.Group>
                         <Button type="submit" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}>Crear Propietario</Button>
                     </Form>
@@ -398,9 +405,13 @@ function Owners() {
                             <Form.Label>Apellido</Form.Label>
                             <Form.Control type="text" name="Apellido" value={editOwner.Apellido} onChange={handleEditInputChange} required />
                         </Form.Group>
-                        <Form.Group controlId="formEditTelefono" className='mb-4'>
+                        <Form.Group controlId="formEditTelefono" className='mb-2'>
                             <Form.Label>Teléfono</Form.Label>
                             <Form.Control type="text" name="Telefono" value={editOwner.Telefono} onChange={handleEditInputChange} required />
+                        </Form.Group>
+                        <Form.Group controlId="formEditDireccion" className='mb-4'>
+                            <Form.Label>Dirección</Form.Label>
+                            <Form.Control type="text" name="Direccion" value={editOwner.Direccion} onChange={handleEditInputChange} />
                         </Form.Group>
                         <Button type="submit" variant="primary" style={{ backgroundColor: '#0d3b66', borderColor: '#0d3b66' }}>Actualizar Propietario</Button>
                     </Form>

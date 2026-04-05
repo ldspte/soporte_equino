@@ -28,21 +28,21 @@ const getOwnerById = async (idPropietario) => {
     return result;
 }
 
-const createOwner = async (Cedula, Nombre, Apellido, Telefono, idVeterinario) => {
+const createOwner = async (Cedula, Nombre, Apellido, Telefono, Direccion, idVeterinario) => {
     const [result] = await db.query(`
-        INSERT INTO propietario (Cedula, Nombre, Apellido, Telefono, CalificacionPromedio, TotalCalificaciones, idVeterinario) 
-        VALUES (?, ?, ?, ?, 0, 0, ?)
+        INSERT INTO propietario (Cedula, Nombre, Apellido, Telefono, Direccion, CalificacionPromedio, TotalCalificaciones, idVeterinario) 
+        VALUES (?, ?, ?, ?, ?, 0, 0, ?)
     `,
-        [Cedula, Nombre, Apellido, Telefono, idVeterinario]
+        [Cedula, Nombre, Apellido, Telefono, Direccion, idVeterinario]
     );
     return result;
 }
 
-const updateOwner = async (idPropietario, Cedula, Nombre, Apellido, Telefono) => {
+const updateOwner = async (idPropietario, Cedula, Nombre, Apellido, Telefono, Direccion) => {
     const [result] = await db.query(`
-        UPDATE propietario SET  Cedula = ?, Nombre = ?, Apellido = ?, Telefono = ? WHERE idPropietario = ?
+        UPDATE propietario SET  Cedula = ?, Nombre = ?, Apellido = ?, Telefono = ?, Direccion = ? WHERE idPropietario = ?
     `,
-        [Cedula, Nombre, Apellido, Telefono, idPropietario]
+        [Cedula, Nombre, Apellido, Telefono, Direccion, idPropietario]
     );
     return result;
 }
